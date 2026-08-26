@@ -1,4 +1,22 @@
 {
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-community": [
+      "eli5"
+    ],
+    "eli5@claude-community": true
+  },
   "extraKnownMarketplaces": {
     "claude-community": {
       "source": {
@@ -6,8 +24,5 @@
         "repo": "anthropics/claude-plugins-community"
       }
     }
-  },
-  "enabledPlugins": {
-    "claude-community": ["eli5"]
   }
 }
