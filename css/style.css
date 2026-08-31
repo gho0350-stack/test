@@ -116,6 +116,35 @@ body {
 .source-link { font-size: 12px; }
 .source-link a { color: var(--accent); text-decoration: none; }
 
+#national-view { padding: 0 20px 20px; }
+.map-caption { font-size: 12px; color: var(--muted); }
+.map-caption a { color: var(--accent); }
+
+#national-map {
+  height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.map-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+.national-status { font-size: 13px; color: var(--muted); }
+
+.district-star-icon {
+  color: #d97706;
+  font-size: 20px;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+}
+
+.back-btn { margin: 16px 20px 0; }
+
+.leaflet-tooltip { font-size: 12px; }
+
 .community-mock { padding: 0 20px 20px; }
 .post-mock {
   background: var(--panel);

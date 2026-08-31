@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>위례 학군지도 (초안 v0.1)</title>
+<title>학군지도 (초안 v0.2)</title>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">위례 학군지도 <span class="badge-draft">초안 v0.1</span></div>
+    <div class="brand">학군지도 <span class="badge-draft">초안 v0.2</span></div>
     <div class="filters" id="filters">
       <button class="chip" data-filter="elementary">초품아</button>
       <button class="chip" data-filter="private">자사고·특목고</button>
@@ -20,41 +21,60 @@
 
   <div class="ad-slot ad-top">광고 영역 (실 서비스 시 "광고" 표기 의무)</div>
 
-  <main class="layout">
-    <section class="map-panel">
-      <p class="map-caption">※ 실제 축척과 무관한 개념도입니다. 정확한 행정경계는 국가공간정보포털 기준으로 재작업 필요.</p>
-      <svg viewBox="0 0 400 420" class="wirye-map" id="wirye-map">
-        <rect class="zone" data-id="buk-wirye" x="60" y="20" width="280" height="130" rx="12"></rect>
-        <text class="zone-label" x="200" y="90" text-anchor="middle">북위례<tspan x="200" dy="16" class="zone-sub">(하남 위례동 · 개발중)</tspan></text>
-
-        <rect class="zone" data-id="nam-seongnam" x="30" y="170" width="150" height="220" rx="12"></rect>
-        <text class="zone-label" x="105" y="280" text-anchor="middle">남위례<tspan x="105" dy="16" class="zone-sub">성남권역(창곡동)</tspan></text>
-
-        <rect class="zone" data-id="nam-songpa" x="190" y="170" width="180" height="130" rx="12"></rect>
-        <text class="zone-label" x="280" y="235" text-anchor="middle">남위례<tspan x="280" dy="16" class="zone-sub">송파권역(거여·장지동)</tspan></text>
-
-        <rect class="zone" data-id="nam-hanam" x="190" y="310" width="180" height="80" rx="12"></rect>
-        <text class="zone-label" x="280" y="350" text-anchor="middle">남위례<tspan x="280" dy="16" class="zone-sub">하남권역(학암동)</tspan></text>
-      </svg>
-    </section>
-
-    <section class="detail-panel" id="detail-panel">
-      <p class="placeholder">지도에서 영역을 클릭하면 상세 정보가 표시됩니다.</p>
-    </section>
-  </main>
-
-  <section class="ad-slot ad-inline">광고 영역 (예: 지역 중개사/인테리어 타겟 배너)</section>
-
-  <section class="community-mock">
-    <h2>학부모 커뮤니티 (UI 목업 — 미연동)</h2>
-    <div class="post-mock">
-      <div class="post-head">
-        <span class="verified-badge">✔ 인증 학부모</span>
-        <span class="post-meta">남위례 · 성남권역 · 익명</span>
-      </div>
-      <p>이번 학기 배정 관련해서 여쭤보고 싶은 게 있어요...</p>
-      <button class="btn-paid-message" id="open-message-modal">쪽지 보내기 (유료)</button>
+  <!-- ===================== 전국 지도 화면 ===================== -->
+  <section id="national-view">
+    <p class="map-caption">
+      시/도 → 시/군/구까지는 통계청(KOSTAT) 2012년 경계 데이터를 사용한 실제 지도입니다.
+      노란 별표(★)는 아직 상세 화면이 있는 유일한 커스텀 학군 영역(위례)입니다 —
+      다른 지역은 아직 콘텐츠가 없어 클릭해도 "준비 중"만 뜹니다.
+      <a href="data/geo/SOURCE.md" target="_blank" rel="noopener">경계 데이터 출처/한계 보기</a>
+    </p>
+    <div id="national-map"></div>
+    <div class="map-controls">
+      <button id="reset-national" class="btn-secondary">전국 지도로</button>
+      <span id="national-status" class="national-status"></span>
     </div>
+  </section>
+
+  <!-- ===================== 위례 상세 화면 (커스텀 영역 드릴다운) ===================== -->
+  <section id="district-view" hidden>
+    <button id="back-to-national" class="btn-secondary back-btn">← 전국 지도로 돌아가기</button>
+    <main class="layout">
+      <section class="map-panel">
+        <p class="map-caption">※ 실제 축척과 무관한 개념도입니다. 정확한 행정경계는 국가공간정보포털 기준으로 재작업 필요.</p>
+        <svg viewBox="0 0 400 420" class="wirye-map" id="wirye-map">
+          <rect class="zone" data-id="buk-wirye" x="60" y="20" width="280" height="130" rx="12"></rect>
+          <text class="zone-label" x="200" y="90" text-anchor="middle">북위례<tspan x="200" dy="16" class="zone-sub">(하남 위례동 · 개발중)</tspan></text>
+
+          <rect class="zone" data-id="nam-seongnam" x="30" y="170" width="150" height="220" rx="12"></rect>
+          <text class="zone-label" x="105" y="280" text-anchor="middle">남위례<tspan x="105" dy="16" class="zone-sub">성남권역(창곡동)</tspan></text>
+
+          <rect class="zone" data-id="nam-songpa" x="190" y="170" width="180" height="130" rx="12"></rect>
+          <text class="zone-label" x="280" y="235" text-anchor="middle">남위례<tspan x="280" dy="16" class="zone-sub">송파권역(거여·장지동)</tspan></text>
+
+          <rect class="zone" data-id="nam-hanam" x="190" y="310" width="180" height="80" rx="12"></rect>
+          <text class="zone-label" x="280" y="350" text-anchor="middle">남위례<tspan x="280" dy="16" class="zone-sub">하남권역(학암동)</tspan></text>
+        </svg>
+      </section>
+
+      <section class="detail-panel" id="detail-panel">
+        <p class="placeholder">지도에서 영역을 클릭하면 상세 정보가 표시됩니다.</p>
+      </section>
+    </main>
+
+    <section class="ad-slot ad-inline">광고 영역 (예: 지역 중개사/인테리어 타겟 배너)</section>
+
+    <section class="community-mock">
+      <h2>학부모 커뮤니티 (UI 목업 — 미연동)</h2>
+      <div class="post-mock">
+        <div class="post-head">
+          <span class="verified-badge">✔ 인증 학부모</span>
+          <span class="post-meta">남위례 · 성남권역 · 익명</span>
+        </div>
+        <p>이번 학기 배정 관련해서 여쭤보고 싶은 게 있어요...</p>
+        <button class="btn-paid-message" id="open-message-modal">쪽지 보내기 (유료)</button>
+      </div>
+    </section>
   </section>
 
   <div class="modal-backdrop" id="modal-backdrop">
@@ -73,10 +93,16 @@
   <footer class="site-footer">
     <p>본 페이지는 기획 초안이며 표시된 데이터 중 일부는 <strong>[확인 필요]</strong> 상태입니다.
       실거래가 원본: <a href="https://rt.molit.go.kr/" target="_blank" rel="noopener">국토교통부 실거래가 공개시스템</a> ·
-      학교 정보 원본: <a href="https://www.schoolinfo.go.kr/" target="_blank" rel="noopener">학교알리미</a></p>
+      학교 정보 원본: <a href="https://www.schoolinfo.go.kr/" target="_blank" rel="noopener">학교알리미</a> ·
+      행정경계 원본: <a href="https://github.com/southkorea/southkorea-maps" target="_blank" rel="noopener">southkorea-maps(KOSTAT)</a></p>
+    <p class="note">로컬에서 열 때는 <code>python3 -m http.server</code> 등으로 정적 서버를 띄운 뒤
+      접속해야 지도 데이터(GeoJSON) fetch가 정상 동작합니다 (file:// 직접 열기는 브라우저 보안정책상 차단될 수 있음).</p>
   </footer>
 
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="data/regions.js"></script>
   <script src="data/wirye-data.js"></script>
+  <script src="js/map.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
