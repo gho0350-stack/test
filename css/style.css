@@ -1,0 +1,166 @@
+:root {
+  --bg: #f7f8fa;
+  --panel: #ffffff;
+  --border: #e2e5ea;
+  --text: #1c2230;
+  --muted: #6b7280;
+  --accent: #2f6fed;
+  --accent-soft: #e8f0fe;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+  --ok: #15803d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { font-size: 18px; font-weight: 700; }
+.badge-draft {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warn);
+  background: var(--warn-bg);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text);
+}
+.chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.ad-slot {
+  background: repeating-linear-gradient(45deg, #f1f2f4, #f1f2f4 10px, #e9eaed 10px, #e9eaed 20px);
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+  padding: 10px;
+  margin: 0 20px;
+  border-radius: 8px;
+}
+.ad-top { margin-top: 16px; }
+.ad-inline { margin-top: 24px; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.map-panel, .detail-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.map-caption { font-size: 12px; color: var(--muted); margin-top: 0; }
+
+.wirye-map { width: 100%; height: auto; }
+.zone {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.zone:hover { fill: #d6e4fd; }
+.zone.selected { fill: #bcd4fb; }
+.zone-label { font-size: 13px; fill: var(--text); pointer-events: none; }
+.zone-sub { font-size: 10px; fill: var(--muted); }
+
+.detail-panel .placeholder { color: var(--muted); }
+
+.detail-card h3 { margin-top: 0; }
+.field { margin-bottom: 14px; }
+.field-label { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+.field-value { font-size: 14px; }
+.tag-verified {
+  display: inline-block;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+}
+.tag-verified.yes { background: #dcfce7; color: var(--ok); }
+.tag-verified.no { background: var(--warn-bg); color: var(--warn); }
+.source-link { font-size: 12px; }
+.source-link a { color: var(--accent); text-decoration: none; }
+
+.community-mock { padding: 0 20px 20px; }
+.post-mock {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  max-width: 480px;
+}
+.post-head { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.verified-badge { font-size: 12px; background: #dcfce7; color: var(--ok); padding: 2px 8px; border-radius: 999px; }
+.post-meta { font-size: 12px; color: var(--muted); }
+.btn-paid-message {
+  margin-top: 10px;
+  background: #fde68a;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  align-items: center;
+  justify-content: center;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px;
+  max-width: 360px;
+  width: 90%;
+}
+.modal-note { font-size: 12px; color: var(--muted); }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn-primary { background: #fee500; border: none; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.btn-secondary { background: #f1f2f4; border: none; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+
+.site-footer {
+  padding: 16px 20px 30px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.site-footer a { color: var(--accent); }
