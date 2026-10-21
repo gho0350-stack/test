@@ -1,0 +1,4 @@
+line_id,name,type,status,open_year,color,note,source_url
+l_8,8호선,지하철,운행,,#e6186c,기존 노선 (샘플 선형),(샘플)
+l_wirye,위례선(트램),트램,공사중,,#00a37a,샘플 표기 · 실제 일정은 공식 자료로 확인 필요,TODO
+l_sinsa,위례신사선,지하철,계획,,#8e44ad,샘플 표기 · 실제 일정은 공식 자료로 확인 필요,TODO

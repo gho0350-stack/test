@@ -1,0 +1,3 @@
+request_id,target_type,target_id,field,proposed_value,reason,votes_for,votes_needed,status
+r_seed1,complex,c02,is_leader,1,"신축 프리미엄과 학교 접근성을 보면 센트럴이 북위례 대표에 가깝다는 의견",2,3,투표중
+r_seed2,complex,c06,is_leader,1,"남위례는 학군 수요가 힐스에 몰린다는 의견",1,3,투표중
