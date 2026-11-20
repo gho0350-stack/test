@@ -14,9 +14,9 @@ const state = {
 // ── 추천 로직 ───────────────────────────────────────────
 function score(g) {
   let s = 0; const why = [];
-  if (state.time && g.time.includes(state.time)) { s += 2; why.push('내 시간대에 가능'); }
+  if (state.time && g.time.includes(state.time)) { s += 2; why.push('지금 시간에 맞음'); }
   const hit = [...state.skills].filter((k) => g.skills.includes(k) || (k === 'phone' && g.skills.includes('phone')));
-  hit.forEach((k) => { s += 2; why.push(SKILL_OPTIONS.find((o) => o.id === k).label.replace('있어요', '').replace('가능', '') + ' 활용'); });
+  hit.forEach((k) => { s += 2; why.push(SKILL_OPTIONS.find((o) => o.id === k).short); });
   if (g.difficulty === 1) s += 0.5;
   return { s, why };
 }
@@ -25,7 +25,7 @@ const hasFilter = () => state.time || state.skills.size;
 // ── 렌더링 ──────────────────────────────────────────────
 function chip(o, active, kind) {
   return `<button class="chip${active ? ' on' : ''}" data-kind="${kind}" data-id="${o.id}" aria-pressed="${active}">
-    <span>${o.emoji}</span>${esc(o.label)}</button>`;
+    ${esc(o.label)}</button>`;
 }
 
 function card(g, why = []) {
@@ -47,29 +47,28 @@ function renderHome() {
   const filtered = hasFilter();
   $('#view').innerHTML = `
     <section class="hero">
-      <p class="eyebrow">틈틈</p>
-      <h1>지금 내 상황에<br><em>딱 맞는 부업</em>,<br>한 곳에서 골라요</h1>
-      <p class="sub">플리토·어도비 스톡·소셜라우더 등 온라인 부업을 비교하지 않고 내 시간·내 재주로 골라보세요.</p>
+      <h1>시간 날 때 하는<br><em>온라인 부업</em> 모음</h1>
+      <p class="sub">플리토, 어도비 스톡, 소셜라우더 같은 부업을 한 번에 보고, 내 사정에 맞는 것만 골라 보세요.</p>
     </section>
     <section class="picker" aria-label="내 상황 선택">
-      <h2>1. 지금 쓸 수 있는 시간은?</h2>
+      <h2>한 번에 얼마나 낼 수 있어요?</h2>
       <div class="chips">${TIME_OPTIONS.map((o) => chip(o, state.time === o.id, 'time')).join('')}</div>
-      <h2>2. 내가 가진 건? <small>여러 개 선택 가능</small></h2>
+      <h2>가진 게 있다면 <small>여러 개 골라도 돼요</small></h2>
       <div class="chips">${SKILL_OPTIONS.map((o) => chip(o, state.skills.has(o.id), 'skill')).join('')}</div>
     </section>
     <section>
-      <div class="list-head"><h2>${filtered ? '내게 맞는 순서' : '전체 부업'} <b>${ranked.length}</b></h2>
+      <div class="list-head"><h2>${filtered ? '내 조건에 맞는 순서' : '전체'} <b>${ranked.length}</b></h2>
         ${filtered ? '<button class="link" id="reset">초기화</button>' : ''}</div>
       <div class="list">${ranked.map(({ g, s, why }) => card(g, filtered && s > 0.5 ? why : [])).join('')}</div>
     </section>
-    <p class="notice">※ 정보는 참고용 샘플이며 수익을 보장하지 않아요. 가입·정산 조건은 각 공식 사이트에서 꼭 확인하세요.</p>`;
+    <p class="notice">수익은 사람마다 다르고 보장되지 않아요. 가입 전에 각 사이트의 최신 조건을 꼭 확인하세요.</p>`;
 }
 
 function renderSaved() {
   const list = GIGS.filter((g) => state.saved.has(g.id));
   $('#view').innerHTML = `<section class="hero small"><h1>저장한 부업</h1></section>
     ${list.length ? `<div class="list">${list.map((g) => card(g)).join('')}</div>`
-      : `<div class="empty"><p>아직 저장한 부업이 없어요.</p><button class="btn" data-tab="home">부업 둘러보기</button></div>`}`;
+      : `<div class="empty"><p>저장해 둔 부업이 없어요.</p><button class="btn" data-tab="home">둘러보러 가기</button></div>`}`;
 }
 
 function render() {
@@ -90,19 +89,19 @@ function openDetail(id, push = true) {
     <div class="facts">
       <div><small>수익 방식</small><b>${esc(g.earnType)}</b></div>
       <div><small>진행 주기</small><b>${esc(g.cadence)}</b></div>
-      <div><small>난이도</small><b>${['쉬워요', '보통', '도전적'][g.difficulty - 1]}</b></div>
+      <div><small>난이도</small><b>${['쉬움', '보통', '어려움'][g.difficulty - 1]}</b></div>
     </div>
-    <h3>시작하는 순서</h3>
+    <h3>이렇게 시작해요</h3>
     <ol class="steps">${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
-    <h3>준비물</h3><ul class="plain">${g.needs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
+    <h3>필요한 것</h3><ul class="plain">${g.needs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
     <div class="proscons">
-      <div><h3>👍 좋아요</h3><ul class="plain">${g.pros.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
-      <div><h3>👀 알아두세요</h3><ul class="plain">${g.cons.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
+      <div><h3>괜찮은 점</h3><ul class="plain">${g.pros.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
+      <div><h3>걸리는 점</h3><ul class="plain">${g.cons.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
     </div>
-    ${g.verified ? '' : '<p class="notice">샘플 정보예요. 공식 사이트에서 최신 조건을 확인하세요.</p>'}
+    ${g.verified ? '' : '<p class="notice">아직 직접 확인하지 못한 정보예요. 공식 사이트에서 다시 확인해 주세요.</p>'}
     <div class="cta-row">
-      <button class="btn ghost" data-save="${g.id}">${saved ? '♥ 저장됨' : '♡ 저장'}</button>
-      <button class="btn" data-go="${g.id}">${g.url ? '공식 사이트에서 시작하기' : '검색으로 찾아보기'}</button>
+      <button class="btn ghost" data-save="${g.id}">${saved ? '저장됨' : '저장'}</button>
+      <button class="btn" data-go="${g.id}">${g.url ? '공식 사이트 가기' : '검색해서 찾기'}</button>
     </div></div>`;
   $('#sheet').classList.add('open');
   document.body.classList.add('lock');
