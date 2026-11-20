@@ -29,10 +29,16 @@ function chip(o, active, kind) {
     ${esc(o.label)}</button>`;
 }
 
+function logo(g, big) {
+  const c = `logo${big ? ' big' : ''}`;
+  const tile = esc(g.name.replace(/[^A-Za-z0-9가-힣]/g, '')[0] || '?');
+  return `<div class="${c}" style="--c:${g.color}">${g.logo ? `<img src="${esc(g.logo)}" alt="" loading="lazy" onerror="this.remove()">` : ''}<span>${tile}</span></div>`;
+}
+
 function card(g, why = []) {
   const saved = state.saved.has(g.id);
   return `<article class="card" data-open="${g.id}" tabindex="0" role="button" aria-label="${esc(g.name)} 자세히 보기">
-    <div class="logo" style="--c:${g.color}">${esc(g.name[0])}</div>
+    ${logo(g)}
     <div class="card-body">
       <div class="card-top"><h3>${esc(g.name)}</h3><span class="tag">${esc(g.category)}</span></div>
       <p>${esc(g.tagline)}</p>
@@ -86,7 +92,7 @@ function openDetail(id, push = true) {
   const saved = state.saved.has(id);
   $('#sheet').innerHTML = `<div class="sheet-card" role="dialog" aria-modal="true" aria-label="${esc(g.name)}">
     <button class="close" data-close aria-label="닫기">✕</button>
-    <div class="sheet-head"><div class="logo big" style="--c:${g.color}">${esc(g.name[0])}</div>
+    <div class="sheet-head">${logo(g, true)}
       <div><span class="tag">${esc(g.category)}</span><h2>${esc(g.name)}</h2></div></div>
     <p class="lead">${esc(g.summary)}</p>
     <div class="facts">
@@ -101,7 +107,9 @@ function openDetail(id, push = true) {
       <div><h3>괜찮은 점</h3><ul class="plain">${g.pros.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
       <div><h3>걸리는 점</h3><ul class="plain">${g.cons.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
     </div>
-    ${g.verified ? '' : '<p class="notice">아직 직접 확인하지 못한 정보예요. 공식 사이트에서 다시 확인해 주세요.</p>'}
+    ${g.sources && g.sources.length
+      ? `<div class="srcs"><h3>출처</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul><p class="notice">${esc(g.checked)}에 공식 페이지에서 확인한 내용이에요. 조건은 바뀔 수 있어요.</p></div>`
+      : '<p class="notice">공식 페이지에서 정산·가입 조건을 확인하지 못한 항목이에요. 아래 내용은 참고만 하고, 가입 전에 공식 사이트에서 확인해 주세요.</p>'}
     <div class="cta-row">
       <button class="btn ghost" data-save="${g.id}">${saved ? '저장됨' : '저장'}</button>
       <a class="btn" data-go="${g.id}" href="${esc(g.url || 'https://www.google.com/search?q=' + encodeURIComponent(g.name + ' 부업'))}" target="_blank" rel="noopener noreferrer">${g.url ? '공식 사이트 가기' : '검색해서 찾기'}</a>

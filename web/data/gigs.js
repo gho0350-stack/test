@@ -1,10 +1,9 @@
 // 부업 데이터 — 화면과 분리된 단일 데이터 소스.
-// 앱으로 옮길 때는 이 파일을 서버 JSON으로 바꾸면 됩니다.
-// verified:false 항목은 공식 사이트에서 확인한 뒤 수정하세요.
+// sources/checked 가 있는 항목만 공식 페이지에서 직접 읽어 확인한 내용입니다.
 export const GIGS = [
   {
     "id": "flitto",
-    "name": "플리토",
+    "name": "Flitto",
     "tagline": "번역·녹음 같은 짧은 작업을 하고 포인트를 받아요",
     "category": "언어",
     "color": "#2F6BFF",
@@ -40,12 +39,15 @@ export const GIGS = [
       "환전하려면 최소 금액을 채워야 함"
     ],
     "url": "https://www.flitto.com/arcade/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "adobe-stock",
-    "name": "어도비 스톡",
-    "tagline": "찍어둔 사진이나 영상을 올려 두고 팔기",
+    "name": "Adobe Stock",
+    "tagline": "찍은 사진·영상을 올려 두고 다운로드될 때마다 로열티 받기",
     "category": "스톡 판매",
     "color": "#E5322D",
     "time": [
@@ -55,34 +57,47 @@ export const GIGS = [
       "visual"
     ],
     "difficulty": 3,
-    "earnType": "팔릴 때마다 로열티",
+    "earnType": "다운로드당 로열티 (사진·일러스트 33%, 영상 35%)",
     "cadence": "올려 둔 만큼, 천천히",
-    "summary": "내가 만든 사진·영상·일러스트를 올려두면 누가 쓸 때마다 로열티가 들어와요. 올릴 때 손이 많이 가고, 수익은 그 뒤에 천천히 생기는 편이에요.",
+    "summary": "사진·영상·일러스트를 올리면 구매자가 다운로드할 때마다 로열티가 들어와요. 로열티는 구매자의 요금제에 따라 달라서, 사이트 예시로는 이미지 한 장당 $0.33~$3.30(미국 가격 기준)이에요.",
     "steps": [
-      "기여자로 가입",
-      "파일 올리고 제목·키워드 적기",
-      "심사 기다리기",
-      "팔리면 정산"
+      "Adobe ID로 기여자 가입",
+      "파일 올리고 제목·키워드 입력",
+      "심사 통과",
+      "다운로드되면 로열티 적립"
     ],
     "needs": [
-      "카메라나 스마트폰",
-      "저작권·초상권 문제가 없는 파일"
+      "만 18세 이상",
+      "내가 단독 소유자인 콘텐츠",
+      "기여자 약관과 콘텐츠 정책 동의"
     ],
     "pros": [
-      "한 번 올리면 계속 팔릴 수 있음",
-      "이미 갖고 있는 사진으로 시작 가능"
+      "로열티 최대 35%, 비독점이라 다른 곳에도 올릴 수 있음",
+      "기여자는 Behance를 무료로 쓸 수 있음"
     ],
     "cons": [
-      "심사에서 떨어지는 일이 흔함",
-      "첫 수익까지 오래 걸릴 수 있음"
+      "금액은 구매 요금제에 따라 달라 예측이 어려움",
+      "가격은 미국 고객 기준이라 지역마다 다를 수 있음"
     ],
-    "url": "https://stock.adobe.com/kr",
-    "verified": false
+    "url": "https://contributor.stock.adobe.com/",
+    "verified": false,
+    "sources": [
+      {
+        "label": "Adobe Stock 기여자 안내",
+        "url": "https://contributor.stock.adobe.com/"
+      },
+      {
+        "label": "Adobe Stock 로열티",
+        "url": "https://contributor.stock.adobe.com/royalties"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": "logos/adobe-stock.png"
   },
   {
     "id": "shutterstock",
-    "name": "셔터스톡",
-    "tagline": "사진·영상·음악을 올려 두고 팔기",
+    "name": "Shutterstock",
+    "tagline": "사진·영상·벡터를 올려 팔고, AI 학습용 작업도 신청",
     "category": "스톡 판매",
     "color": "#EE2B2B",
     "time": [
@@ -92,34 +107,46 @@ export const GIGS = [
       "visual"
     ],
     "difficulty": 3,
-    "earnType": "팔릴 때마다 로열티",
-    "cadence": "올려 둔 만큼, 천천히",
-    "summary": "세계적인 스톡 마켓이에요. 기여자로 등록해 사진, 영상, 일러스트 등을 올리면 다운로드될 때마다 수익이 생겨요.",
+    "earnType": "판매 로열티, AI 학습용 콘텐츠·작업 의뢰",
+    "cadence": "올려 둔 만큼, 의뢰가 올 때",
+    "summary": "공식 안내에는 2003년부터 기여자에게 10억 달러 넘게 지급했다고 나와 있어요. 이미지·영상 라이선스 판매 외에, AI 학습용 콘텐츠 제공과 주석·검수 같은 작업 기회도 소개돼요.",
     "steps": [
       "기여자로 가입",
-      "샘플 파일 심사",
-      "승인 후 파일 업로드",
+      "샘플 제출·심사",
+      "승인 후 콘텐츠 업로드",
       "판매되면 정산"
     ],
     "needs": [
-      "카메라나 스마트폰",
-      "저작권·초상권 문제가 없는 파일"
+      "만 18세 이상",
+      "계정 등록 시 필요한 양식 작성",
+      "약관과 제출 가이드라인 준수"
     ],
     "pros": [
-      "전 세계에 팔 수 있음",
-      "어도비 스톡과 같은 파일을 같이 올리는 사람이 많음"
+      "판매 외에도 AI 학습용 콘텐츠·작업 등 수입 경로가 여럿",
+      "일부 기회는 조건이 맞으면 알림으로 연결"
     ],
     "cons": [
-      "처음 승인받기가 쉽지 않음",
-      "수익이 들쭉날쭉함"
+      "로열티 비율과 최소 지급액은 가입 후 안내 페이지에서 확인해야 함"
     ],
-    "url": "https://www.shutterstock.com/ko/",
-    "verified": false
+    "url": "https://submit.shutterstock.com/",
+    "verified": false,
+    "sources": [
+      {
+        "label": "Shutterstock 기여자 안내",
+        "url": "https://submit.shutterstock.com/"
+      },
+      {
+        "label": "계정·제출 가이드라인",
+        "url": "https://submit.shutterstock.com/help/en/articles/10594696"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": "logos/shutterstock.png"
   },
   {
     "id": "crowdpic",
     "name": "크라우드픽",
-    "tagline": "국내 사진 마켓에 내 사진 올리기",
+    "tagline": "한국 분위기 사진·일러스트를 올려 팔기",
     "category": "스톡 판매",
     "color": "#1F9D8B",
     "time": [
@@ -129,33 +156,41 @@ export const GIGS = [
       "visual"
     ],
     "difficulty": 2,
-    "earnType": "다운로드·판매 시 수익",
+    "earnType": "판매 수수료 50% (공모전은 0%)",
     "cadence": "올려 둔 만큼",
-    "summary": "국내 이용자에게 사진을 파는 마켓이에요. 사진을 올려 두면 구매나 다운로드가 일어날 때 수익이 생겨요. 해외 스톡보다 한국 분위기의 사진을 찾는 수요가 있어요.",
+    "summary": "한국 이용자 중심의 이미지 마켓이에요. 사이트 공지에 따르면 2023년 10월 4일부터 스톡 이미지 판매 수수료가 30%에서 50%로 올랐고, 공모전 수수료는 0%, API 수수료는 30%예요.",
     "steps": [
-      "회원 가입 후 작가 등록",
-      "사진 업로드와 태그 입력",
-      "검수 통과",
+      "작가 신청",
+      "이미지 업로드",
+      "검수",
       "판매되면 정산"
     ],
     "needs": [
-      "사진 파일",
-      "초상권·저작권 확인"
+      "직접 만든 사진·일러스트·아이콘 등",
+      "작가 가이드와 품질 가이드 확인"
     ],
     "pros": [
-      "국내 이용자 대상이라 한국 소재 사진에 유리",
-      "해외 마켓보다 영어 부담이 적음"
+      "한국 이용자가 찾는 소재(증명사진 배경, 한식, 지도 등)가 눈에 띔",
+      "공모전은 수수료가 없음"
     ],
     "cons": [
-      "시장이 해외 스톡보다 작음",
-      "수익 구조는 공식 사이트에서 확인 필요"
+      "판매 수수료가 50%라 작가 몫이 크지 않을 수 있음",
+      "정산 최소 금액은 확인하지 못함"
     ],
     "url": "https://www.crowdpic.net/",
-    "verified": false
+    "verified": false,
+    "sources": [
+      {
+        "label": "크라우드픽 메인(수수료 공지)",
+        "url": "https://www.crowdpic.net/"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": null
   },
   {
     "id": "pond5",
-    "name": "폰드5",
+    "name": "Pond5",
     "tagline": "영상·음악·효과음 소스 판매",
     "category": "스톡 판매",
     "color": "#F36C21",
@@ -189,11 +224,14 @@ export const GIGS = [
       "경쟁이 있음"
     ],
     "url": "https://www.pond5.com/ko/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "audiojungle",
-    "name": "오디오정글",
+    "name": "AudioJungle",
     "tagline": "내가 만든 음악·효과음 팔기",
     "category": "스톡 판매",
     "color": "#82B440",
@@ -226,11 +264,14 @@ export const GIGS = [
       "심사 기준이 있음"
     ],
     "url": "https://audiojungle.net/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "artlist",
-    "name": "아트리스트",
+    "name": "Artlist",
     "tagline": "영상 제작자가 쓰는 음악·영상 소스 플랫폼",
     "category": "스톡 판매",
     "color": "#111111",
@@ -263,12 +304,15 @@ export const GIGS = [
       "조건은 공식 사이트에서 확인 필요"
     ],
     "url": "https://artlist.io/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "tooldi",
     "name": "툴디",
-    "tagline": "디자인 요소를 만들어 올리기",
+    "tagline": "템플릿·요소·사진을 올려 판매·구독·인쇄 리워드 받기",
     "category": "디자인",
     "color": "#6C5CE7",
     "time": [
@@ -278,31 +322,41 @@ export const GIGS = [
       "design"
     ],
     "difficulty": 2,
-    "earnType": "크리에이터 수익",
-    "cadence": "올려 둔 만큼",
-    "summary": "디자인 툴 툴디에 쓰이는 요소를 만들어 올리는 크리에이터 프로그램이 있어요. 디자인 파일을 올려 두면 다른 사람들이 가져다 써요.",
+    "earnType": "판매·구독·인쇄·프로모션 리워드, 판매 수수료 20%(등급별 12~17%로 감면)",
+    "cadence": "판매될 때, 월 단위",
+    "summary": "툴디에서 쓰이는 템플릿·요소·사진을 올리는 크리에이터 프로그램이에요. 등급은 스탯포인트로 정해지고, 브론즈(100점 이상)부터 유료 콘텐츠 등록과 리워드 정산이 열려요. 판매 수수료는 20%이고 실버 17%, 골드 15%, 플래티넘 12%로 내려가요.",
     "steps": [
-      "크리에이터 가입",
-      "디자인 요소 제작",
-      "업로드와 심사",
-      "사용되면 수익"
+      "크리에이터 지원",
+      "템플릿은 에디터로 만들어 심사 등록, 요소·사진은 크리에이터 센터로 업로드",
+      "등급에 따라 유료 판매·정산",
+      "리워드 정산"
     ],
     "needs": [
-      "일러스트나 디자인 툴 사용 능력"
+      "툴디 에디터로 만든 템플릿 또는 요소·사진",
+      "템플릿은 심사 승인 필요"
     ],
     "pros": [
-      "디자인 실력을 수익으로 연결 가능",
-      "한국 사용자 대상"
+      "한 번 지원하면 템플릿·요소·사진 모두 활동 가능",
+      "활동할수록 수수료가 줄어드는 구조"
     ],
     "cons": [
-      "수익 구조는 크리에이터 안내에서 확인 필요"
+      "처음에는 무료 콘텐츠 중심(일반 등급)",
+      "등급을 올릴 스탯포인트를 쌓아야 함"
     ],
     "url": "https://www.tooldi.com/introduce-creator",
-    "verified": false
+    "verified": false,
+    "sources": [
+      {
+        "label": "툴디 크리에이터 안내",
+        "url": "https://www.tooldi.com/introduce-creator"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": "logos/tooldi.ico"
   },
   {
     "id": "miricanvas",
-    "name": "미리캔버스 크리에이터",
+    "name": "MiriCanvas",
     "tagline": "디자인 요소를 만들어 올리기",
     "category": "디자인",
     "color": "#FF5C8A",
@@ -332,11 +386,14 @@ export const GIGS = [
       "수익 조건은 로그인 후 확인 필요"
     ],
     "url": "https://designhub.miricanvas.com/ko/login?prevUrl=%2Fko%2Felement%2Fupload",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "redbubble",
-    "name": "레드버블",
+    "name": "Redbubble",
     "tagline": "내 디자인을 상품에 얹어 팔기",
     "category": "디자인",
     "color": "#E41321",
@@ -369,12 +426,15 @@ export const GIGS = [
       "디자인 저작권을 지켜야 함"
     ],
     "url": "https://www.redbubble.com/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "stibee",
-    "name": "스티비",
-    "tagline": "뉴스레터를 발행해서 독자 모으기",
+    "name": "Stibee",
+    "tagline": "이메일 뉴스레터 만들고 발송하는 도구",
     "category": "글쓰기",
     "color": "#FF6B35",
     "time": [
@@ -384,34 +444,40 @@ export const GIGS = [
       "writing"
     ],
     "difficulty": 2,
-    "earnType": "구독·광고 등 직접 설계",
+    "earnType": "발송 도구라 수익은 직접 설계",
     "cadence": "발행 주기에 따라",
-    "summary": "국내 뉴스레터 발송 도구예요. 수익이 바로 생기는 서비스는 아니고, 구독자를 모아서 광고나 협찬, 유료 구독으로 이어가는 식이에요.",
+    "summary": "공식 소개는 \"이메일 제작부터 자동화, 데이터 분석, 성과 개선까지\"인 이메일 마케팅 도구예요. 수익을 바로 주는 서비스는 아니고, 구독자를 모은 뒤 광고·협찬 등을 직접 연결해야 해요.",
     "steps": [
       "뉴스레터 주제 정하기",
-      "스티비로 발행",
+      "스티비에서 제작·발송",
       "구독자 모으기",
-      "수익 방식 붙이기"
+      "수익 방식 직접 연결"
     ],
     "needs": [
-      "꾸준히 쓸 수 있는 주제",
-      "글쓰기"
+      "꾸준히 쓸 수 있는 주제"
     ],
     "pros": [
-      "내 독자를 직접 가질 수 있음",
-      "주제를 자유롭게 정함"
+      "발송·자동화·분석 기능이 한 곳에 있음"
     ],
     "cons": [
-      "구독자 모으기가 가장 어려움",
-      "수익까지 시간이 걸림"
+      "돈이 되는 구조는 스스로 만들어야 함",
+      "요금제는 확인하지 못함"
     ],
     "url": "https://stibee.com/",
-    "verified": false
+    "verified": false,
+    "sources": [
+      {
+        "label": "스티비 메인",
+        "url": "https://stibee.com/"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": "logos/stibee.png"
   },
   {
     "id": "maily",
-    "name": "메일리",
-    "tagline": "글을 쓰고 구독으로 수익 만들기",
+    "name": "Maily",
+    "tagline": "뉴스레터를 발행하고 유료 멤버십으로 수익 만들기",
     "category": "글쓰기",
     "color": "#2D9CDB",
     "time": [
@@ -421,33 +487,41 @@ export const GIGS = [
       "writing"
     ],
     "difficulty": 2,
-    "earnType": "유료 구독 등",
+    "earnType": "유료 멤버십 (수수료는 확인 못함)",
     "cadence": "발행 주기에 따라",
-    "summary": "뉴스레터를 발행하고 유료 구독을 받을 수 있는 플랫폼이에요. 전문 지식이나 취향 있는 글을 쓰는 사람에게 맞아요.",
+    "summary": "뉴스레터 플랫폼이에요. 베이직 플랜은 무료로, 월 1,000건 발송·월 4회 발행까지 쓸 수 있고, 유료 멤버십 기능도 있다고 소개돼요.",
     "steps": [
-      "글 주제 정하고 가입",
-      "뉴스레터 발행",
+      "가입하고 뉴스레터 만들기",
+      "글 쓰고 발행",
       "구독자 모으기",
-      "유료 구독 설정"
+      "유료 멤버십 설정"
     ],
     "needs": [
       "꾸준히 쓸 수 있는 주제",
-      "글쓰기"
+      "구독자를 모을 방법"
     ],
     "pros": [
-      "유료 구독을 바로 받아볼 수 있음",
-      "독자와 직접 연결"
+      "무료 플랜으로 시작 가능",
+      "검색되는 블로그 형태로도 발행"
     ],
     "cons": [
-      "구독자가 없으면 수익이 없음",
-      "꾸준히 써야 함"
+      "유료 멤버십 수수료와 정산 조건은 확인하지 못함",
+      "구독자가 없으면 수익이 없음"
     ],
     "url": "https://maily.so/",
-    "verified": false
+    "verified": false,
+    "sources": [
+      {
+        "label": "메일리 메인",
+        "url": "https://maily.so/"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": null
   },
   {
     "id": "fiverr",
-    "name": "파이버",
+    "name": "Fiverr",
     "tagline": "내 기술을 해외에 서비스로 팔기",
     "category": "재능 판매",
     "color": "#1DBF73",
@@ -481,11 +555,14 @@ export const GIGS = [
       "수수료가 있음"
     ],
     "url": "https://www.fiverr.com/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "crowdworks",
-    "name": "크라우드웍스",
+    "name": "CrowdWorks",
     "tagline": "AI 학습용 데이터 라벨링 작업하기",
     "category": "데이터 작업",
     "color": "#0B5FFF",
@@ -520,11 +597,14 @@ export const GIGS = [
       "자격 테스트를 통과해야 함"
     ],
     "url": "https://works.crowdworks.kr/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "aiworks",
-    "name": "에이아이웍스",
+    "name": "AIWORKS",
     "tagline": "AI 데이터 작업 참여하기",
     "category": "데이터 작업",
     "color": "#3B82F6",
@@ -555,11 +635,14 @@ export const GIGS = [
       "(확인 후 작성)"
     ],
     "url": "https://aiworks.co.kr/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "databakery",
-    "name": "데이터 베이커리",
+    "name": "Data Bakery",
     "tagline": "AI 데이터 작업 참여하기",
     "category": "데이터 작업",
     "color": "#F59E0B",
@@ -587,11 +670,14 @@ export const GIGS = [
       "(확인 후 작성)"
     ],
     "url": null,
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "metworks",
-    "name": "메트웍스",
+    "name": "METWORKS",
     "tagline": "데이터 작업 프로젝트 참여하기",
     "category": "데이터 작업",
     "color": "#0EA5A4",
@@ -622,12 +708,15 @@ export const GIGS = [
       "(확인 후 작성)"
     ],
     "url": "https://www.metworks.co.kr/",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   },
   {
     "id": "labelon",
-    "name": "라벨온",
-    "tagline": "라벨링 작업 참여하기",
+    "name": "LabelOn",
+    "tagline": "AI 데이터에 이름표를 붙이는 재택 라벨링",
     "category": "데이터 작업",
     "color": "#7C3AED",
     "time": [
@@ -638,32 +727,43 @@ export const GIGS = [
       "phone"
     ],
     "difficulty": 1,
-    "earnType": "작업 건당 보상",
+    "earnType": "크레딧 적립 (환전 조건은 확인 못함)",
     "cadence": "프로젝트가 열릴 때",
-    "summary": "데이터에 이름표를 붙이는 라벨링 작업 플랫폼이에요. 정확한 작업 방식과 보상은 공식 사이트에서 확인이 필요해요.",
+    "summary": "운영사 Euclidsoft(유클리드소프트)의 \"e-working Platform for AI\"예요. 가입 후 프로젝트에 참여하는 어노테이터·리뷰어로 일하는 구조이고, 메뉴에 \"My Credit\"과 입금계좌관리가 있어요.",
     "steps": [
-      "가입",
+      "회원 가입(실명)",
       "프로젝트 확인",
-      "작업",
-      "검수 후 보상"
+      "작업 참여",
+      "크레딧 적립 후 입금"
     ],
     "needs": [
-      "PC나 스마트폰"
+      "실명 가입",
+      "만 15세 미만은 법정대리인 동의 필요"
     ],
     "pros": [
-      "(확인 후 작성)"
+      "집에서 PC로 할 수 있음",
+      "체험하기 메뉴가 있음"
     ],
     "cons": [
-      "(확인 후 작성)"
+      "프로젝트 단가·출금 기준은 가입 후에 확인해야 함",
+      "3개월 이상 로그인하지 않으면 이용이 제한될 수 있음"
     ],
     "url": "https://www.labelon.kr/",
-    "verified": false
+    "verified": false,
+    "sources": [
+      {
+        "label": "LabelOn 메인·이용약관",
+        "url": "https://www.labelon.kr/"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": "logos/labelon.png"
   },
   {
     "id": "pandarank",
     "name": "판다랭크",
-    "tagline": "온라인 판매할 때 쓰는 분석 도구",
-    "category": "온라인 판매",
+    "tagline": "블로그·스마트스토어 채널을 키우는 분석·AI 도구",
+    "category": "블로그·쇼핑",
     "color": "#16A34A",
     "time": [
       "60"
@@ -672,32 +772,39 @@ export const GIGS = [
       "phone"
     ],
     "difficulty": 2,
-    "earnType": "(판매 수익은 본인 하기 나름)",
-    "cadence": "상품 준비 시간에 따라",
-    "summary": "스마트스토어 같은 온라인 판매를 할 때 상품과 키워드를 살펴보는 도구로 알고 있어요. 이 서비스를 쓰면 바로 돈이 생기는 건 아니고, 판매 부업을 준비하는 사람이 활용해요.",
+    "earnType": "도구 이용 (수익은 내 채널에서)",
+    "cadence": "채널 운영 시간에 따라",
+    "summary": "스스로를 \"크리에이터 수익화 플랫폼\"이라고 소개해요. 키워드 분석, 블로그 분석·순위, 상품 분석, AI 글쓰기 도구가 있고, 쇼핑 커넥트·체험단 메뉴도 있어요. 가입 시 무료 크레딧을 준다고 안내돼요.",
     "steps": [
-      "서비스 가입",
-      "팔 상품과 키워드 조사",
-      "스토어에 등록",
-      "판매"
+      "가입(무료 크레딧)",
+      "키워드·상품 분석",
+      "블로그나 스토어 운영",
+      "체험단·쇼핑 커넥트 등으로 수익화"
     ],
     "needs": [
-      "판매할 상품",
-      "스토어 운영"
+      "블로그·스마트스토어·SNS 채널 중 하나"
     ],
     "pros": [
-      "어떤 상품을 팔지 정하는 데 도움이 될 수 있음"
+      "글감·키워드 고르는 시간을 줄일 수 있음"
     ],
     "cons": [
-      "판매 자체는 따로 해야 함",
-      "사업자 등록이 필요할 수 있음"
+      "도구 자체가 돈을 주진 않고, 수익은 채널 성과에 달림",
+      "요금제는 확인하지 못함"
     ],
     "url": "https://pandarank.net/",
-    "verified": false
+    "verified": false,
+    "sources": [
+      {
+        "label": "판다랭크 메인",
+        "url": "https://pandarank.net/"
+      }
+    ],
+    "checked": "2026-11-20",
+    "logo": "logos/pandarank.png"
   },
   {
     "id": "social-louder",
-    "name": "소셜라우더",
+    "name": "Sociallouder",
     "tagline": "SNS 체험단 — 게시물 올리고 포인트 받기",
     "category": "SNS",
     "color": "#8A4DFF",
@@ -731,7 +838,10 @@ export const GIGS = [
       "게시 기간·문구 조건을 지켜야 함"
     ],
     "url": "https://apps.apple.com/kr/app/id6747383642",
-    "verified": false
+    "verified": false,
+    "sources": [],
+    "checked": null,
+    "logo": null
   }
 ];
 
