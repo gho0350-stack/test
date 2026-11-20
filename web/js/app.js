@@ -47,8 +47,8 @@ function card(g, why = []) {
     <div class="card-body">
       <div class="card-top"><h3>${esc(g.name)}</h3><span class="tag">${esc(g.category)}</span></div>
       <p>${esc(g.doWhat)}</p>
-      <dl class="mini"><div><dt>수익</dt><dd class="${g.amountShort ? '' : 'none'}">${esc(g.amountShort || '확인 전')}</dd></div>
-      <div><dt>시간</dt><dd>${timeLabel(g)}</dd></div></dl>
+      ${g.headline ? `<div class="hl">${esc(g.headline)}</div>` : ''}
+      ${g.alert ? `<div class="warn">${esc(g.alert)}</div>` : ''}
       ${why.length ? `<div class="why">${why.map(esc).join(' · ')}</div>` : ''}
     </div>
     <button class="heart${saved ? ' on' : ''}" data-save="${g.id}" aria-label="${saved ? '저장 취소' : '저장'}">${saved ? '저장됨' : '저장'}</button>
@@ -91,13 +91,6 @@ function render() {
 }
 
 // ── 상세 (바텀시트) ─────────────────────────────────────
-function list(title, arr) {
-  return arr && arr.length ? `<h3>${title}</h3><ul class="plain">${arr.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : '';
-}
-function block(title, text) {
-  return `<section class="blk"><h3>${title}</h3><p class="${text ? '' : 'none'}">${esc(text || '확인하지 못했어요.')}</p></section>`;
-}
-
 function openDetail(id, push = true) {
   const g = GIGS.find((x) => x.id === id); if (!g) return;
   track('ViewGig', { gig: id });
@@ -108,15 +101,13 @@ function openDetail(id, push = true) {
     <div class="sheet-head">${logo(g, true)}
       <div><span class="tag">${esc(g.category)}</span><h2>${esc(g.name)}</h2></div></div>
     <p class="lead">${esc(g.doWhat)}</p>
-    <dl class="rows">
-      <div class="row"><dt>수익</dt><dd>${g.amountShort ? `<b class="big">${esc(g.amountShort)}</b>` : ''}${g.amount ? `<span class="sm">${esc(g.amount)}</span>` : (g.amountShort ? '' : '<span class="none">아직 비어 있어요</span>')}</dd></div>
-      <div class="row"><dt>방식</dt><dd>${g.how ? esc(g.how) : '<span class="none">아직 비어 있어요</span>'}</dd></div>
-      <div class="row"><dt>시간</dt><dd>${g.timeNote ? esc(g.timeNote) : '<span class="none">아직 비어 있어요</span>'}</dd></div>
-      <div class="row"><dt>조건</dt><dd>${g.needs && g.needs.length && g.sources.length ? esc(g.needs.join(' · ')) : '<span class="none">아직 비어 있어요</span>'}</dd></div>
-    </dl>
-    ${g.sources && g.sources.length
-      ? `<div class="srcs"><h3>출처</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul><p class="notice">${esc(g.checked)} 확인. 조건은 바뀔 수 있어요.</p></div>`
-      : '<p class="notice">공식 페이지에서 확인한 내용이 아직 없어요. 가입 전에 직접 확인해 주세요.</p>'}
+    ${g.headline ? `<div class="hl big">${esc(g.headline)}</div>` : ''}
+    ${g.alert ? `<div class="warn">${esc(g.alert)}</div>` : ''}
+    <div class="rows">${g.rows.map((r) => `<section class="row"><h3>${esc(r.k)}</h3><p>${esc(r.v)}</p></section>`).join('')}</div>
+    ${g.example ? `<div class="eg"><b>예를 들면</b>${esc(g.example)}</div>` : ''}
+    ${g.note ? `<p class="notice">${esc(g.note)}</p>` : ''}
+    <div class="srcs"><h3>출처 · ${esc(g.checked)} 확인</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul>
+      <p class="notice">조건은 바뀔 수 있어요. 가입 전에 공식 사이트를 한 번 더 확인하세요.</p></div>
     <div class="cta-row">
       <button class="btn ghost" data-save="${g.id}">${saved ? '저장됨' : '저장'}</button>
       <a class="btn" data-go="${g.id}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">공식 사이트 가기</a>
