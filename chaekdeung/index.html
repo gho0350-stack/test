@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>책등</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap">
+<style>
+/* 컨셉: 산속 서재의 밤. 먹빛 청록 하늘에 독서등이 흩어져 있고, 아래로 능선과 안개가 깔린다. 한 줄 문장은 불빛이 되어 날아온다. */
+:root {
+  --night-0: #0a1316;
+  --night-1: #10222a;
+  --night-2: #1a3135;
+  --ridge-a: #112328;
+  --ridge-b: #0d1b1f;
+  --ridge-c: #081214;
+  --hanji: #efe7d4;
+  --hanji-dim: #b4b9ad;
+  --paper: #f1e9d6;
+  --paper-ink: #2b2a24;
+  --lamp: #f4c777;
+  --lamp-ink: #2a1c05;
+  --jade: #8fb8a6;
+  --danger: #f0a08c;
+  --line: rgba(239, 231, 212, .16);
+  --panel: rgba(12, 26, 30, .8);
+  --panel-solid: #0f1f24;
+  --font-serif: "Gowun Batang", "Noto Serif KR", "Apple SD Gothic Neo", "Malgun Gothic", serif;
+  --font-ui: "Gowun Dodum", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--night-0);
+  color: var(--hanji);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  overflow: hidden;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+
+/* 배경 */
+.scene { position: fixed; inset: 0; background: linear-gradient(180deg, var(--night-0) 0%, var(--night-1) 48%, var(--night-2) 100%); }
+#sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ridges { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 36%; display: block; }
+.r-a { fill: var(--ridge-a); } .r-b { fill: var(--ridge-b); } .r-c { fill: var(--ridge-c); }
+.mist {
+  position: absolute; left: -10%; right: -10%; bottom: 10%; height: 24%;
+  background: radial-gradient(60% 100% at 30% 60%, rgba(143,184,166,.13), transparent 70%),
+              radial-gradient(55% 90% at 72% 50%, rgba(143,184,166,.10), transparent 70%);
+  animation: drift 40s ease-in-out infinite alternate;
+}
+@keyframes drift { from { transform: translateX(-4%); } to { transform: translateX(4%); } }
+
+/* 레이아웃 */
+.app {
+  position: relative; z-index: 1; height: 100%;
+  display: flex; flex-direction: column; overflow-y: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 18px;
+}
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.5rem; letter-spacing: .08em; }
+.brand-name::after { content: ""; display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--lamp); box-shadow: 0 0 10px 3px rgba(244,199,119,.55); vertical-align: 2px; }
+.brand-sub { color: var(--hanji-dim); font-size: .85rem; }
+.top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: rgba(0,0,0,.18); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: .85rem; color: var(--hanji-dim); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: rgba(244,199,119,.16); color: var(--hanji); }
+.ghost { border: 1px solid var(--line); background: rgba(0,0,0,.18); border-radius: 10px; padding: 6px 14px; font-size: .9rem; cursor: pointer; color: var(--hanji); }
+.ghost:hover { border-color: rgba(244,199,119,.5); }
+.ghost .n { color: var(--lamp); font-variant-numeric: tabular-nums; margin-left: 4px; }
+
+.center { margin: auto auto 0; text-align: center; max-width: 34rem; padding: 22px 0 16px; }
+.presence { margin: 0 0 14px; font-size: .9rem; color: var(--jade); letter-spacing: .02em; }
+.hero { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.45rem, 4.6vw, 2.1rem); line-height: 1.4; text-wrap: balance; text-shadow: 0 2px 18px rgba(0,0,0,.55); }
+.sub { margin: 12px auto 0; color: var(--hanji-dim); font-size: .95rem; max-width: 29rem; text-wrap: pretty; text-shadow: 0 1px 12px rgba(0,0,0,.6); }
+.timer { font-family: var(--font-serif); font-size: clamp(2.6rem, 11vw, 3.8rem); letter-spacing: .06em; font-variant-numeric: tabular-nums; line-height: 1.1; text-shadow: 0 2px 20px rgba(0,0,0,.6); }
+[data-state="idle"] .only-reading { display: none; }
+[data-state="reading"] .only-idle { display: none; }
+[data-state="reading"] .top, [data-state="reading"] .dock-note { opacity: .55; }
+
+.dock { width: 100%; max-width: 34rem; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; backdrop-filter: blur(8px); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chip { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 7px 14px; font-size: .92rem; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--lamp); background: rgba(244,199,119,.14); }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.primary { flex: 1 1 10rem; border: 0; border-radius: 10px; padding: 12px 18px; background: var(--lamp); color: var(--lamp-ink); font-weight: 700; font-size: 1rem; cursor: pointer; }
+.primary:hover { filter: brightness(1.06); }
+.primary:disabled { opacity: .5; cursor: default; }
+.secondary { border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 12px 18px; cursor: pointer; }
+.secondary:hover { border-color: rgba(244,199,119,.5); }
+.dock-note { margin: 12px 0 0; font-size: .8rem; color: var(--hanji-dim); text-align: center; }
+
+/* 다이얼로그 */
+dialog { background: var(--panel-solid); color: var(--hanji); border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); }
+.sheet { padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 6px; }
+.sheet h2 { margin: 0 0 6px; font-family: var(--font-serif); font-size: 1.3rem; }
+.sheet label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 10px; font-size: .9rem; color: var(--hanji-dim); }
+.count { font-variant-numeric: tabular-nums; font-size: .8rem; }
+.sheet input, .sheet textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 16px; line-height: 1.5; resize: none; }
+.sheet input::placeholder, .sheet textarea::placeholder { color: rgba(180,185,173,.6); }
+.combo { position: relative; }
+.results { list-style: none; margin: 4px 0 0; padding: 4px; position: absolute; left: 0; right: 0; z-index: 5; max-height: 220px; overflow: auto; background: #132a30; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+.results button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.results button:hover, .results button:focus-visible { background: rgba(244,199,119,.12); }
+.results .t { display: block; font-size: .95rem; }
+.results .a { display: block; font-size: .8rem; color: var(--hanji-dim); }
+.results .none { padding: 10px; color: var(--hanji-dim); font-size: .9rem; }
+.src { margin: 4px 0 0; font-size: .75rem; color: var(--hanji-dim); min-height: 1.2em; }
+.chosen { margin: 6px 0 0; font-size: .9rem; color: var(--jade); }
+.hint { margin: 8px 0 0; font-size: .78rem; color: var(--hanji-dim); }
+.err { margin: 6px 0 0; font-size: .85rem; color: var(--danger); min-height: 1.3em; }
+.sheet .btn-row { margin-top: 8px; justify-content: flex-end; }
+
+/* 도착한 문장 카드 */
+.paper { background: var(--paper); color: var(--paper-ink); margin: 18px 18px 0; padding: 26px 22px 20px; border-radius: 6px; background-image: radial-gradient(120% 80% at 20% 0%, rgba(255,255,255,.35), transparent 60%); }
+.paper .q { margin: 0; font-family: var(--font-serif); font-size: 1.3rem; line-height: 1.75; text-wrap: balance; }
+.paper .meta { margin: 14px 0 0; font-size: .85rem; color: #5a574a; }
+.paper hr { border: 0; border-top: 1px dashed rgba(43,42,36,.3); margin: 16px 0 12px; }
+.paper .lbl { margin: 0; font-size: .75rem; letter-spacing: .06em; color: #6d6a5a; }
+.paper .note { margin: 4px 0 0; font-family: var(--font-serif); font-size: 1.02rem; }
+.card-actions { padding: 14px 18px 18px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.card-actions .primary { flex: 0 1 auto; padding: 10px 18px; }
+.card-actions .secondary { padding: 10px 16px; }
+.eg { margin: 10px 18px 0; font-size: .75rem; color: var(--hanji-dim); }
+
+/* 서랍 */
+.drawer-sec { margin-top: 6px; }
+.drawer-sec h3 { margin: 14px 0 8px; font-size: .95rem; color: var(--jade); font-weight: 400; }
+.entry { padding: 12px 0; border-top: 1px solid var(--line); }
+.entry .q { margin: 0; font-family: var(--font-serif); font-size: 1.05rem; line-height: 1.65; }
+.entry .m { margin: 4px 0 0; font-size: .8rem; color: var(--hanji-dim); }
+.entry .nt { margin: 4px 0 0; font-size: .88rem; color: var(--hanji); }
+.empty { margin: 0; padding: 10px 0; font-size: .9rem; color: var(--hanji-dim); }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: #1b3a40; border: 1px solid var(--line); padding: 10px 18px; border-radius: 10px; font-size: .92rem; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; z-index: 50; max-width: calc(100vw - 32px); text-align: center; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mist { animation: none; }
+  .toast { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <canvas id="sky"></canvas>
+  <div class="mist"></div>
+  <svg class="ridges" viewBox="0 0 1200 300" preserveAspectRatio="none" focusable="false">
+    <path class="r-a" d="M0,170 C120,110 220,150 340,120 C470,88 560,150 700,128 C840,104 930,150 1060,118 C1130,102 1170,120 1200,126 L1200,300 L0,300 Z"/>
+    <path class="r-b" d="M0,215 C100,170 210,200 320,176 C450,150 540,205 690,186 C830,168 930,208 1070,184 C1130,174 1170,186 1200,190 L1200,300 L0,300 Z"/>
+    <path class="r-c" d="M0,262 C140,236 260,262 420,244 C560,228 680,268 820,252 C960,236 1080,262 1200,248 L1200,300 L0,300 Z"/>
+  </svg>
+</div>
+
+<main class="app" id="app" data-state="idle">
+  <header class="top">
+    <div class="brand"><span class="brand-name">책등</span><span class="brand-sub">함께 읽는 밤</span></div>
+    <div class="top-actions">
+      <div class="seg" role="group" aria-label="불빛 모양">
+        <button type="button" data-skin="lamp" aria-pressed="true">독서등</button>
+        <button type="button" data-skin="candle" aria-pressed="false">촛불</button>
+        <button type="button" data-skin="dot" aria-pressed="false">점</button>
+      </div>
+      <button type="button" class="ghost" id="openDrawer">서랍<span class="n" id="drawerCount">0</span></button>
+    </div>
+  </header>
+
+  <section class="center">
+    <p class="presence" id="presence" aria-live="off"></p>
+    <h1 class="hero only-idle">오늘 밤, 같은 시간에 책을 읽는 불빛들</h1>
+    <p class="sub only-idle">책을 읽다가 마음에 남은 한 줄을 남기면 어딘가의 독서등으로 날아가요. 쉬는 시간에는 낯선 독자의 한 줄이 도착해요.</p>
+    <div class="timer only-reading" id="timer" role="timer" aria-live="off">25:00</div>
+    <p class="sub only-reading">읽는 중이에요. 마음에 남는 문장이 생기면 언제든 남겨 주세요.</p>
+  </section>
+
+  <section class="dock" aria-label="읽기 시작">
+    <div class="only-idle">
+      <div class="chips" id="chips" role="group" aria-label="읽을 시간">
+        <button type="button" class="chip" data-min="15" aria-pressed="false">15분</button>
+        <button type="button" class="chip" data-min="25" aria-pressed="true">25분</button>
+        <button type="button" class="chip" data-min="40" aria-pressed="false">40분</button>
+        <button type="button" class="chip" data-sec="10" aria-pressed="false">체험 10초</button>
+      </div>
+      <div class="btn-row"><button type="button" class="primary" id="startBtn">읽기 시작</button></div>
+    </div>
+    <div class="only-reading btn-row">
+      <button type="button" class="primary" id="writeBtn">이 문장 남기기</button>
+      <button type="button" class="secondary" id="stopBtn">그만 읽기</button>
+    </div>
+    <p class="dock-note">프로토타입입니다. 다른 독자의 불빛과 도착하는 문장은 예시예요.</p>
+  </section>
+</main>
+
+<dialog id="composer" aria-labelledby="composerTitle">
+  <form class="sheet" id="composerForm" autocomplete="off">
+    <h2 id="composerTitle">밑줄 친 문장 남기기</h2>
+    <label for="bookQ">읽고 있는 책</label>
+    <div class="combo">
+      <input id="bookQ" type="search" placeholder="제목이나 저자로 검색" aria-controls="bookList" aria-describedby="bookSrc">
+      <ul class="results" id="bookList" hidden></ul>
+    </div>
+    <p class="src" id="bookSrc"></p>
+    <p class="chosen" id="bookChosen" hidden></p>
+    <label for="quote">좋았던 문장 <span class="count" id="quoteCount">0/100</span></label>
+    <textarea id="quote" rows="3" maxlength="100" placeholder="책에서 한 줄만 옮겨 주세요"></textarea>
+    <label for="note">받는 분께 한 줄 <span class="count" id="noteCount">0/40</span></label>
+    <input id="note" type="text" maxlength="40" placeholder="예: 오늘도 수고했어요">
+    <p class="hint">출처와 함께 한 줄만 남겨 주세요. 링크와 연락처는 보낼 수 없어요.</p>
+    <p class="err" id="formErr" role="alert"></p>
+    <div class="btn-row">
+      <button type="button" class="secondary" data-close>닫기</button>
+      <button type="submit" class="primary">불빛으로 보내기</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="cardDlg" aria-labelledby="cardQuote">
+  <div class="paper">
+    <p class="q" id="cardQuote"></p>
+    <p class="meta" id="cardMeta"></p>
+    <hr>
+    <p class="lbl">보낸 이의 한 줄</p>
+    <p class="note" id="cardNote"></p>
+  </div>
+  <p class="eg" id="cardEg" hidden>예시 문장입니다. 저작권이 만료된 작품에서 가져왔어요.</p>
+  <div class="card-actions">
+    <button type="button" class="secondary" id="copyBtn">복사</button>
+    <button type="button" class="secondary" id="saveBtn">서랍에 담기</button>
+    <button type="button" class="primary" data-close>고마워요</button>
+  </div>
+</dialog>
+
+<dialog id="drawerDlg" aria-labelledby="drawerTitle">
+  <div class="sheet">
+    <h2 id="drawerTitle">내 서랍</h2>
+    <div class="drawer-sec"><h3>받은 문장</h3><div id="recvList"></div></div>
+    <div class="drawer-sec"><h3>보낸 문장</h3><div id="sentList"></div></div>
+    <div class="btn-row"><button type="button" class="secondary" data-close>닫기</button></div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DAILY = 3;
+
+/* ---------- 도서 검색 ---------- */
+// 카카오/네이버 도서 검색을 쓰려면 키를 숨겨 주는 작은 프록시를 만들고 주소를 넣으세요.
+// 응답 형식은 카카오 책 검색과 같은 { documents: [{ title, authors: [] }] } 입니다.
+const BOOK_PROXY = "";
+
+const CATALOG = [
+  ["어린 왕자", "앙투안 드 생텍쥐페리"], ["데미안", "헤르만 헤세"], ["인간 실격", "다자이 오사무"],
+  ["채식주의자", "한강"], ["소년이 온다", "한강"], ["작별하지 않는다", "한강"],
+  ["불편한 편의점", "김호연"], ["달러구트 꿈 백화점", "이미예"], ["아몬드", "손원평"],
+  ["모순", "양귀자"], ["죽고 싶지만 떡볶이는 먹고 싶어", "백세희"], ["미움받을 용기", "기시미 이치로, 고가 후미타케"],
+  ["이방인", "알베르 카뮈"], ["호밀밭의 파수꾼", "J.D. 샐린저"], ["나미야 잡화점의 기적", "히가시노 게이고"],
+  ["82년생 김지영", "조남주"], ["파친코", "이민진"], ["코스모스", "칼 세이건"],
+  ["하늘과 바람과 별과 시", "윤동주"], ["진달래꽃", "김소월"], ["님의 침묵", "한용운"], ["육사시집", "이육사"],
+  ["월든", "헨리 데이비드 소로"], ["노인과 바다", "어니스트 헤밍웨이"]
+].map(([title, authors]) => ({ title, authors }));
+
+function localSearch(q) {
+  const k = q.toLowerCase().replace(/\s+/g, "");
+  return CATALOG.filter((b) => (b.title + b.authors).toLowerCase().replace(/\s+/g, "").includes(k)).slice(0, 8);
+}
+async function fetchTimeout(url, ms) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms);
+  try { return await fetch(url, { signal: c.signal }); } finally { clearTimeout(t); }
+}
+async function searchBooks(q) {
+  try {
+    if (BOOK_PROXY) {
+      const r = await fetchTimeout(BOOK_PROXY + "?q=" + encodeURIComponent(q), 4000);
+      if (!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      const items = (j.documents || []).slice(0, 8).map((d) => ({ title: d.title, authors: (d.authors || []).join(", ") }));
+      if (items.length) return { source: "도서 검색", items };
+    } else {
+      const r = await fetchTimeout("https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=8&q=" + encodeURIComponent(q), 4000);
+      if (!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      const items = (j.items || []).map((v) => ({ title: v.volumeInfo.title, authors: (v.volumeInfo.authors || []).join(", ") })).filter((b) => b.title);
+      if (items.length) return { source: "Google Books 검색", items };
+    }
+  } catch (e) { /* 샘플 목록으로 대체 */ }
+  return { source: "샘플 도서 목록 (인터넷 검색이 연결되지 않았어요)", items: localSearch(q) };
+}
+
+/* ---------- 예시 문장 (저작권이 만료된 작품) ---------- */
+const SEEDS = [
+  { quote: "죽는 날까지 하늘을 우러러 한 점 부끄럼이 없기를", book: "하늘과 바람과 별과 시", author: "윤동주", note: "오늘은 그냥 버틴 것만으로도 충분해요." },
+  { quote: "별 하나에 추억과 별 하나에 사랑과 별 하나에 쓸쓸함과", book: "하늘과 바람과 별과 시", author: "윤동주", note: "책 덮고 창밖을 한 번 보고 가요." },
+  { quote: "인생은 살기 어렵다는데 시가 이렇게 쉽게 씌어지는 것은 부끄러운 일이다", book: "하늘과 바람과 별과 시", author: "윤동주", note: "힘든 날의 문장이 오래 남더라고요." },
+  { quote: "나는 나룻배 당신은 행인", book: "님의 침묵", author: "한용운", note: "기다려 주는 사람이 되는 밤이길." },
+  { quote: "산에는 꽃 피네 꽃이 피네 갈 봄 여름 없이 꽃이 피네", book: "진달래꽃", author: "김소월", note: "아무도 안 봐도 피는 꽃처럼, 천천히요." },
+  { quote: "엄마야 누나야 강변 살자", book: "진달래꽃", author: "김소월", note: "지금 있는 곳이 강변이라고 생각해 봐요." },
+  { quote: "내 고장 칠월은 청포도가 익어 가는 시절", book: "육사시집", author: "이육사", note: "오늘 하루도 조금씩 익고 있어요." },
+  { quote: "까마득한 날에 하늘이 처음 열리고", book: "육사시집", author: "이육사", note: "시작은 늘 까마득해요. 그래도 한 페이지." }
+];
+
+/* ---------- 저장소 ---------- */
+const KEY = "chaekdeung.v1";
+const defaults = () => ({ drawer: [], sent: [], skin: "lamp", day: "", count: 0 });
+function load() {
+  try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return defaults(); }
+}
+let store = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* 저장 불가 */ } }
+function dayKey() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function sentToday() { return store.day === dayKey() ? store.count : 0; }
+
+/* ---------- 상태 ---------- */
+const app = $("#app");
+const state = { reading: false, endAt: 0, dur: 25 * 60 * 1000, timerId: 0, chosen: null, lastSeed: -1 };
+let pendingCard = null, pendingReceive = false;
+
+let toastTimer = 0;
+function toast(msg) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("on"), 3200);
+}
+function anyDialogOpen() { return !!document.querySelector("dialog[open]"); }
+
+/* ---------- 캔버스: 불빛 ---------- */
+const cv = $("#sky");
+const ctx = cv.getContext("2d");
+let W = 0, H = 0, base = 1;
+const own = { x: .5, y: .27 };
+const lamps = [];
+const flights = [];
+const stars = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random() * .55, r: Math.random() < .2 ? 2 : 1, a: .15 + Math.random() * .35, sp: .5 + Math.random() * 1.5, ph: Math.random() * 6.28 }));
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  base = Math.max(.8, Math.min(1.5, Math.min(W, H) / 620));
+}
+window.addEventListener("resize", resize);
+
+function glow(x, y, rad, a) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+  g.addColorStop(0, "rgba(244,199,119," + a + ")");
+  g.addColorStop(1, "rgba(244,199,119,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.2832); ctx.fill();
+}
+function drawLight(x, y, s, a, t, ph) {
+  const skin = store.skin;
+  if (skin === "dot") {
+    glow(x, y, 9 * s, a * .45);
+    ctx.fillStyle = "rgba(255,230,180," + a + ")";
+    ctx.beginPath(); ctx.arc(x, y, 1.9 * s, 0, 6.2832); ctx.fill();
+  } else if (skin === "candle") {
+    const f = 1 + Math.sin(t * 6 + ph) * .08 + Math.sin(t * 9.3 + ph * 2) * .05;
+    glow(x, y - 3 * s, 24 * s * f, a * .42);
+    ctx.fillStyle = "rgba(239,231,212," + a * .55 + ")";
+    ctx.fillRect(x - 2 * s, y + 3 * s, 4 * s, 10 * s);
+    ctx.fillStyle = "rgba(255,214,140," + a + ")";
+    ctx.beginPath(); ctx.ellipse(x, y, 2 * s * f * .9, 4.6 * s * f, 0, 0, 6.2832); ctx.fill();
+  } else {
+    glow(x, y + 8 * s, 28 * s, a * .34);
+    const g = ctx.createLinearGradient(x, y, x, y + 32 * s);
+    g.addColorStop(0, "rgba(244,199,119," + a * .5 + ")");
+    g.addColorStop(1, "rgba(244,199,119,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x - 3 * s, y); ctx.lineTo(x + 3 * s, y); ctx.lineTo(x + 15 * s, y + 32 * s); ctx.lineTo(x - 15 * s, y + 32 * s); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "rgba(255,230,180," + a + ")";
+    ctx.beginPath(); ctx.ellipse(x, y, 4.2 * s, 2.3 * s, 0, 0, 6.2832); ctx.fill();
+  }
+}
+
+function newLamp() {
+  let x, y, tries = 0;
+  const span = H / W > 1.3 ? .27 : .42;
+  do { x = .05 + Math.random() * .9; y = .09 + Math.random() * span; tries++; }
+  while (tries < 12 && Math.hypot((x - own.x) * W, (y - own.y) * H) < 90);
+  return { x, y, s: .7 + Math.random() * .6, ph: Math.random() * 6.28, sp: .4 + Math.random() * .6, a: 0, target: 1 };
+}
+let presenceN = 14 + Math.floor(Math.random() * 22);
+function setPresence(n, instant) {
+  const live = lamps.filter((l) => l.target === 1);
+  while (live.length < n) { const l = newLamp(); if (instant) l.a = 1; lamps.push(l); live.push(l); }
+  while (live.length > n) { const l = live.splice(Math.floor(Math.random() * live.length), 1)[0]; l.target = 0; }
+  $("#presence").textContent = "지금 " + n + "개의 불빛이 책을 읽고 있어요";
+}
+
+const ease = (u) => (u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
+function flyIn(done) {
+  flights.push({ kind: "in", x0: Math.random() < .5 ? -.05 : 1.05, y0: .04 + Math.random() * .18, cx: .5 + (Math.random() - .5) * .5, cy: -.08, x1: own.x, y1: own.y, t0: performance.now(), dur: reduce ? 10 : 2800, done });
+}
+function flyOut() {
+  flights.push({ kind: "out", x0: own.x, y0: own.y, cx: own.x + (Math.random() - .5) * .3, cy: own.y - .2, x1: own.x + (Math.random() - .5) * .6, y1: -.1, t0: performance.now(), dur: reduce ? 10 : 3400 });
+}
+
+function frame(ts) {
+  const t = reduce ? 0 : ts / 1000;
+  ctx.clearRect(0, 0, W, H);
+  for (const st of stars) {
+    const a = st.a * (reduce ? 1 : .7 + .3 * Math.sin(t * st.sp + st.ph));
+    ctx.fillStyle = "rgba(239,231,212," + a + ")";
+    ctx.fillRect(st.x * W, st.y * H, st.r, st.r);
+  }
+  const mg = ctx.createRadialGradient(W * .86, H * .11, 0, W * .86, H * .11, 60 * base);
+  mg.addColorStop(0, "rgba(239,231,212,.22)"); mg.addColorStop(1, "rgba(239,231,212,0)");
+  ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(W * .86, H * .11, 60 * base, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = "rgba(239,231,212,.8)"; ctx.beginPath(); ctx.arc(W * .86, H * .11, 7 * base, 0, 6.2832); ctx.fill();
+
+  for (let i = lamps.length - 1; i >= 0; i--) {
+    const l = lamps[i];
+    l.a += (l.target - l.a) * .04;
+    if (l.target === 0 && l.a < .02) { lamps.splice(i, 1); continue; }
+    const dx = reduce ? 0 : Math.sin(t * l.sp + l.ph) * 3;
+    const dy = reduce ? 0 : Math.cos(t * l.sp * .8 + l.ph) * 2;
+    const pulse = reduce ? .6 : .55 + .25 * Math.sin(t * .7 + l.ph);
+    drawLight(l.x * W + dx, l.y * H + dy, base * l.s, l.a * pulse, t, l.ph);
+  }
+
+  const ox = own.x * W, oy = own.y * H;
+  drawLight(ox, oy, base * 1.5, state.reading ? 1 : .8, t, 0);
+  ctx.font = "12px 'Gowun Dodum', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(180,185,173,.85)";
+  ctx.fillText("나", ox, oy + 52 * base);
+
+  const now = performance.now();
+  for (let i = flights.length - 1; i >= 0; i--) {
+    const f = flights[i];
+    const u = Math.min(1, (now - f.t0) / f.dur);
+    const e = ease(u);
+    const x = (1 - e) * (1 - e) * f.x0 + 2 * (1 - e) * e * f.cx + e * e * f.x1;
+    const y = (1 - e) * (1 - e) * f.y0 + 2 * (1 - e) * e * f.cy + e * e * f.y1;
+    const a = f.kind === "in" ? Math.min(1, u * 6) : 1 - Math.pow(u, 1.5);
+    drawLight(x * W, y * H, base * 1.3, a, t, 1.7);
+    if (u >= 1) { flights.splice(i, 1); if (f.done) f.done(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- 읽기 타이머 ---------- */
+const fmt = (ms) => {
+  const s = Math.ceil(ms / 1000), m = Math.floor(s / 60), r = s % 60;
+  return String(m).padStart(2, "0") + ":" + String(r).padStart(2, "0");
+};
+function tick() {
+  const left = Math.max(0, state.endAt - Date.now());
+  $("#timer").textContent = fmt(left);
+  if (left <= 0) finishReading(true);
+}
+function startReading() {
+  state.reading = true;
+  state.endAt = Date.now() + state.dur;
+  app.dataset.state = "reading";
+  tick();
+  clearInterval(state.timerId);
+  state.timerId = setInterval(tick, 250);
+}
+function finishReading(done) {
+  if (!state.reading) return;
+  clearInterval(state.timerId);
+  state.reading = false;
+  app.dataset.state = "idle";
+  toast(done ? "수고했어요. 낯선 독자의 불빛이 오고 있어요." : "잠시 쉬어가요. 불빛이 오고 있어요.");
+  if (anyDialogOpen()) pendingReceive = true; else receive();
+}
+function receive() {
+  let i;
+  do { i = Math.floor(Math.random() * SEEDS.length); } while (SEEDS.length > 1 && i === state.lastSeed);
+  state.lastSeed = i;
+  flyIn(() => showCard(SEEDS[i]));
+}
+
+/* ---------- 문장 카드 ---------- */
+let currentCard = null;
+function showCard(c) {
+  if (anyDialogOpen()) { pendingCard = c; return; }
+  currentCard = c;
+  $("#cardQuote").textContent = c.quote;
+  $("#cardMeta").textContent = c.author + ", 《" + c.book + "》";
+  $("#cardNote").textContent = c.note || "";
+  $("#cardEg").hidden = false;
+  refreshSaveBtn();
+  $("#cardDlg").showModal();
+}
+function isSaved(c) { return store.drawer.some((d) => d.quote === c.quote && d.book === c.book); }
+function refreshSaveBtn() {
+  const b = $("#saveBtn");
+  const saved = currentCard && isSaved(currentCard);
+  b.disabled = !!saved;
+  b.textContent = saved ? "서랍에 담았어요" : "서랍에 담기";
+}
+$("#saveBtn").addEventListener("click", () => {
+  if (!currentCard || isSaved(currentCard)) return;
+  store.drawer.unshift(Object.assign({ at: Date.now() }, currentCard));
+  store.drawer = store.drawer.slice(0, 100);
+  save(); renderDrawerCount(); refreshSaveBtn();
+  toast("서랍에 담았어요.");
+});
+$("#copyBtn").addEventListener("click", async () => {
+  if (!currentCard) return;
+  const text = "“" + currentCard.quote + "” — " + currentCard.author + ", 《" + currentCard.book + "》";
+  try { await navigator.clipboard.writeText(text); toast("문장을 복사했어요."); }
+  catch (e) { toast("복사할 수 없어요. 문장을 길게 눌러 선택해 주세요."); }
+});
+
+/* ---------- 서랍 ---------- */
+const dateLabel = (ts) => new Date(ts).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+function renderDrawerCount() { $("#drawerCount").textContent = String(store.drawer.length); }
+function renderList(el, items, emptyText, withNote) {
+  el.textContent = "";
+  if (!items.length) { const p = document.createElement("p"); p.className = "empty"; p.textContent = emptyText; el.appendChild(p); return; }
+  for (const it of items) {
+    const d = document.createElement("div"); d.className = "entry";
+    const q = document.createElement("p"); q.className = "q"; q.textContent = it.quote;
+    const m = document.createElement("p"); m.className = "m"; m.textContent = (it.author ? it.author + ", " : "") + "《" + it.book + "》 · " + dateLabel(it.at);
+    d.appendChild(q); d.appendChild(m);
+    if (withNote && it.note) { const n = document.createElement("p"); n.className = "nt"; n.textContent = it.note; d.appendChild(n); }
+    el.appendChild(d);
+  }
+}
+$("#openDrawer").addEventListener("click", () => {
+  renderList($("#recvList"), store.drawer, "아직 담은 문장이 없어요. 쉬는 시간에 도착하는 문장을 담아 보세요.", true);
+  renderList($("#sentList"), store.sent, "아직 보낸 문장이 없어요.", true);
+  $("#drawerDlg").showModal();
+});
+
+/* ---------- 문장 남기기 ---------- */
+const bookQ = $("#bookQ"), bookList = $("#bookList"), quoteEl = $("#quote"), noteEl = $("#note");
+let searchSeq = 0, searchTimer = 0;
+function closeList() { bookList.hidden = true; bookList.textContent = ""; }
+function renderResults(res) {
+  bookList.textContent = "";
+  $("#bookSrc").textContent = res.source;
+  if (!res.items.length) {
+    const li = document.createElement("li"); li.className = "none"; li.textContent = "검색 결과가 없어요. 다른 단어로 찾아보세요.";
+    bookList.appendChild(li);
+  }
+  for (const b of res.items) {
+    const li = document.createElement("li");
+    const btn = document.createElement("button"); btn.type = "button";
+    const t = document.createElement("span"); t.className = "t"; t.textContent = b.title;
+    const a = document.createElement("span"); a.className = "a"; a.textContent = b.authors || "저자 정보 없음";
+    btn.appendChild(t); btn.appendChild(a);
+    btn.addEventListener("click", () => {
+      state.chosen = b;
+      bookQ.value = b.title;
+      $("#bookChosen").textContent = "선택한 책: " + b.title + (b.authors ? " · " + b.authors : "");
+      $("#bookChosen").hidden = false;
+      closeList();
+      quoteEl.focus();
+    });
+    li.appendChild(btn); bookList.appendChild(li);
+  }
+  bookList.hidden = false;
+}
+bookQ.addEventListener("input", () => {
+  state.chosen = null;
+  $("#bookChosen").hidden = true;
+  clearTimeout(searchTimer);
+  const q = bookQ.value.trim();
+  if (!q) { closeList(); $("#bookSrc").textContent = ""; return; }
+  searchTimer = setTimeout(async () => {
+    const my = ++searchSeq;
+    $("#bookSrc").textContent = "찾는 중이에요…";
+    const res = await searchBooks(q);
+    if (my !== searchSeq) return;
+    renderResults(res);
+  }, 300);
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".combo")) closeList(); });
+quoteEl.addEventListener("input", () => { $("#quoteCount").textContent = quoteEl.value.length + "/100"; });
+noteEl.addEventListener("input", () => { $("#noteCount").textContent = noteEl.value.length + "/40"; });
+
+function openComposer() {
+  $("#composerForm").reset();
+  state.chosen = null;
+  $("#bookChosen").hidden = true; $("#bookSrc").textContent = ""; $("#formErr").textContent = "";
+  $("#quoteCount").textContent = "0/100"; $("#noteCount").textContent = "0/40";
+  closeList();
+  $("#composer").showModal();
+  bookQ.focus();
+}
+const BLOCK = /(https?:\/\/|www\.|@[a-z0-9_.]+|\d{2,3}[-\s]?\d{3,4}[-\s]?\d{4}|카톡|오픈채팅|open\.kakao)/i;
+$("#composerForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const err = $("#formErr");
+  const quote = quoteEl.value.trim(), note = noteEl.value.trim();
+  if (!state.chosen) { err.textContent = "검색 결과에서 읽고 있는 책을 골라 주세요."; return; }
+  if (quote.length < 4) { err.textContent = "책에서 마음에 든 문장을 한 줄 적어 주세요."; return; }
+  if (BLOCK.test(quote) || BLOCK.test(note)) { err.textContent = "링크나 연락처는 보낼 수 없어요."; return; }
+  if (sentToday() >= DAILY) { err.textContent = "오늘 보낼 수 있는 불빛을 모두 보냈어요. 내일 또 만나요."; return; }
+  store.day = dayKey(); store.count = sentToday() + 1;
+  store.sent.unshift({ at: Date.now(), quote, note, book: state.chosen.title, author: state.chosen.authors });
+  store.sent = store.sent.slice(0, 100);
+  save();
+  $("#composer").close();
+  flyOut();
+  toast("문장이 불빛이 되어 떠났어요. 오늘 " + (DAILY - store.count) + "번 더 보낼 수 있어요.");
+});
+
+/* ---------- 컨트롤 ---------- */
+document.querySelectorAll("dialog").forEach((d) => {
+  d.addEventListener("close", () => {
+    if (anyDialogOpen()) return;
+    if (pendingCard) { const c = pendingCard; pendingCard = null; showCard(c); }
+    else if (pendingReceive) { pendingReceive = false; receive(); }
+  });
+  d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
+});
+document.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
+
+$("#chips").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+  state.dur = b.dataset.sec ? Number(b.dataset.sec) * 1000 : Number(b.dataset.min) * 60000;
+  $("#timer").textContent = fmt(state.dur);
+});
+$("#startBtn").addEventListener("click", startReading);
+$("#stopBtn").addEventListener("click", () => finishReading(false));
+$("#writeBtn").addEventListener("click", openComposer);
+
+function applySkin() {
+  document.querySelectorAll("[data-skin]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.skin === store.skin)));
+}
+document.querySelectorAll("[data-skin]").forEach((b) => b.addEventListener("click", () => { store.skin = b.dataset.skin; save(); applySkin(); }));
+
+/* ---------- 시작 ---------- */
+resize();
+applySkin();
+renderDrawerCount();
+$("#timer").textContent = fmt(state.dur);
+setPresence(presenceN, true);
+setInterval(() => {
+  presenceN = Math.max(12, Math.min(40, presenceN + Math.floor(Math.random() * 5) - 2));
+  setPresence(presenceN, false);
+}, 5000);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
