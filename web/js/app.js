@@ -101,7 +101,7 @@ function openDetail(id, push = true) {
     ${g.verified ? '' : '<p class="notice">아직 직접 확인하지 못한 정보예요. 공식 사이트에서 다시 확인해 주세요.</p>'}
     <div class="cta-row">
       <button class="btn ghost" data-save="${g.id}">${saved ? '저장됨' : '저장'}</button>
-      <button class="btn" data-go="${g.id}">${g.url ? '공식 사이트 가기' : '검색해서 찾기'}</button>
+      <a class="btn" data-go="${g.id}" href="${esc(g.url || 'https://www.google.com/search?q=' + encodeURIComponent(g.name + ' 부업'))}" target="_blank" rel="noopener noreferrer">${g.url ? '공식 사이트 가기' : '검색해서 찾기'}</a>
     </div></div>`;
   $('#sheet').classList.add('open');
   document.body.classList.add('lock');
@@ -133,10 +133,7 @@ document.addEventListener('click', (e) => {
     render(); if ($('#sheet').classList.contains('open')) openDetail(id, false); return;
   }
   const go = t.closest('[data-go]');
-  if (go) {
-    const g = GIGS.find((x) => x.id === go.dataset.go); track('OutboundClick', { gig: g.id });
-    return openLink(g.url || `https://www.google.com/search?q=${encodeURIComponent(g.name + ' 부업')}`);
-  }
+  if (go) { track('OutboundClick', { gig: go.dataset.go }); return; }
   if (t.closest('[data-close]') || t.id === 'sheet') return closeDetail();
   const tab = t.closest('[data-tab]');
   if (tab) { state.tab = tab.dataset.tab; render(); return window.scrollTo(0, 0); }

@@ -37,7 +37,7 @@ h1 em{font-style:normal;background:linear-gradient(transparent 62%,#B8F0D2 62%)}
 .heart.on{color:#F0436B}
 .notice{font-size:12px;color:var(--sub);margin:22px 0 0;line-height:1.6}
 .empty{text-align:center;padding:60px 0;color:var(--sub)}.empty .btn{margin-top:16px}
-.btn{background:var(--accent);color:#fff;font-weight:700;padding:15px 20px;border-radius:16px;flex:1}
+.btn{display:block;text-align:center;text-decoration:none;background:var(--accent);color:#fff;font-weight:700;padding:15px 20px;border-radius:16px;flex:1}
 .btn:active{background:var(--accent-d)}
 .btn.ghost{background:var(--bg);color:var(--ink);flex:none;padding:15px 18px}
 .tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:8px;padding:8px 20px calc(8px + env(safe-area-inset-bottom));background:rgba(247,246,242,.92);backdrop-filter:blur(12px);border-top:1px solid var(--line)}
