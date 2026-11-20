@@ -9,6 +9,7 @@ const state = {
   skills: new Set(storage.get('skills', [])),
   saved: new Set(storage.get('saved', [])),
   tab: 'home',
+  cat: null,
 };
 
 // ── 추천 로직 ───────────────────────────────────────────
@@ -43,12 +44,13 @@ function card(g, why = []) {
 }
 
 function renderHome() {
-  const ranked = GIGS.map((g) => ({ g, ...score(g) })).sort((a, b) => b.s - a.s);
+  const cats = [...new Set(GIGS.map((g) => g.category))];
+  const ranked = GIGS.filter((g) => !state.cat || g.category === state.cat).map((g) => ({ g, ...score(g) })).sort((a, b) => b.s - a.s);
   const filtered = hasFilter();
   $('#view').innerHTML = `
     <section class="hero">
       <h1>시간 날 때 하는<br><em>온라인 부업</em> 모음</h1>
-      <p class="sub">플리토, 어도비 스톡, 소셜라우더 같은 부업을 한 번에 보고, 내 사정에 맞는 것만 골라 보세요.</p>
+      <p class="sub">사진 팔기, 번역, 데이터 작업, 뉴스레터까지. 온라인 부업 ${GIGS.length}가지를 모았어요. 내 사정에 맞는 것만 골라 보세요.</p>
     </section>
     <section class="picker" aria-label="내 상황 선택">
       <h2>한 번에 얼마나 낼 수 있어요?</h2>
@@ -57,6 +59,7 @@ function renderHome() {
       <div class="chips">${SKILL_OPTIONS.map((o) => chip(o, state.skills.has(o.id), 'skill')).join('')}</div>
     </section>
     <section>
+      <div class="chips cats">${[{ id: 'all', label: '전체' }, ...cats.map((c) => ({ id: c, label: c }))].map((o) => chip(o, (state.cat || 'all') === o.id, 'cat')).join('')}</div>
       <div class="list-head"><h2>${filtered ? '내 조건에 맞는 순서' : '전체'} <b>${ranked.length}</b></h2>
         ${filtered ? '<button class="link" id="reset">초기화</button>' : ''}</div>
       <div class="list">${ranked.map(({ g, s, why }) => card(g, filtered && s > 0.5 ? why : [])).join('')}</div>
@@ -118,6 +121,7 @@ document.addEventListener('click', (e) => {
   const chipEl = t.closest('.chip');
   if (chipEl) {
     const { kind, id } = chipEl.dataset;
+    if (kind === 'cat') { state.cat = id === 'all' ? null : id; return render(); }
     if (kind === 'time') state.time = state.time === id ? null : id;
     else state.skills.has(id) ? state.skills.delete(id) : state.skills.add(id);
     storage.set('time', state.time); storage.set('skills', [...state.skills]);

@@ -61,3 +61,4 @@ h1 em{font-style:normal;background:linear-gradient(transparent 62%,#B8F0D2 62%)}
 .cta-row{display:flex;gap:10px;margin-top:22px;position:sticky;bottom:0;background:linear-gradient(transparent,#fff 30%);padding-top:14px}
 @media(max-width:380px){.proscons{grid-template-columns:1fr}h1{font-size:27px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.cats{margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-20px;padding-right:20px}.cats::-webkit-scrollbar{display:none}.cats .chip{flex:none;padding:8px 13px;font-size:13.5px;background:var(--card)}.cats .chip.on{background:var(--soft)}
