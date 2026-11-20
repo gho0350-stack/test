@@ -1,0 +1,95 @@
+// 부업 데이터 — 화면과 분리된 "단일 데이터 소스".
+// 앱(Capacitor/React Native 등)으로 옮길 때 이 파일만 JSON으로 서버에 올리면 됩니다.
+// ⚠️ 샘플입니다. 수익·정책은 수시로 바뀌므로 verified:false 항목은 공식 사이트 확인 후 수정하세요.
+export const GIGS = [
+  {
+    id: 'flitto',
+    name: '플리토',
+    tagline: '내가 아는 언어로 번역·녹음하고 포인트 모으기',
+    category: '언어',
+    color: '#2F6BFF',
+    time: ['5', '30', '60'],          // 한 번에 가능한 시간(분)
+    skills: ['language', 'voice'],    // 필요한 것: language 외국어 / voice 목소리
+    difficulty: 1,                    // 1 쉬움 ~ 3 어려움
+    earnType: '포인트 → 현금 환전',
+    cadence: '수시 (원할 때마다)',
+    summary: '번역 문장 검수, 음성 녹음, 데이터 수집 같은 짧은 작업을 하고 포인트를 쌓는 크라우드소싱 플랫폼이에요.',
+    steps: ['앱 설치 후 가입', '쓸 수 있는 언어 설정', '번역·녹음·검수 작업 수행', '포인트를 모아 환전 신청'],
+    needs: ['스마트폰', '한국어 외 1개 언어 가능하면 유리'],
+    pros: ['1~5분짜리 작업이 많아 틈새시간에 좋아요', '진입 장벽이 낮아요'],
+    cons: ['작업 단가가 낮은 편이에요', '환전 최소 금액이 있어요'],
+    url: 'https://www.flitto.com',
+    verified: false,
+  },
+  {
+    id: 'plam',
+    name: '플램',
+    tagline: '앱으로 가볍게 참여하는 소액 부업',
+    category: '앱테크',
+    color: '#FF7A3D',
+    time: ['5', '30'],
+    skills: ['phone'],
+    difficulty: 1,
+    earnType: '확인 필요',
+    cadence: '확인 필요',
+    summary: '샘플 자리 표시 항목이에요. 실제 서비스 내용을 확인한 뒤 요약·수익 방식·진행 단계를 채워 주세요.',
+    steps: ['가입', '참여 가능한 미션 확인', '미션 수행', '보상 수령'],
+    needs: ['스마트폰'],
+    pros: ['(확인 후 작성)'],
+    cons: ['(확인 후 작성)'],
+    url: null,
+    verified: false,
+  },
+  {
+    id: 'adobe-stock',
+    name: '어도비 스톡',
+    tagline: '내 사진·영상·일러스트를 올려서 팔기',
+    category: '콘텐츠',
+    color: '#E5322D',
+    time: ['60'],
+    skills: ['visual'],
+    difficulty: 3,
+    earnType: '판매 시마다 로열티',
+    cadence: '꾸준히 쌓이는 수익',
+    summary: '전 세계 사용자에게 내 콘텐츠를 라이선스로 판매해요. 한 번 올려두면 팔릴 때마다 수익이 생기는 구조예요.',
+    steps: ['기여자(Contributor) 가입', '콘텐츠 업로드 · 제목/키워드 입력', '심사 통과', '판매 발생 시 로열티 수령'],
+    needs: ['카메라/스마트폰 또는 디자인 툴', '초상권·저작권 문제 없는 콘텐츠'],
+    pros: ['올려둔 콘텐츠가 계속 수익이 돼요', '취미를 부업으로 연결하기 좋아요'],
+    cons: ['심사 기준이 까다로워요', '수익이 나기까지 시간이 걸려요'],
+    url: 'https://contributor.stock.adobe.com',
+    verified: false,
+  },
+  {
+    id: 'social-louder',
+    name: '소셜라우더',
+    tagline: 'SNS 계정으로 체험하고 후기 남기기',
+    category: 'SNS',
+    color: '#8A4DFF',
+    time: ['30', '60'],
+    skills: ['sns'],
+    difficulty: 2,
+    earnType: '제품·서비스 또는 리워드',
+    cadence: '캠페인 단위',
+    summary: '브랜드 캠페인에 참여해 SNS에 콘텐츠를 올리고 리워드를 받는 인플루언서 마케팅 플랫폼이에요.',
+    steps: ['가입 · SNS 계정 연동', '맞는 캠페인 신청', '선정 후 콘텐츠 작성·게시', '리워드 수령'],
+    needs: ['운영 중인 SNS 계정', '가이드라인에 맞는 콘텐츠 작성'],
+    pros: ['팔로워가 많지 않아도 시작할 수 있는 캠페인이 있어요', '계정을 꾸준히 키울 수 있어요'],
+    cons: ['선정이 되어야 진행돼요', '게시물 의무 조건을 지켜야 해요'],
+    url: null,
+    verified: false,
+  },
+];
+
+export const TIME_OPTIONS = [
+  { id: '5', label: '5분 틈새', emoji: '⚡' },
+  { id: '30', label: '30분 정도', emoji: '☕' },
+  { id: '60', label: '1시간 이상', emoji: '🌙' },
+];
+
+export const SKILL_OPTIONS = [
+  { id: 'phone', label: '스마트폰만 있어요', emoji: '📱' },
+  { id: 'language', label: '외국어 가능', emoji: '🌍' },
+  { id: 'visual', label: '사진·영상 찍어요', emoji: '📷' },
+  { id: 'sns', label: 'SNS 계정 있어요', emoji: '💬' },
+  { id: 'voice', label: '목소리 자신 있어요', emoji: '🎙️' },
+];
