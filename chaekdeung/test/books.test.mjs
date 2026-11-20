@@ -46,3 +46,14 @@ assert.ok(BLOCK.test("카톡 주세요"));
 assert.ok(!BLOCK.test("가장 중요한 것은 눈에 보이지 않아"));
 
 console.log("books.test.mjs: all passed");
+
+// 관리자 기본 문장: 10개, 길이 제한 안, 연락처 패턴 없음
+import { DEFAULT_CURATED } from "../src/worker.js";
+assert.equal(DEFAULT_CURATED.length, 10);
+for (const s of DEFAULT_CURATED) {
+  assert.ok(s.quote.length >= 2 && s.quote.length <= 100, s.quote);
+  assert.ok(s.note.length <= 40, s.note);
+  assert.ok(s.book && s.author);
+  assert.ok(!BLOCK.test(s.quote + " " + s.note));
+}
+console.log("curated defaults: ok");

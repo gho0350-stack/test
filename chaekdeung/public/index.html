@@ -101,6 +101,7 @@ body[data-time="day"] .ghost .n { color: #a85d12; }
 .opt .t { display: block; font-size: .98rem; }
 .opt .d { display: block; font-size: .78rem; color: var(--hanji-dim); }
 .opt[aria-pressed="true"]::after { content: "재생 중"; font-size: .75rem; color: var(--jade); white-space: nowrap; }
+.opt[aria-busy="true"]::after { content: "불러오는 중"; font-size: .75rem; color: var(--hanji-dim); white-space: nowrap; }
 .opt[data-id="off"][aria-pressed="true"]::after { content: ""; }
 .vol { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px; font-size: .85rem; color: var(--hanji-dim); }
 .vol input { flex: 1; min-width: 0; accent-color: var(--lamp); }
@@ -169,12 +170,15 @@ dialog .seg button[aria-pressed="true"] { color: #efe7d4; }
 /* 서랍 */
 .drawer-sec { margin-top: 6px; }
 .drawer-sec h3 { margin: 14px 0 8px; font-size: .95rem; color: #8fb8a6; font-weight: 400; }
-.entry { padding: 12px 0; border-top: 1px solid rgba(239,231,212,.16); }
+.entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 12px 0; border-top: 1px solid rgba(239,231,212,.16); }
 .entry .q { margin: 0; font-family: var(--font-serif); font-size: 1.05rem; line-height: 1.65; }
 .entry .m { margin: 4px 0 0; font-size: .8rem; color: #b4b9ad; }
 .entry .nt { margin: 4px 0 0; font-size: .88rem; }
+.entry .tag { margin: 6px 0 0; font-size: .8rem; color: #f4c777; }
 .empty { margin: 0; padding: 10px 0; font-size: .9rem; color: #b4b9ad; }
-.disc { margin: 0 0 4px; font-size: .78rem; color: #b4b9ad; }
+.del { border: 1px solid rgba(239,231,212,.2); background: transparent; color: #b4b9ad; border-radius: 8px; padding: 4px 10px; font-size: .78rem; cursor: pointer; white-space: nowrap; }
+.del:hover { color: #f0a08c; border-color: rgba(240,160,140,.5); }
+.del.armed { color: #f0a08c; border-color: #f0a08c; }
 .stores { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .store { display: inline-block; border: 1px solid rgba(239,231,212,.22); border-radius: 8px; padding: 5px 12px; font-size: .85rem; color: #efe7d4; text-decoration: none; }
 .store:hover { border-color: #f4c777; background: rgba(244,199,119,.12); }
@@ -271,25 +275,22 @@ dialog .seg button[aria-pressed="true"] { color: #efe7d4; }
     <p class="lbl">보낸 이의 한 줄</p>
     <p class="note" id="cardNote"></p>
   </div>
-  <p class="eg" id="cardEg" hidden>예시 문장입니다. 저작권이 만료된 작품에서 가져왔어요.</p>
+  <p class="eg" id="cardEg" hidden></p>
   <div class="card-actions">
     <button type="button" class="secondary" id="reportBtn" hidden>신고</button>
     <button type="button" class="secondary" id="copyBtn">복사</button>
     <button type="button" class="secondary" id="saveBtn">서랍에 담기</button>
-    <button type="button" class="primary" data-close>고마워요</button>
+    <button type="button" class="secondary" data-close>닫기</button>
+    <button type="button" class="primary" id="thanksBtn">♡ 고마워요</button>
   </div>
 </dialog>
 
 <dialog id="drawerDlg" aria-labelledby="drawerTitle">
   <div class="sheet">
     <h2 id="drawerTitle">내 서랍</h2>
-    <div class="drawer-sec">
-      <h3>담은 문장의 책</h3>
-      <p class="disc">제휴 링크가 포함돼요. 링크로 구매하면 책등이 수수료를 받을 수 있어요.</p>
-      <div id="wishList"></div>
-    </div>
+    <div class="drawer-sec"><h3>담은 문장의 책</h3><div id="wishList"></div></div>
     <div class="drawer-sec"><h3>받은 문장</h3><div id="recvList"></div></div>
-    <div class="drawer-sec"><h3>보낸 문장</h3><div id="sentList"></div></div>
+    <div class="drawer-sec"><h3>내 밑줄</h3><div id="sentList"></div></div>
     <div class="btn-row"><button type="button" class="secondary" data-close>닫기</button></div>
   </div>
 </dialog>
@@ -399,7 +400,7 @@ function storeUrl(id, b) {
   return f ? f(encodeURIComponent((b.book + " " + firstAuthor(b.author)).trim())) : "";
 }
 
-/* ---------- 예시 문장 (저작권이 만료된 작품) ---------- */
+/* ---------- 예시 문장 (서버가 없을 때만 씁니다. 저작권이 만료된 작품) ---------- */
 const SEEDS = [
   { quote: "죽는 날까지 하늘을 우러러 한 점 부끄럼이 없기를", book: "하늘과 바람과 별과 시", author: "윤동주", note: "오늘은 그냥 버틴 것만으로도 충분해요." },
   { quote: "별 하나에 추억과 별 하나에 사랑과 별 하나에 쓸쓸함과", book: "하늘과 바람과 별과 시", author: "윤동주", note: "책 덮고 창밖을 한 번 보고 가요." },
@@ -413,7 +414,7 @@ const SEEDS = [
 
 /* ---------- 저장소 ---------- */
 const KEY = "chaekdeung.v1";
-const defaults = () => ({ drawer: [], sent: [], skin: "lamp", day: "", count: 0, device: "", scene: "auto", season: "auto", sound: "wind", soundOn: false, volume: 50 });
+const defaults = () => ({ drawer: [], sent: [], dismissed: [], skin: "lamp", day: "", count: 0, device: "", scene: "auto", season: "auto", sound: "wind", soundOn: false, volume: 50 });
 function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return defaults(); }
 }
@@ -430,6 +431,7 @@ function uuid() {
 if (!/^[0-9a-f-]{36}$/i.test(store.device)) { store.device = uuid(); save(); }
 function dayKey() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
 function sentToday() { return store.day === dayKey() ? store.count : 0; }
+const bookKey = (b) => b.book + "|" + (b.author || "");
 
 /* ---------- 상태 ---------- */
 const app = $("#app");
@@ -719,7 +721,7 @@ function startReading() {
   clearInterval(state.hb);
   state.hb = setInterval(beat, 30000);
   // 지난번에 소리를 켜 둔 채로 나갔다면 읽기 시작과 함께 이어서 틀어 줍니다.
-  if (Sound.supported && store.soundOn && Sound.playing === "off") { Sound.set(store.sound); renderSound(); }
+  if (Sound.supported && store.soundOn && Sound.playing === "off") Sound.set(store.sound).then(renderSound);
 }
 function beat() {
   if (state.live) api("/api/heartbeat", { device: store.device }).then(pollPresence);
@@ -741,13 +743,13 @@ function finishReading(done) {
   toast(done ? "수고했어요. 낯선 독자의 불빛이 오고 있어요." : "잠시 쉬어가요. 불빛이 오고 있어요.");
   if (anyDialogOpen()) pendingReceive = true; else receive();
 }
-// 쉬는 시간이 되면 서버에서 다른 독자의 문장을 하나 받아 옵니다. 없거나 서버가 없으면 예시 문장을 보여 줘요.
+// 쉬는 시간이 되면 서버에서 문장을 하나 받아 옵니다. 서버가 없으면 예시 문장을 보여 줘요.
 async function receive() {
   let card = null;
   if (state.live) {
     const r = await api("/api/receive", { device: store.device });
     const L = r.ok && r.data && r.data.light;
-    if (L) card = { id: L.id, live: true, quote: L.quote, book: L.book, author: L.author, note: L.note };
+    if (L) card = { id: L.id, live: true, admin: L.source === "admin", quote: L.quote, book: L.book, author: L.author, note: L.note };
   }
   if (!card) {
     let i;
@@ -767,11 +769,16 @@ function showCard(c) {
   $("#cardQuote").textContent = c.quote;
   $("#cardMeta").textContent = cite(c);
   $("#cardNote").textContent = c.note || "";
-  $("#cardEg").hidden = !c.seed;
+  const eg = $("#cardEg");
+  eg.hidden = !(c.seed || c.admin);
+  eg.textContent = c.admin ? "책등이 고른 문장이에요." : "예시 문장입니다. 저작권이 만료된 작품에서 가져왔어요.";
   const rb = $("#reportBtn");
-  rb.hidden = !c.live;
+  rb.hidden = !(c.live && !c.admin);
   rb.disabled = false;
   rb.textContent = "신고";
+  const tb = $("#thanksBtn");
+  tb.disabled = false;
+  tb.textContent = "♡ 고마워요";
   refreshSaveBtn();
   $("#cardDlg").showModal();
 }
@@ -784,8 +791,10 @@ function refreshSaveBtn() {
 }
 $("#saveBtn").addEventListener("click", () => {
   if (!currentCard || isSaved(currentCard)) return;
-  store.drawer.unshift(Object.assign({ at: Date.now() }, currentCard));
+  const c = currentCard;
+  store.drawer.unshift({ at: Date.now(), quote: c.quote, book: c.book, author: c.author || "", note: c.note || "" });
   store.drawer = store.drawer.slice(0, 100);
+  store.dismissed = store.dismissed.filter((k) => k !== bookKey(c)); // 빼 두었던 책도 다시 담으면 보이게
   save(); renderDrawerCount(); refreshSaveBtn();
   toast("서랍에 담았어요.");
 });
@@ -803,34 +812,56 @@ $("#reportBtn").addEventListener("click", async () => {
   if (r.ok) { b.textContent = "신고했어요"; toast("신고했어요. 확인할게요."); }
   else { b.disabled = false; toast("지금은 신고할 수 없어요."); }
 });
+// "고마워요"는 글 없이 마음만 보냅니다. 받은 사람에게는 개수로만 쌓여요.
+$("#thanksBtn").addEventListener("click", async () => {
+  const c = currentCard;
+  if (c && c.live) {
+    $("#thanksBtn").disabled = true;
+    const r = await api("/api/thanks", { device: store.device, id: c.id });
+    toast(r.ok ? "고마운 마음을 전했어요." : "지금은 전할 수 없어요.");
+  } else {
+    toast("마음에 담았어요.");
+  }
+  $("#cardDlg").close();
+});
 
 /* ---------- 서랍 ---------- */
 const dateLabel = (ts) => new Date(ts).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
 function renderDrawerCount() { $("#drawerCount").textContent = String(store.drawer.length); }
 function emptyP(text) { const p = document.createElement("p"); p.className = "empty"; p.textContent = text; return p; }
-function renderList(el, items, emptyText) {
-  el.textContent = "";
-  if (!items.length) { el.appendChild(emptyP(emptyText)); return; }
-  for (const it of items) {
-    const d = document.createElement("div"); d.className = "entry";
-    const q = document.createElement("p"); q.className = "q"; q.textContent = it.quote;
-    const m = document.createElement("p"); m.className = "m"; m.textContent = cite(it) + " · " + dateLabel(it.at);
-    d.appendChild(q); d.appendChild(m);
-    if (it.note) { const n = document.createElement("p"); n.className = "nt"; n.textContent = it.note; d.appendChild(n); }
-    el.appendChild(d);
-  }
+function para(cls, text) { const p = document.createElement("p"); p.className = cls; p.textContent = text; return p; }
+// 지우기 버튼은 한 번 더 눌러야 실행돼요. (실수로 지우는 일을 막기 위해)
+function delBtn(label, confirmLabel, onGo) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "del"; b.textContent = label;
+  let timer = 0;
+  b.addEventListener("click", () => {
+    if (!timer) {
+      b.classList.add("armed"); b.textContent = confirmLabel;
+      timer = setTimeout(() => { timer = 0; b.classList.remove("armed"); b.textContent = label; }, 3000);
+      return;
+    }
+    clearTimeout(timer);
+    onGo();
+  });
+  return b;
+}
+function entry(body, del) {
+  const d = document.createElement("div"); d.className = "entry";
+  d.appendChild(body); d.appendChild(del);
+  return d;
 }
 // 서랍에 담은 문장의 책을 모아 서점으로 이어 줍니다.
 function renderWish(el) {
   el.textContent = "";
   const seen = new Map();
-  for (const d of store.drawer) { const k = d.book + "|" + (d.author || ""); if (!seen.has(k)) seen.set(k, { book: d.book, author: d.author || "" }); }
+  for (const d of store.drawer) { const k = bookKey(d); if (!seen.has(k) && !store.dismissed.includes(k)) seen.set(k, { book: d.book, author: d.author || "" }); }
   const books = [...seen.values()].slice(0, 20);
   if (!books.length) { el.appendChild(emptyP("문장을 서랍에 담으면 그 책을 여기서 만날 수 있어요.")); return; }
   for (const b of books) {
-    const d = document.createElement("div"); d.className = "entry";
-    const q = document.createElement("p"); q.className = "q"; q.textContent = "《" + b.book + "》";
-    const m = document.createElement("p"); m.className = "m"; m.textContent = b.author || "저자 정보 없음";
+    const body = document.createElement("div");
+    body.appendChild(para("q", "《" + b.book + "》"));
+    body.appendChild(para("m", b.author || "저자 정보 없음"));
     const row = document.createElement("div"); row.className = "stores";
     for (const id of stores) {
       const href = storeUrl(id, b);
@@ -840,16 +871,75 @@ function renderWish(el) {
       a.textContent = STORE_NAMES[id] || id;
       row.appendChild(a);
     }
-    d.appendChild(q); d.appendChild(m); d.appendChild(row);
-    el.appendChild(d);
+    body.appendChild(row);
+    el.appendChild(entry(body, delBtn("빼기", "정말 뺄까요?", () => {
+      store.dismissed.push(bookKey(b)); save(); renderDrawer();
+    })));
   }
 }
-$("#openDrawer").addEventListener("click", () => {
+function renderReceived(el) {
+  el.textContent = "";
+  if (!store.drawer.length) { el.appendChild(emptyP("아직 담은 문장이 없어요. 쉬는 시간에 도착하는 문장을 담아 보세요.")); return; }
+  for (const it of store.drawer) {
+    const body = document.createElement("div");
+    body.appendChild(para("q", it.quote));
+    body.appendChild(para("m", cite(it) + " · " + dateLabel(it.at)));
+    if (it.note) body.appendChild(para("nt", it.note));
+    el.appendChild(entry(body, delBtn("지우기", "정말 지울까요?", () => {
+      store.drawer = store.drawer.filter((d) => d !== it); save(); renderDrawerCount(); renderDrawer();
+    })));
+  }
+}
+// 내가 밑줄 친 문장은 책과 문장만 보여 줘요. 고마워요를 받았다면 개수만 작게 붙습니다.
+function renderMine(el) {
+  el.textContent = "";
+  if (!store.sent.length) { el.appendChild(emptyP("아직 밑줄 친 문장이 없어요.")); return; }
+  for (const it of store.sent) {
+    const body = document.createElement("div");
+    body.appendChild(para("q", it.quote));
+    body.appendChild(para("m", cite(it) + " · " + dateLabel(it.at)));
+    if (it.thanks > 0) body.appendChild(para("tag", "♡ 고마워요 " + it.thanks));
+    el.appendChild(entry(body, delBtn("지우기", "정말 지울까요?", async () => {
+      store.sent = store.sent.filter((s) => s !== it); save(); renderDrawer();
+      if (state.live && it.sid) {
+        await api("/api/lights/delete", { device: store.device, id: it.sid });
+        toast("문장을 거둬들였어요. 이미 누군가의 서랍에 담긴 문장은 그대로 남아요.");
+      } else {
+        toast("지웠어요.");
+      }
+    })));
+  }
+}
+function renderDrawer() {
   renderWish($("#wishList"));
-  renderList($("#recvList"), store.drawer, "아직 담은 문장이 없어요. 쉬는 시간에 도착하는 문장을 담아 보세요.");
-  renderList($("#sentList"), store.sent, "아직 보낸 문장이 없어요.");
+  renderReceived($("#recvList"));
+  renderMine($("#sentList"));
+}
+$("#openDrawer").addEventListener("click", () => {
+  renderDrawer();
   $("#drawerDlg").showModal();
+  syncMine(false).then((changed) => { if (changed && $("#drawerDlg").open) renderMine($("#sentList")); });
 });
+
+// 서버가 있을 때, 내가 남긴 문장이 받은 "고마워요" 수를 가져옵니다.
+async function syncMine(announce) {
+  if (!state.live || !store.sent.some((s) => s.sid)) return false;
+  const r = await api("/api/mine", { device: store.device });
+  if (!r.ok || !r.data) return false;
+  const by = new Map(r.data.lights.map((l) => [l.id, l]));
+  let gained = 0, changed = false;
+  for (const s of store.sent) {
+    const l = s.sid && by.get(s.sid);
+    if (!l) continue;
+    if (l.thanks !== (s.thanks || 0)) changed = true;
+    gained += Math.max(0, l.thanks - (s.thanksSeen || 0));
+    s.thanks = l.thanks;
+    if (announce) s.thanksSeen = l.thanks;
+  }
+  if (announce) { save(); if (gained > 0) toast("내가 남긴 문장에 ♡ 고마워요가 " + gained + "개 도착했어요."); }
+  else if (changed) save();
+  return changed;
+}
 
 /* ---------- 문장 남기기 ---------- */
 const bookQ = $("#bookQ"), bookList = $("#bookList"), quoteEl = $("#quote"), noteEl = $("#note");
@@ -917,19 +1007,20 @@ $("#composerForm").addEventListener("submit", async (e) => {
   if (!book) { err.textContent = "검색 결과에서 읽고 있는 책을 골라 주세요."; return; }
   if (quote.length < 4) { err.textContent = "책에서 마음에 든 문장을 한 줄 적어 주세요."; return; }
   if (BLOCK.test(quote) || BLOCK.test(note)) { err.textContent = "링크나 연락처는 보낼 수 없어요."; return; }
-  let remaining;
+  let remaining, sid = 0;
   if (state.live) {
     sendBtn.disabled = true;
     const r = await api("/api/lights", { device: store.device, book: book.title, author: book.authors, quote, note });
     sendBtn.disabled = false;
     if (!r.ok) { err.textContent = (r.data && r.data.message) || "지금은 보낼 수 없어요. 잠시 뒤에 다시 시도해 주세요."; return; }
-    remaining = r.data.remaining;
+    remaining = r.data.remaining; sid = r.data.id || 0;
   } else {
     if (sentToday() >= DAILY) { err.textContent = "오늘 보낼 수 있는 불빛을 모두 보냈어요. 내일 또 만나요."; return; }
     store.day = dayKey(); store.count = sentToday() + 1;
     remaining = DAILY - store.count;
   }
-  store.sent.unshift({ at: Date.now(), quote, note, book: book.title, author: book.authors });
+  // 서랍에는 책과 좋았던 문장만 쌓아요. (받는 분께 보낸 한 줄은 보관하지 않습니다)
+  store.sent.unshift({ at: Date.now(), quote, book: book.title, author: book.authors, sid, thanks: 0, thanksSeen: 0 });
   store.sent = store.sent.slice(0, 100);
   save();
   $("#composer").close();
@@ -937,132 +1028,80 @@ $("#composerForm").addEventListener("submit", async (e) => {
   toast("문장이 불빛이 되어 떠났어요. 오늘 " + remaining + "번 더 보낼 수 있어요.");
 });
 
-/* ---------- 소리 (브라우저에서 직접 만들어 내는 소리라 음원 파일이 없어요) ---------- */
+/* ---------- 소리: 녹음된 자연의 소리와 피아노 ---------- */
+// 파일은 public/sounds 에 있고, 고르는 순간에 한 번 내려받아 재생합니다. 출처와 라이선스는 sounds/CREDITS.md 에 있어요.
 const SOUNDS = [
   { id: "off", label: "끔", desc: "" },
-  { id: "wind", label: "바람", desc: "숲을 지나는 바람" },
-  { id: "rain", label: "빗소리", desc: "처마 끝에 떨어지는 비" },
-  { id: "stream", label: "시냇물", desc: "낮게 흐르는 물소리" },
-  { id: "chime", label: "풍경", desc: "멀리서 울리는 풍경 소리" },
-  { id: "keys", label: "잔잔한 건반", desc: "천천히 이어지는 몇 개의 음" }
+  { id: "wind", label: "바람", desc: "숲을 지나는 바람과 새소리", file: "sounds/wind.mp3" },
+  { id: "rain", label: "빗소리", desc: "창가에 내리는 비", file: "sounds/rain.mp3" },
+  { id: "stream", label: "시냇물", desc: "작은 물길이 흘러드는 소리", file: "sounds/stream.mp3" },
+  { id: "chime", label: "풍경", desc: "바람에 흔들리는 풍경", file: "sounds/chime.mp3" },
+  { id: "piano", label: "피아노", desc: "슈만, 트로이메라이", file: "sounds/piano.mp3" }
 ];
 const Sound = (() => {
   const AC = window.AudioContext || window.webkitAudioContext;
   const supported = !!AC;
-  let ac = null, master = null, white = null, brown = null, ir = null, track = null, playing = "off";
+  let ac = null, master = null, track = null, playing = "off", loading = "", reqId = 0, onChange = () => {};
+  const cache = new Map();
   const volGain = () => Math.pow(store.volume / 100, 1.5);
 
   function init() {
-    if (!supported) return false;
     if (!ac) {
-      ac = new AC();
+      // 낮은 샘플레이트로 열어 두면 긴 녹음을 디코딩해도 메모리를 적게 씁니다. 지원하지 않으면 기본값.
+      try { ac = new AC({ sampleRate: 32000 }); } catch (e) { ac = new AC(); }
       master = ac.createGain(); master.gain.value = volGain(); master.connect(ac.destination);
-      const len = ac.sampleRate * 4;
-      white = ac.createBuffer(1, len, ac.sampleRate);
-      const w = white.getChannelData(0);
-      for (let i = 0; i < len; i++) w[i] = Math.random() * 2 - 1;
-      brown = ac.createBuffer(1, len, ac.sampleRate);
-      const b = brown.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < len; i++) { last = (last + .02 * w[i]) / 1.02; b[i] = last * 3.5; }
-      const il = Math.floor(ac.sampleRate * 2.6);
-      ir = ac.createBuffer(2, il, ac.sampleRate);
-      for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < il; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / il, 2.4); }
     }
     if (ac.state === "suspended") ac.resume();
-    return true;
   }
-  const src = (buf) => { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.start(0, Math.random() * 3); return s; };
-  const osc = (f) => { const o = ac.createOscillator(); o.frequency.value = f; o.start(); return o; };
-  const gain = (v) => { const g = ac.createGain(); g.gain.value = v; return g; };
-  const filt = (type, f, q) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; return b; };
-
-  function wind(out, level) {
-    const n = src(brown), lp = filt("lowpass", 520, .7), bp = filt("bandpass", 950, .5), a = gain(.9 * level), b = gain(.3 * level);
-    n.connect(lp); lp.connect(a); a.connect(out);
-    n.connect(bp); bp.connect(b); b.connect(out);
-    const l1 = osc(.06), g1 = gain(240); l1.connect(g1); g1.connect(lp.frequency);
-    const l2 = osc(.1), g2 = gain(.3 * level); l2.connect(g2); g2.connect(a.gain);
-    return [n, l1, l2];
-  }
-  function rain(out) {
-    const n = src(white), hp = filt("highpass", 1100, .5), lp = filt("lowpass", 9000, .5), g = gain(.28);
-    n.connect(hp); hp.connect(lp); lp.connect(g); g.connect(out);
-    const n2 = src(white), bp = filt("bandpass", 2600, .4), g2 = gain(.16);
-    n2.connect(bp); bp.connect(g2); g2.connect(out);
-    const l = osc(.15), lg = gain(.05); l.connect(lg); lg.connect(g.gain);
-    return [n, n2, l];
-  }
-  function stream(out) {
-    const nodes = [];
-    [[700, 1.1, .9, .37], [1600, 2, .7, .61], [3200, 3, .5, 1.3]].forEach(([f, q, gv, rate]) => {
-      const n = src(white), bp = filt("bandpass", f, q), g = gain(gv);
-      n.connect(bp); bp.connect(g); g.connect(out);
-      const l = osc(rate), lg = gain(f * .3); l.connect(lg); lg.connect(bp.frequency);
-      nodes.push(n, l);
-    });
-    return nodes;
-  }
-  function chime(out, tr) {
-    const nodes = wind(out, .25), notes = [784, 988, 1175, 1568, 1976];
-    const strike = () => {
-      if (tr.dead) return;
-      const t0 = ac.currentTime + .02, f = notes[(Math.random() * notes.length) | 0] * (Math.random() < .3 ? .5 : 1), v = .06 + Math.random() * .06;
-      [[1, 1, 3.4], [2.76, .35, 1.8], [5.4, .12, .9]].forEach(([m, a, d]) => {
-        const o = ac.createOscillator(), g = ac.createGain();
-        o.type = "sine"; o.frequency.value = f * m + (Math.random() - .5) * 1.5;
-        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v * a, t0 + .006); g.gain.exponentialRampToValueAtTime(.0001, t0 + d + 1);
-        o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + d + 1.2);
-      });
-      tr.timer = setTimeout(strike, 1800 + Math.random() * 4500);
-    };
-    tr.timer = setTimeout(strike, 600);
-    return nodes;
-  }
-  function keys(out, tr) {
-    const dry = gain(.75), wet = gain(.5), cv = ac.createConvolver();
-    cv.buffer = ir; dry.connect(out); cv.connect(wet); wet.connect(out);
-    const scale = [62, 64, 66, 69, 71, 74, 78].map((m) => 440 * Math.pow(2, (m - 69) / 12));
-    let i = 3;
-    const play = (f, v) => {
-      const t0 = ac.currentTime + .02;
-      [[1, 1, 4.2], [2, .22, 2.2], [3, .07, 1.2]].forEach(([m, a, d]) => {
-        const o = ac.createOscillator(), g = ac.createGain();
-        o.type = "sine"; o.frequency.value = f * m;
-        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v * a, t0 + .012); g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
-        o.connect(g); g.connect(dry); g.connect(cv); o.start(t0); o.stop(t0 + d + .1);
-      });
-    };
-    const step = () => {
-      if (tr.dead) return;
-      i = Math.max(0, Math.min(scale.length - 1, i + ((Math.random() * 5) | 0) - 2));
-      play(scale[i], .12 + Math.random() * .1);
-      if (Math.random() < .18) play(scale[Math.max(0, i - 2)] * .5, .08);
-      tr.timer = setTimeout(step, 1500 + Math.random() * 3500);
-    };
-    tr.timer = setTimeout(step, 500);
-    return [];
+  async function load(file) {
+    if (cache.has(file)) return cache.get(file);
+    const r = await fetch(file);
+    if (!r.ok) throw new Error(String(r.status));
+    const data = await r.arrayBuffer();
+    const buf = await new Promise((res, rej) => { const p = ac.decodeAudioData(data, res, rej); if (p && p.then) p.then(res, rej); });
+    cache.clear(); // 한 번에 하나만 메모리에 둡니다.
+    cache.set(file, buf);
+    return buf;
   }
   function fadeOut(tr) {
-    tr.dead = true; clearTimeout(tr.timer);
-    tr.out.gain.setTargetAtTime(0, ac.currentTime, .4);
-    setTimeout(() => { tr.nodes.forEach((n) => { try { n.stop(); } catch (e) { /* 이미 멈춤 */ } }); try { tr.out.disconnect(); } catch (e) { /* 무시 */ } }, 2400);
+    tr.g.gain.setTargetAtTime(0, ac.currentTime, .4);
+    setTimeout(() => { try { tr.src.stop(); } catch (e) { /* 이미 멈춤 */ } try { tr.g.disconnect(); } catch (e) { /* 무시 */ } }, 2200);
   }
-  function set(id) {
-    if (id === playing) return true;
+  // 결과: "ok" 재생 시작/정지, "fail" 불러오지 못함, "superseded" 그 사이 다른 소리를 골랐음
+  async function set(id) {
+    if (id === playing && !loading) return "ok";
+    const my = ++reqId;
     if (track) { fadeOut(track); track = null; }
-    playing = "off";
-    if (id === "off") return true;
-    if (!init()) return false;
-    const tr = { out: gain(0), nodes: [], timer: 0, dead: false };
-    tr.out.connect(master);
-    tr.nodes = { wind: (o) => wind(o, 1), rain, stream, chime, keys }[id](tr.out, tr);
-    tr.out.gain.setTargetAtTime(1, ac.currentTime, .6);
-    track = tr; playing = id;
-    return true;
+    playing = "off"; loading = "";
+    if (id === "off") { onChange(); return "ok"; }
+    if (!supported) return "fail";
+    init();
+    loading = id; onChange();
+    let buf;
+    try { buf = await load(SOUNDS.find((s) => s.id === id).file); }
+    catch (e) { if (my === reqId) { loading = ""; onChange(); } return "fail"; }
+    if (my !== reqId) return "superseded";
+    loading = "";
+    const src = ac.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    // 파일 양끝의 아주 짧은 구간은 건너뛰어 반복할 때 생기는 잡음을 줄입니다.
+    const trim = Math.min(.05, buf.duration / 20);
+    src.loopStart = trim; src.loopEnd = buf.duration - trim;
+    const g = ac.createGain(); g.gain.value = 0;
+    src.connect(g); g.connect(master);
+    src.start(0, trim);
+    g.gain.setTargetAtTime(1, ac.currentTime, .8);
+    track = { src, g }; playing = id;
+    onChange();
+    return "ok";
   }
   function setVolume() { if (master) master.gain.setTargetAtTime(volGain(), ac.currentTime, .05); }
-  return { supported, set, setVolume, get playing() { return playing; } };
+  return {
+    supported, set, setVolume,
+    get playing() { return playing; },
+    get loading() { return loading; },
+    set onChange(f) { onChange = f; }
+  };
 })();
 
 const soundBtn = $("#soundBtn"), soundPop = $("#soundPop");
@@ -1073,6 +1112,7 @@ function renderSound() {
     const b = document.createElement("button");
     b.type = "button"; b.className = "opt"; b.dataset.id = s.id;
     b.setAttribute("aria-pressed", String(Sound.playing === s.id));
+    if (Sound.loading === s.id) b.setAttribute("aria-busy", "true");
     const box = document.createElement("span");
     const t = document.createElement("span"); t.className = "t"; t.textContent = s.label; box.appendChild(t);
     if (s.desc) { const d = document.createElement("span"); d.className = "d"; d.textContent = s.desc; box.appendChild(d); }
@@ -1084,11 +1124,14 @@ function renderSound() {
   soundBtn.textContent = Sound.playing === "off" ? "소리" : "소리 · " + cur.label;
   const note = $("#soundNote");
   const resume = SOUNDS.find((s) => s.id === store.sound);
-  note.hidden = !(store.soundOn && Sound.playing === "off" && resume);
+  note.hidden = !(store.soundOn && Sound.playing === "off" && !Sound.loading && resume);
   if (!note.hidden) note.textContent = "읽기 시작을 누르면 '" + resume.label + "'이 다시 켜져요.";
 }
-function chooseSound(id) {
-  if (!Sound.set(id)) { toast("이 기기에서는 소리를 낼 수 없어요."); return; }
+Sound.onChange = renderSound;
+async function chooseSound(id) {
+  const r = await Sound.set(id);
+  if (r === "superseded") return;
+  if (r === "fail") { toast("소리를 불러오지 못했어요. 잠시 뒤에 다시 시도해 주세요."); renderSound(); return; }
   if (id === "off") store.soundOn = false; else { store.sound = id; store.soundOn = true; }
   save(); renderSound();
 }
@@ -1164,6 +1207,7 @@ requestAnimationFrame(frame);
     setPresenceText();
     await pollPresence(true);
     setInterval(pollPresence, 15000);
+    setTimeout(() => syncMine(true), 1200);
   } else {
     lampN = 14 + Math.floor(Math.random() * 22);
     setLamps(lampN, true);

@@ -47,6 +47,12 @@ h2 { margin: 28px 0 10px; font-size: 1.05rem; color: var(--ok); font-weight: 400
 .mini { margin: 0; padding: 0; list-style: none; font-size: .92rem; }
 .mini li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--line); }
 .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 28px; }
+.cform { margin: 16px 0 6px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); display: flex; flex-direction: column; gap: 10px; }
+.cform label { position: relative; display: flex; flex-direction: column; gap: 4px; font-size: .88rem; color: var(--dim); }
+.cform .cnt { position: absolute; right: 0; top: 0; }
+.cform input { padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); font-size: 16px; }
+.cform .cnt { float: right; font-size: .78rem; }
+.hintp { margin: 0; font-size: .85rem; color: var(--dim); }
 @media (max-width: 560px) { .row { grid-template-columns: 1fr; } .row .acts { justify-content: flex-start; } }
 </style>
 </head>
@@ -74,8 +80,25 @@ h2 { margin: 28px 0 10px; font-size: 1.05rem; color: var(--ok); font-weight: 400
     <div class="tabs" role="group" aria-label="문장 목록">
       <button class="btn" type="button" data-filter="reported" aria-pressed="true">신고된 문장</button>
       <button class="btn" type="button" data-filter="hidden" aria-pressed="false">숨긴 문장</button>
-      <button class="btn" type="button" data-filter="recent" aria-pressed="false">최근 문장</button>
+      <button class="btn" type="button" data-filter="recent" aria-pressed="false">독자 문장</button>
+      <button class="btn" type="button" data-filter="curated" aria-pressed="false">책등이 고른 문장</button>
     </div>
+
+    <form id="curated" class="cform" hidden autocomplete="off">
+      <p class="hintp">여기에 쓴 문장은 독자들의 쉬는 시간에 무작위로 도착해요. 저작권이 만료된 작품이나 직접 쓴 글을 쓰고, 책 한 권에서 한 줄만 옮겨 주세요.</p>
+      <div class="two">
+        <label>책 제목<input id="cBook" maxlength="100" required></label>
+        <label>저자<input id="cAuthor" maxlength="100"></label>
+      </div>
+      <label>문장 <span class="cnt" id="cQuoteN">0/100</span><input id="cQuote" maxlength="100" required></label>
+      <label>받는 분께 한 줄 <span class="cnt" id="cNoteN">0/40</span><input id="cNote" maxlength="40"></label>
+      <p class="err" id="cErr" role="alert"></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" type="submit" id="cSave">추가하기</button>
+        <button class="btn" type="button" id="cCancel" hidden>수정 취소</button>
+        <button class="btn" type="button" id="cSeed" hidden>기본 10개 넣기</button>
+      </div>
+    </form>
     <div id="list"></div>
 
     <h2>서점 링크 클릭</h2>
@@ -122,7 +145,8 @@ async function loadStats() {
   box.textContent = "";
   const items = [
     ["지금 읽는 사람", d.readersNow], ["오늘 보낸 문장", d.lightsToday], ["전체 문장", d.lightsTotal],
-    ["신고 대기", d.reported, d.reported > 0], ["숨긴 문장", d.hidden], ["전달된 횟수", d.deliveriesTotal], ["서점 클릭(전체)", d.clicksTotal]
+    ["신고 대기", d.reported, d.reported > 0], ["숨긴 문장", d.hidden], ["책등이 고른 문장", d.curated], ["♡ 고마워요 합계", d.thanksTotal],
+    ["전달된 횟수", d.deliveriesTotal], ["서점 클릭(전체)", d.clicksTotal]
   ];
   for (const [l, v, warn] of items) {
     const s = el("div", "stat" + (warn ? " warn" : ""));
@@ -142,8 +166,9 @@ async function loadList() {
   const box = $("#list");
   box.textContent = "";
   if (!r.ok) { box.appendChild(el("p", "empty", "목록을 불러오지 못했어요.")); return; }
+  $("#cSeed").hidden = !(filter === "curated" && !r.data.lights.length);
   if (!r.data.lights.length) {
-    box.appendChild(el("p", "empty", filter === "reported" ? "신고된 문장이 없어요." : "문장이 없어요."));
+    box.appendChild(el("p", "empty", filter === "reported" ? "신고된 문장이 없어요." : filter === "curated" ? "아직 책등이 고른 문장이 없어요. 아래 버튼으로 기본 10개를 넣거나 직접 추가해 보세요." : "문장이 없어요."));
     return;
   }
   for (const L of r.data.lights) {
@@ -153,9 +178,10 @@ async function loadList() {
     if (L.hidden) q.appendChild(el("span", "tag red", "숨김"));
     if (L.reports > 0) q.appendChild(el("span", "tag red", "신고 " + L.reports));
     left.appendChild(q);
-    left.appendChild(el("p", "m", (L.author ? L.author + ", " : "") + "《" + L.book + "》 · #" + L.id + " · " + fmt(L.created_at) + " · 전달 " + L.deliveries));
+    left.appendChild(el("p", "m", (L.author ? L.author + ", " : "") + "《" + L.book + "》 · #" + L.id + " · " + fmt(L.created_at) + " · 전달 " + L.deliveries + " · ♡ " + L.thanks));
     if (L.note) left.appendChild(el("p", "n", "한 줄: " + L.note));
     const acts = el("div", "acts");
+    if (L.source === "admin") acts.appendChild(editBtn(L));
     if (L.hidden || L.reports > 0) acts.appendChild(act("복원", L.id, "restore"));
     if (!L.hidden) acts.appendChild(act("숨기기", L.id, "hide"));
     acts.appendChild(delBtn(L.id));
@@ -163,6 +189,37 @@ async function loadList() {
     box.appendChild(row);
   }
 }
+// 책등이 고른 문장 입력 폼
+let editingId = null;
+function resetForm() {
+  editingId = null;
+  $("#curated").reset();
+  $("#cQuoteN").textContent = "0/100"; $("#cNoteN").textContent = "0/40"; $("#cErr").textContent = "";
+  $("#cSave").textContent = "추가하기"; $("#cCancel").hidden = true;
+}
+function editBtn(L) {
+  const b = el("button", "btn", "수정"); b.type = "button";
+  b.addEventListener("click", () => {
+    editingId = L.id;
+    $("#cBook").value = L.book; $("#cAuthor").value = L.author; $("#cQuote").value = L.quote; $("#cNote").value = L.note;
+    $("#cQuoteN").textContent = L.quote.length + "/100"; $("#cNoteN").textContent = L.note.length + "/40";
+    $("#cSave").textContent = "저장하기"; $("#cCancel").hidden = false;
+    $("#curated").scrollIntoView({ block: "center" });
+  });
+  return b;
+}
+$("#cQuote").addEventListener("input", () => { $("#cQuoteN").textContent = $("#cQuote").value.length + "/100"; });
+$("#cNote").addEventListener("input", () => { $("#cNoteN").textContent = $("#cNote").value.length + "/40"; });
+$("#cCancel").addEventListener("click", resetForm);
+$("#curated").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const body = { book: $("#cBook").value, author: $("#cAuthor").value, quote: $("#cQuote").value, note: $("#cNote").value };
+  if (editingId) body.id = editingId;
+  const r = await api("/api/admin/curated", body);
+  if (!r.ok) { $("#cErr").textContent = (r.data && r.data.message) || "저장하지 못했어요."; return; }
+  resetForm(); await refresh();
+});
+$("#cSeed").addEventListener("click", async () => { await api("/api/admin/seed", {}); await refresh(); });
 function act(label, id, action) {
   const b = el("button", "btn", label); b.type = "button";
   b.addEventListener("click", async () => { b.disabled = true; await api("/api/admin/action", { id, action }); await refresh(); });
@@ -201,6 +258,7 @@ $("#logout").addEventListener("click", () => { token = ""; try { sessionStorage.
 document.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => {
   filter = b.dataset.filter;
   document.querySelectorAll("[data-filter]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  $("#curated").hidden = filter !== "curated";
   loadList();
 }));
 if (token) enter();

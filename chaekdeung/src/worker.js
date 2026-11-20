@@ -2,7 +2,7 @@
 // 저장소는 Cloudflare D1, 도서 검색은 카카오(우선) 또는 네이버 API를 서버에서 대신 호출합니다.
 
 const LIMITS = { sendsPerDevice: 3, sendsPerIp: 12, receivesPerDevice: 12, booksPerIp: 300, adminFailsPerIp: 20 };
-const MAX_DELIVERIES = 3; // 한 문장이 최대 몇 명에게 도착하는지
+const MAX_DELIVERIES = 3; // 독자가 남긴 문장 하나가 최대 몇 명에게 도착하는지
 const HIDE_AT_REPORTS = 2; // 신고가 이만큼 쌓이면 숨김
 const PRESENCE_WINDOW_MS = 90_000;
 
@@ -16,6 +16,20 @@ const STORE_URLS = {
   yes24: "https://www.yes24.com/Product/Search?domain=BOOK&query={q}"
 };
 const EXTRA_STORES = ["coupang"]; // 기본 주소가 없고, 환경 변수가 있을 때만 켜지는 서점
+
+// 관리자 화면의 "기본 10개 넣기"로 들어가는 문장. 모두 저작권이 만료된 작품의 구절입니다.
+export const DEFAULT_CURATED = [
+  { book: "하늘과 바람과 별과 시", author: "윤동주", quote: "죽는 날까지 하늘을 우러러 한 점 부끄럼이 없기를", note: "오늘은 그냥 버틴 것만으로도 충분해요." },
+  { book: "하늘과 바람과 별과 시", author: "윤동주", quote: "잎새에 이는 바람에도 나는 괴로워했다", note: "작은 바람에도 흔들리는 날이 있죠." },
+  { book: "하늘과 바람과 별과 시", author: "윤동주", quote: "별 하나에 추억과 별 하나에 사랑과 별 하나에 쓸쓸함과", note: "책 덮고 창밖을 한 번 보고 가요." },
+  { book: "하늘과 바람과 별과 시", author: "윤동주", quote: "인생은 살기 어렵다는데 시가 이렇게 쉽게 씌어지는 것은 부끄러운 일이다", note: "힘든 날의 문장이 오래 남더라고요." },
+  { book: "님의 침묵", author: "한용운", quote: "나는 나룻배 당신은 행인", note: "기다려 주는 사람이 되는 밤이길." },
+  { book: "님의 침묵", author: "한용운", quote: "아아 님은 갔지마는 나는 님을 보내지 아니하였습니다", note: "보내지 못한 마음도 괜찮아요." },
+  { book: "진달래꽃", author: "김소월", quote: "산에는 꽃 피네 꽃이 피네 갈 봄 여름 없이 꽃이 피네", note: "아무도 안 봐도 피는 꽃처럼, 천천히요." },
+  { book: "진달래꽃", author: "김소월", quote: "엄마야 누나야 강변 살자", note: "지금 있는 곳이 강변이라고 생각해 봐요." },
+  { book: "육사시집", author: "이육사", quote: "내 고장 칠월은 청포도가 익어 가는 시절", note: "오늘 하루도 조금씩 익고 있어요." },
+  { book: "육사시집", author: "이육사", quote: "까마득한 날에 하늘이 처음 열리고", note: "시작은 늘 까마득해요. 그래도 한 페이지." }
+];
 
 /* ---------- 공통 ---------- */
 function json(data, status = 200, headers = {}) {
@@ -151,35 +165,78 @@ async function handleSend(request, env) {
   if (used > LIMITS.sendsPerDevice || usedIp > LIMITS.sendsPerIp) {
     return json({ error: "limit", message: "오늘 보낼 수 있는 불빛을 모두 보냈어요. 내일 또 만나요." }, 429);
   }
-  await env.DB
+  const ins = await env.DB
     .prepare("INSERT INTO lights (device, book, author, quote, note, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
     .bind(b.device, book, author, quote, note, Date.now())
     .run();
-  return json({ ok: true, remaining: LIMITS.sendsPerDevice - used });
+  return json({ ok: true, remaining: LIMITS.sendsPerDevice - used, id: ins.meta.last_row_id });
 }
 
-// 쉬는 시간에 들어온 사람에게 아직 많이 전달되지 않은 문장을 무작위로 하나 줍니다.
+// 보낸 사람이 자기 문장을 거둬들입니다. 이미 누군가의 서랍에 담긴 복사본은 지울 수 없어요.
+async function handleWithdraw(request, env) {
+  const b = await readBody(request);
+  const id = Number(b && b.id);
+  if (!b || !UUID.test(String(b.device)) || !Number.isInteger(id)) return bad("잘못된 요청이에요.");
+  const row = await env.DB.prepare("SELECT id FROM lights WHERE id = ?1 AND device = ?2 AND source = 'user'").bind(id, b.device).first();
+  if (!row) return json({ ok: true }); // 이미 없거나 내 문장이 아님
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM lights WHERE id = ?1").bind(id),
+    env.DB.prepare("DELETE FROM seen WHERE light_id = ?1").bind(id),
+    env.DB.prepare("DELETE FROM thanks WHERE light_id = ?1").bind(id),
+    env.DB.prepare("DELETE FROM reports WHERE light_id = ?1").bind(id)
+  ]);
+  return json({ ok: true });
+}
+
+const PICK = "SELECT id, source, book, author, quote, note FROM lights";
+// 쉬는 시간에 들어온 사람에게 문장 하나를 줍니다.
+// 1순위: 아직 많이 전달되지 않은 독자의 문장, 2순위: 아직 안 본 관리자 문장, 3순위: 관리자 문장 다시 보여 주기.
 async function handleReceive(request, env) {
   const b = await readBody(request);
   if (!b || !UUID.test(String(b.device))) return bad("잘못된 요청이에요.");
   const n = await bump(env.DB, "recv:" + b.device, kstDay());
   if (n > LIMITS.receivesPerDevice) return json({ light: null });
 
-  const row = await env.DB
-    .prepare(
-      `SELECT id, book, author, quote, note FROM lights
-       WHERE hidden = 0 AND deliveries < ?2 AND device <> ?1
-         AND id NOT IN (SELECT light_id FROM seen WHERE device = ?1)
-       ORDER BY deliveries ASC, RANDOM() LIMIT 1`
-    )
+  const unseen = "id NOT IN (SELECT light_id FROM seen WHERE device = ?1)";
+  let row = await env.DB
+    .prepare(`${PICK} WHERE hidden = 0 AND source = 'user' AND deliveries < ?2 AND device <> ?1 AND ${unseen} ORDER BY deliveries ASC, RANDOM() LIMIT 1`)
     .bind(b.device, MAX_DELIVERIES)
     .first();
+  if (!row) {
+    row = await env.DB.prepare(`${PICK} WHERE hidden = 0 AND source = 'admin' AND ${unseen} ORDER BY RANDOM() LIMIT 1`).bind(b.device).first();
+  }
+  if (!row) {
+    row = await env.DB.prepare(`${PICK} WHERE hidden = 0 AND source = 'admin' ORDER BY RANDOM() LIMIT 1`).first();
+  }
   if (!row) return json({ light: null });
   await env.DB.batch([
     env.DB.prepare("INSERT OR IGNORE INTO seen (device, light_id, at) VALUES (?1, ?2, ?3)").bind(b.device, row.id, Date.now()),
     env.DB.prepare("UPDATE lights SET deliveries = deliveries + 1 WHERE id = ?1").bind(row.id)
   ]);
   return json({ light: row });
+}
+
+// 받은 문장에 "고마워요"를 보냅니다. 한 사람이 한 문장에 한 번만 셉니다.
+async function handleThanks(request, env) {
+  const b = await readBody(request);
+  const id = Number(b && b.id);
+  if (!b || !UUID.test(String(b.device)) || !Number.isInteger(id)) return bad("잘못된 요청이에요.");
+  const seen = await env.DB.prepare("SELECT 1 AS x FROM seen WHERE device = ?1 AND light_id = ?2").bind(b.device, id).first();
+  if (!seen) return bad("고마움을 전할 수 없는 문장이에요.", 403);
+  const ins = await env.DB.prepare("INSERT OR IGNORE INTO thanks (device, light_id, at) VALUES (?1, ?2, ?3)").bind(b.device, id, Date.now()).run();
+  if (ins.meta && ins.meta.changes) await env.DB.prepare("UPDATE lights SET thanks = thanks + 1 WHERE id = ?1").bind(id).run();
+  return json({ ok: true });
+}
+
+// 내가 남긴 문장이 몇 명에게 닿았고 "고마워요"를 몇 개 받았는지.
+async function handleMine(request, env) {
+  const b = await readBody(request);
+  if (!b || !UUID.test(String(b.device))) return bad("잘못된 요청이에요.");
+  const rows = await env.DB
+    .prepare("SELECT id, deliveries, thanks FROM lights WHERE device = ?1 AND source = 'user' ORDER BY id DESC LIMIT 100")
+    .bind(b.device)
+    .all();
+  return json({ lights: rows.results });
 }
 
 async function handleReport(request, env) {
@@ -239,35 +296,39 @@ async function requireAdmin(request, env) {
 }
 
 const ADMIN_FILTERS = {
-  reported: "reports > 0 AND hidden = 0 ORDER BY reports DESC, id DESC",
+  reported: "source = 'user' AND reports > 0 AND hidden = 0 ORDER BY reports DESC, id DESC",
   hidden: "hidden = 1 ORDER BY id DESC",
-  recent: "1 = 1 ORDER BY id DESC"
+  curated: "source = 'admin' ORDER BY id DESC",
+  recent: "source = 'user' ORDER BY id DESC"
 };
 
 async function adminStats(env) {
   const now = Date.now();
   const startToday = Date.parse(kstDay() + "T00:00:00+09:00");
   const one = (sql, ...args) => env.DB.prepare(sql).bind(...args).first();
-  const [total, today, hidden, reported, deliveries, readers, clicks] = await Promise.all([
-    one("SELECT COUNT(*) AS c FROM lights"),
-    one("SELECT COUNT(*) AS c FROM lights WHERE created_at >= ?1", startToday),
+  const [total, today, hidden, reported, deliveries, readers, clicks, curated, thanks] = await Promise.all([
+    one("SELECT COUNT(*) AS c FROM lights WHERE source = 'user'"),
+    one("SELECT COUNT(*) AS c FROM lights WHERE source = 'user' AND created_at >= ?1", startToday),
     one("SELECT COUNT(*) AS c FROM lights WHERE hidden = 1"),
-    one("SELECT COUNT(*) AS c FROM lights WHERE reports > 0 AND hidden = 0"),
+    one("SELECT COUNT(*) AS c FROM lights WHERE source = 'user' AND reports > 0 AND hidden = 0"),
     one("SELECT COALESCE(SUM(deliveries), 0) AS c FROM lights"),
     one("SELECT COUNT(*) AS c FROM presence WHERE last_seen > ?1", now - PRESENCE_WINDOW_MS),
-    one("SELECT COUNT(*) AS c FROM clicks")
+    one("SELECT COUNT(*) AS c FROM clicks"),
+    one("SELECT COUNT(*) AS c FROM lights WHERE source = 'admin'"),
+    one("SELECT COALESCE(SUM(thanks), 0) AS c FROM lights")
   ]);
   const byStore = await env.DB.prepare("SELECT store, COUNT(*) AS c FROM clicks WHERE at >= ?1 GROUP BY store ORDER BY c DESC").bind(startToday).all();
   const topBooks = await env.DB.prepare("SELECT book, COUNT(*) AS c FROM clicks GROUP BY book ORDER BY c DESC LIMIT 5").all();
   return json({
     readersNow: readers.c, lightsTotal: total.c, lightsToday: today.c, hidden: hidden.c, reported: reported.c,
-    deliveriesTotal: deliveries.c, clicksTotal: clicks.c, clicksTodayByStore: byStore.results, topBooks: topBooks.results
+    curated: curated.c, thanksTotal: thanks.c, deliveriesTotal: deliveries.c, clicksTotal: clicks.c,
+    clicksTodayByStore: byStore.results, topBooks: topBooks.results
   });
 }
 async function adminLights(env, url) {
   const where = ADMIN_FILTERS[url.searchParams.get("filter")] || ADMIN_FILTERS.recent;
   const rows = await env.DB
-    .prepare("SELECT id, book, author, quote, note, created_at, deliveries, reports, hidden FROM lights WHERE " + where + " LIMIT 100")
+    .prepare("SELECT id, source, book, author, quote, note, created_at, deliveries, thanks, reports, hidden FROM lights WHERE " + where + " LIMIT 100")
     .all();
   return json({ lights: rows.results });
 }
@@ -286,10 +347,47 @@ async function adminAction(request, env) {
     await env.DB.batch([
       env.DB.prepare("DELETE FROM lights WHERE id = ?1").bind(id),
       env.DB.prepare("DELETE FROM seen WHERE light_id = ?1").bind(id),
+      env.DB.prepare("DELETE FROM thanks WHERE light_id = ?1").bind(id),
       env.DB.prepare("DELETE FROM reports WHERE light_id = ?1").bind(id)
     ]);
   }
   return json({ ok: true });
+}
+// 관리자가 고른 문장을 새로 넣거나(id 없음) 고칩니다(id 있음).
+async function adminCurated(request, env) {
+  const b = await readBody(request);
+  if (!b) return bad("잘못된 요청이에요.");
+  const book = clean(b.book, 100), author = clean(b.author, 100), quote = clean(b.quote, 100), note = clean(b.note, 40);
+  if (!book) return bad("책 제목을 적어 주세요.");
+  if (quote.length < 2) return bad("문장을 적어 주세요.");
+  if (b.id != null) {
+    const id = Number(b.id);
+    if (!Number.isInteger(id)) return bad("잘못된 요청이에요.");
+    await env.DB
+      .prepare("UPDATE lights SET book = ?2, author = ?3, quote = ?4, note = ?5 WHERE id = ?1 AND source = 'admin'")
+      .bind(id, book, author, quote, note)
+      .run();
+    return json({ ok: true, id });
+  }
+  const ins = await env.DB
+    .prepare("INSERT INTO lights (device, source, book, author, quote, note, created_at) VALUES ('admin', 'admin', ?1, ?2, ?3, ?4, ?5)")
+    .bind(book, author, quote, note, Date.now())
+    .run();
+  return json({ ok: true, id: ins.meta.last_row_id });
+}
+// 관리자 문장이 하나도 없을 때만 기본 10개를 넣습니다.
+async function adminSeed(env) {
+  const r = await env.DB.prepare("SELECT COUNT(*) AS c FROM lights WHERE source = 'admin'").first();
+  if (r && r.c > 0) return json({ ok: true, added: 0 });
+  const now = Date.now();
+  await env.DB.batch(
+    DEFAULT_CURATED.map((s, i) =>
+      env.DB
+        .prepare("INSERT INTO lights (device, source, book, author, quote, note, created_at) VALUES ('admin', 'admin', ?1, ?2, ?3, ?4, ?5)")
+        .bind(s.book, s.author, s.quote, s.note, now + i)
+    )
+  );
+  return json({ ok: true, added: DEFAULT_CURATED.length });
 }
 
 /* ---------- 라우팅 ---------- */
@@ -304,12 +402,17 @@ async function route(request, env, ctx, url) {
     case "GET /api/books": return handleBooks(request, env, ctx, url);
     case "GET /api/presence": return handlePresence(env);
     case "POST /api/lights": return handleSend(request, env);
+    case "POST /api/lights/delete": return handleWithdraw(request, env);
     case "POST /api/receive": return handleReceive(request, env);
+    case "POST /api/thanks": return handleThanks(request, env);
+    case "POST /api/mine": return handleMine(request, env);
     case "POST /api/report": return handleReport(request, env);
     case "POST /api/heartbeat": return handleHeartbeat(request, env);
     case "GET /api/admin/stats": return adminStats(env);
     case "GET /api/admin/lights": return adminLights(env, url);
     case "POST /api/admin/action": return adminAction(request, env);
+    case "POST /api/admin/curated": return adminCurated(request, env);
+    case "POST /api/admin/seed": return adminSeed(env);
     default: return json({ error: "not_found" }, 404);
   }
 }
