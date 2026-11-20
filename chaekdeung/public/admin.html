@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>책등 관리</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap">
+<style>
+:root {
+  --bg: #0b1517; --panel: #11232a; --line: rgba(239,231,212,.16); --text: #efe7d4; --dim: #b4b9ad;
+  --lamp: #f4c777; --lamp-ink: #2a1c05; --danger: #f0a08c; --ok: #8fb8a6;
+  --font: "Gowun Dodum", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 16px; line-height: 1.55; word-break: keep-all; overflow-wrap: break-word; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); }
+h1 { margin: 0; font-size: 1.4rem; }
+h2 { margin: 28px 0 10px; font-size: 1.05rem; color: var(--ok); font-weight: 400; }
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .9rem; }
+.btn:hover { border-color: rgba(244,199,119,.55); }
+.btn.primary { background: var(--lamp); color: var(--lamp-ink); border-color: transparent; font-weight: 700; }
+.btn.danger { color: var(--danger); }
+.btn[aria-pressed="true"] { border-color: var(--lamp); background: rgba(244,199,119,.14); }
+.login { max-width: 360px; margin: 18vh auto 0; display: flex; flex-direction: column; gap: 10px; }
+.login input { width: 100%; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); font-size: 16px; }
+.err { color: var(--danger); font-size: .9rem; min-height: 1.4em; margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 16px; }
+.stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--panel); }
+.stat .v { font-size: 1.6rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.stat .l { font-size: .82rem; color: var(--dim); }
+.stat.warn .v { color: var(--danger); }
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.row { border-top: 1px solid var(--line); padding: 14px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; }
+.row .q { margin: 0; font-size: 1.02rem; }
+.row .m { margin: 2px 0 0; font-size: .82rem; color: var(--dim); }
+.row .n { margin: 2px 0 0; font-size: .9rem; }
+.row .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; }
+.tag { display: inline-block; font-size: .75rem; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); margin-left: 6px; }
+.tag.red { color: var(--danger); border-color: rgba(240,160,140,.5); }
+.empty { color: var(--dim); padding: 14px 0; }
+.mini { margin: 0; padding: 0; list-style: none; font-size: .92rem; }
+.mini li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--line); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 28px; }
+@media (max-width: 560px) { .row { grid-template-columns: 1fr; } .row .acts { justify-content: flex-start; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form class="login" id="login" autocomplete="off">
+    <h1>책등 관리</h1>
+    <label for="pw" style="color:var(--dim);font-size:.9rem">관리자 비밀번호</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <p class="err" id="loginErr" role="alert"></p>
+    <button class="btn primary" type="submit">들어가기</button>
+  </form>
+
+  <div id="panel" hidden>
+    <div class="bar">
+      <h1>책등 관리</h1>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="refresh" type="button">새로고침</button>
+        <button class="btn" id="logout" type="button">나가기</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+
+    <h2>문장 관리</h2>
+    <div class="tabs" role="group" aria-label="문장 목록">
+      <button class="btn" type="button" data-filter="reported" aria-pressed="true">신고된 문장</button>
+      <button class="btn" type="button" data-filter="hidden" aria-pressed="false">숨긴 문장</button>
+      <button class="btn" type="button" data-filter="recent" aria-pressed="false">최근 문장</button>
+    </div>
+    <div id="list"></div>
+
+    <h2>서점 링크 클릭</h2>
+    <div class="two">
+      <div><p class="m" style="color:var(--dim);margin:0 0 6px;font-size:.85rem">오늘 서점별</p><ul class="mini" id="byStore"></ul></div>
+      <div><p class="m" style="color:var(--dim);margin:0 0 6px;font-size:.85rem">많이 눌린 책</p><ul class="mini" id="topBooks"></ul></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const STORE_NAMES = { aladin: "알라딘", kyobo: "교보문고", yes24: "예스24", coupang: "쿠팡" };
+let token = "";
+try { token = sessionStorage.getItem("chaekdeung.admin") || ""; } catch (e) { /* 저장 불가 */ }
+let filter = "reported";
+
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: body ? "POST" : "GET",
+    headers: Object.assign({ authorization: "Bearer " + token }, body ? { "content-type": "application/json" } : {}),
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let data = null;
+  try { data = await r.json(); } catch (e) { /* JSON이 아님 */ }
+  return { ok: r.ok, status: r.status, data };
+}
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+const fmt = (ts) => new Date(ts).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+function show(on) { $("#login").hidden = on; $("#panel").hidden = !on; }
+
+async function loadStats() {
+  const r = await api("/api/admin/stats");
+  if (!r.ok) return r;
+  const d = r.data, box = $("#stats");
+  box.textContent = "";
+  const items = [
+    ["지금 읽는 사람", d.readersNow], ["오늘 보낸 문장", d.lightsToday], ["전체 문장", d.lightsTotal],
+    ["신고 대기", d.reported, d.reported > 0], ["숨긴 문장", d.hidden], ["전달된 횟수", d.deliveriesTotal], ["서점 클릭(전체)", d.clicksTotal]
+  ];
+  for (const [l, v, warn] of items) {
+    const s = el("div", "stat" + (warn ? " warn" : ""));
+    s.appendChild(el("div", "v", String(v))); s.appendChild(el("div", "l", l)); box.appendChild(s);
+  }
+  const bs = $("#byStore"); bs.textContent = "";
+  if (!d.clicksTodayByStore.length) bs.appendChild(el("li", "empty", "아직 없어요."));
+  for (const x of d.clicksTodayByStore) { const li = el("li"); li.appendChild(el("span", null, STORE_NAMES[x.store] || x.store)); li.appendChild(el("span", null, String(x.c))); bs.appendChild(li); }
+  const tb = $("#topBooks"); tb.textContent = "";
+  if (!d.topBooks.length) tb.appendChild(el("li", "empty", "아직 없어요."));
+  for (const x of d.topBooks) { const li = el("li"); li.appendChild(el("span", null, x.book)); li.appendChild(el("span", null, String(x.c))); tb.appendChild(li); }
+  return r;
+}
+
+async function loadList() {
+  const r = await api("/api/admin/lights?filter=" + filter);
+  const box = $("#list");
+  box.textContent = "";
+  if (!r.ok) { box.appendChild(el("p", "empty", "목록을 불러오지 못했어요.")); return; }
+  if (!r.data.lights.length) {
+    box.appendChild(el("p", "empty", filter === "reported" ? "신고된 문장이 없어요." : "문장이 없어요."));
+    return;
+  }
+  for (const L of r.data.lights) {
+    const row = el("div", "row");
+    const left = el("div");
+    const q = el("p", "q", L.quote);
+    if (L.hidden) q.appendChild(el("span", "tag red", "숨김"));
+    if (L.reports > 0) q.appendChild(el("span", "tag red", "신고 " + L.reports));
+    left.appendChild(q);
+    left.appendChild(el("p", "m", (L.author ? L.author + ", " : "") + "《" + L.book + "》 · #" + L.id + " · " + fmt(L.created_at) + " · 전달 " + L.deliveries));
+    if (L.note) left.appendChild(el("p", "n", "한 줄: " + L.note));
+    const acts = el("div", "acts");
+    if (L.hidden || L.reports > 0) acts.appendChild(act("복원", L.id, "restore"));
+    if (!L.hidden) acts.appendChild(act("숨기기", L.id, "hide"));
+    acts.appendChild(delBtn(L.id));
+    row.appendChild(left); row.appendChild(acts);
+    box.appendChild(row);
+  }
+}
+function act(label, id, action) {
+  const b = el("button", "btn", label); b.type = "button";
+  b.addEventListener("click", async () => { b.disabled = true; await api("/api/admin/action", { id, action }); await refresh(); });
+  return b;
+}
+// confirm() 대신, 한 번 더 눌러야 삭제되도록 합니다.
+function delBtn(id) {
+  const b = el("button", "btn danger", "삭제"); b.type = "button";
+  let armed = 0;
+  b.addEventListener("click", async () => {
+    if (!armed) { armed = setTimeout(() => { armed = 0; b.textContent = "삭제"; }, 3000); b.textContent = "정말 삭제"; return; }
+    clearTimeout(armed); b.disabled = true;
+    await api("/api/admin/action", { id, action: "delete" });
+    await refresh();
+  });
+  return b;
+}
+async function refresh() { await Promise.all([loadStats(), loadList()]); }
+
+async function enter() {
+  const r = await loadStats();
+  if (!r || !r.ok) {
+    $("#loginErr").textContent = (r && r.data && r.data.message) || "들어갈 수 없어요.";
+    token = ""; try { sessionStorage.removeItem("chaekdeung.admin"); } catch (e) { /* 무시 */ }
+    show(false);
+    return;
+  }
+  try { sessionStorage.setItem("chaekdeung.admin", token); } catch (e) { /* 저장 불가 */ }
+  show(true);
+  await loadList();
+}
+
+$("#login").addEventListener("submit", (e) => { e.preventDefault(); token = $("#pw").value; $("#pw").value = ""; $("#loginErr").textContent = ""; enter(); });
+$("#refresh").addEventListener("click", refresh);
+$("#logout").addEventListener("click", () => { token = ""; try { sessionStorage.removeItem("chaekdeung.admin"); } catch (e) { /* 무시 */ } show(false); });
+document.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  loadList();
+}));
+if (token) enter();
+})();
+</script>
+</body>
+</html>

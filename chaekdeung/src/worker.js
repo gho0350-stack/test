@@ -1,13 +1,21 @@
-// 책등 서버. public/ 의 정적 파일과 /api/* 를 한 Worker에서 제공합니다.
+// 책등 서버. public/ 의 정적 파일과 /api/*, /go 를 한 Worker에서 제공합니다.
 // 저장소는 Cloudflare D1, 도서 검색은 카카오(우선) 또는 네이버 API를 서버에서 대신 호출합니다.
 
-const LIMITS = { sendsPerDevice: 3, sendsPerIp: 12, receivesPerDevice: 12, booksPerIp: 300 };
+const LIMITS = { sendsPerDevice: 3, sendsPerIp: 12, receivesPerDevice: 12, booksPerIp: 300, adminFailsPerIp: 20 };
 const MAX_DELIVERIES = 3; // 한 문장이 최대 몇 명에게 도착하는지
 const HIDE_AT_REPORTS = 2; // 신고가 이만큼 쌓이면 숨김
 const PRESENCE_WINDOW_MS = 90_000;
 
 export const BLOCK = /(https?:\/\/|www\.|@[a-z0-9_.]+|\d{2,3}[-\s]?\d{3,4}[-\s]?\d{4}|카톡|오픈채팅|open\.kakao)/i;
 const UUID = /^[0-9a-f-]{36}$/i;
+
+// 서점 검색 주소. 제휴 링크를 받았다면 AFFILIATE_ALADIN 같은 환경 변수에 {q} 자리를 넣은 주소로 넣으면 이 값 대신 쓰입니다.
+const STORE_URLS = {
+  aladin: "https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord={q}",
+  kyobo: "https://search.kyobobook.co.kr/search?keyword={q}",
+  yes24: "https://www.yes24.com/Product/Search?domain=BOOK&query={q}"
+};
+const EXTRA_STORES = ["coupang"]; // 기본 주소가 없고, 환경 변수가 있을 때만 켜지는 서점
 
 /* ---------- 공통 ---------- */
 function json(data, status = 200, headers = {}) {
@@ -24,10 +32,13 @@ export function clean(s, max) {
 function kstDay() {
   return new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
 }
+async function sha256(s) {
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
+}
 async function ipHash(request, env) {
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ip + (env.IP_SALT || "chaekdeung")));
-  return [...new Uint8Array(buf)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const d = await sha256(ip + (env.IP_SALT || "chaekdeung"));
+  return [...d.slice(0, 8)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 async function readBody(request) {
   if (Number(request.headers.get("content-length") || 0) > 4096) return null;
@@ -100,6 +111,28 @@ async function handleBooks(request, env, ctx, url) {
   const res = json({ documents: items }, 200, { "cache-control": "public, max-age=86400" });
   if (cache && items.length) ctx.waitUntil(cache.put(cacheKey, res.clone()));
   return res;
+}
+
+/* ---------- 서점 링크 (제휴 수익) ---------- */
+function storeTemplate(env, id) {
+  if (!/^[a-z0-9]{2,12}$/.test(id)) return null;
+  return env["AFFILIATE_" + id.toUpperCase()] || STORE_URLS[id] || null;
+}
+function availableStores(env) {
+  return [...Object.keys(STORE_URLS), ...EXTRA_STORES.filter((id) => env["AFFILIATE_" + id.toUpperCase()])];
+}
+// /go?s=aladin&t=제목&a=저자 → 클릭을 세고 서점으로 이동시킵니다.
+async function handleGo(env, url) {
+  const store = url.searchParams.get("s") || "";
+  const tpl = storeTemplate(env, store);
+  const title = clean(url.searchParams.get("t"), 100);
+  const author = clean(url.searchParams.get("a"), 100).split(",")[0].trim();
+  if (!tpl || !title) return json({ error: "not_found" }, 404);
+  const q = encodeURIComponent((title + " " + author).trim());
+  const dest = tpl.split("{q}").join(q);
+  if (!/^https:\/\//.test(dest)) return json({ error: "bad_template" }, 500);
+  await env.DB.prepare("INSERT INTO clicks (store, book, at) VALUES (?1, ?2, ?3)").bind(store, title, Date.now()).run();
+  return new Response(null, { status: 302, headers: { location: dest, "cache-control": "no-store" } });
 }
 
 /* ---------- 문장 주고받기 ---------- */
@@ -187,17 +220,96 @@ async function handlePresence(env) {
   return json({ count: r ? r.c : 0 });
 }
 
+/* ---------- 관리자 ---------- */
+// 관리자 요청은 Authorization: Bearer <ADMIN_TOKEN> 이어야 합니다. 틀린 시도는 IP별로 세고, 20번이 넘으면 그날은 잠급니다.
+async function requireAdmin(request, env) {
+  if (!env.ADMIN_TOKEN) return json({ error: "admin_disabled", message: "ADMIN_TOKEN이 설정되지 않았어요." }, 503);
+  const key = "adminfail:" + (await ipHash(request, env)), day = kstDay();
+  const row = await env.DB.prepare("SELECT n FROM limits WHERE k = ?1 AND day = ?2").bind(key, day).first();
+  if (row && row.n >= LIMITS.adminFailsPerIp) return json({ error: "locked", message: "시도 횟수가 너무 많아요. 내일 다시 시도해 주세요." }, 429);
+  const given = (request.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
+  const [a, b] = await Promise.all([sha256(given), sha256(env.ADMIN_TOKEN)]);
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  if (diff !== 0) {
+    await bump(env.DB, key, day);
+    return json({ error: "unauthorized", message: "관리자 비밀번호가 맞지 않아요." }, 401);
+  }
+  return null;
+}
+
+const ADMIN_FILTERS = {
+  reported: "reports > 0 AND hidden = 0 ORDER BY reports DESC, id DESC",
+  hidden: "hidden = 1 ORDER BY id DESC",
+  recent: "1 = 1 ORDER BY id DESC"
+};
+
+async function adminStats(env) {
+  const now = Date.now();
+  const startToday = Date.parse(kstDay() + "T00:00:00+09:00");
+  const one = (sql, ...args) => env.DB.prepare(sql).bind(...args).first();
+  const [total, today, hidden, reported, deliveries, readers, clicks] = await Promise.all([
+    one("SELECT COUNT(*) AS c FROM lights"),
+    one("SELECT COUNT(*) AS c FROM lights WHERE created_at >= ?1", startToday),
+    one("SELECT COUNT(*) AS c FROM lights WHERE hidden = 1"),
+    one("SELECT COUNT(*) AS c FROM lights WHERE reports > 0 AND hidden = 0"),
+    one("SELECT COALESCE(SUM(deliveries), 0) AS c FROM lights"),
+    one("SELECT COUNT(*) AS c FROM presence WHERE last_seen > ?1", now - PRESENCE_WINDOW_MS),
+    one("SELECT COUNT(*) AS c FROM clicks")
+  ]);
+  const byStore = await env.DB.prepare("SELECT store, COUNT(*) AS c FROM clicks WHERE at >= ?1 GROUP BY store ORDER BY c DESC").bind(startToday).all();
+  const topBooks = await env.DB.prepare("SELECT book, COUNT(*) AS c FROM clicks GROUP BY book ORDER BY c DESC LIMIT 5").all();
+  return json({
+    readersNow: readers.c, lightsTotal: total.c, lightsToday: today.c, hidden: hidden.c, reported: reported.c,
+    deliveriesTotal: deliveries.c, clicksTotal: clicks.c, clicksTodayByStore: byStore.results, topBooks: topBooks.results
+  });
+}
+async function adminLights(env, url) {
+  const where = ADMIN_FILTERS[url.searchParams.get("filter")] || ADMIN_FILTERS.recent;
+  const rows = await env.DB
+    .prepare("SELECT id, book, author, quote, note, created_at, deliveries, reports, hidden FROM lights WHERE " + where + " LIMIT 100")
+    .all();
+  return json({ lights: rows.results });
+}
+async function adminAction(request, env) {
+  const b = await readBody(request);
+  const id = Number(b && b.id);
+  if (!b || !Number.isInteger(id) || !["hide", "restore", "delete"].includes(b.action)) return bad("잘못된 요청이에요.");
+  if (b.action === "hide") {
+    await env.DB.prepare("UPDATE lights SET hidden = 1 WHERE id = ?1").bind(id).run();
+  } else if (b.action === "restore") {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE lights SET hidden = 0, reports = 0 WHERE id = ?1").bind(id),
+      env.DB.prepare("DELETE FROM reports WHERE light_id = ?1").bind(id)
+    ]);
+  } else {
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM lights WHERE id = ?1").bind(id),
+      env.DB.prepare("DELETE FROM seen WHERE light_id = ?1").bind(id),
+      env.DB.prepare("DELETE FROM reports WHERE light_id = ?1").bind(id)
+    ]);
+  }
+  return json({ ok: true });
+}
+
 /* ---------- 라우팅 ---------- */
 async function route(request, env, ctx, url) {
+  if (url.pathname.startsWith("/api/admin/")) {
+    const deny = await requireAdmin(request, env);
+    if (deny) return deny;
+  }
   const key = request.method + " " + url.pathname;
   switch (key) {
-    case "GET /api/health": return json({ ok: true });
+    case "GET /api/health": return json({ ok: true, stores: availableStores(env) });
     case "GET /api/books": return handleBooks(request, env, ctx, url);
     case "GET /api/presence": return handlePresence(env);
     case "POST /api/lights": return handleSend(request, env);
     case "POST /api/receive": return handleReceive(request, env);
     case "POST /api/report": return handleReport(request, env);
     case "POST /api/heartbeat": return handleHeartbeat(request, env);
+    case "GET /api/admin/stats": return adminStats(env);
+    case "GET /api/admin/lights": return adminLights(env, url);
+    case "POST /api/admin/action": return adminAction(request, env);
     default: return json({ error: "not_found" }, 404);
   }
 }
@@ -205,10 +317,12 @@ async function route(request, env, ctx, url) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (!url.pathname.startsWith("/api/")) {
+    const isApi = url.pathname.startsWith("/api/");
+    if (!isApi && url.pathname !== "/go") {
       return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
     }
     try {
+      if (url.pathname === "/go") return await handleGo(env, url);
       return await route(request, env, ctx, url);
     } catch (e) {
       console.error(e);

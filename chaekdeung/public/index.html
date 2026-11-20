@@ -7,14 +7,9 @@
 <title>책등</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&display=swap">
 <style>
-/* 컨셉: 산속 서재의 밤. 먹빛 청록 하늘에 독서등이 흩어져 있고, 아래로 능선과 안개가 깔린다. 한 줄 문장은 불빛이 되어 날아온다. */
+/* 컨셉: 산속 서재. 밤에는 독서등이 흩어지고, 낮에는 계절이 바뀐다. 아래로 능선과 안개가 깔리고 한 줄 문장은 불빛이 되어 날아온다. */
 :root {
   --night-0: #0a1316;
-  --night-1: #10222a;
-  --night-2: #1a3135;
-  --ridge-a: #112328;
-  --ridge-b: #0d1b1f;
-  --ridge-c: #081214;
   --hanji: #efe7d4;
   --hanji-dim: #b4b9ad;
   --paper: #f1e9d6;
@@ -26,9 +21,23 @@
   --line: rgba(239, 231, 212, .16);
   --panel: rgba(12, 26, 30, .8);
   --panel-solid: #0f1f24;
+  --btn-bg: rgba(0, 0, 0, .18);
+  --pop-bg: #132a30;
+  --tshadow: 0 2px 18px rgba(0, 0, 0, .55);
+  /* 풍경 (JS가 계절과 시간에 맞춰 바꿉니다) */
+  --sky-0: #0f1214; --sky-1: #1b1f22; --sky-2: #2b2927;
+  --ridge-a: #2b1d18; --ridge-b: #20150f; --ridge-c: #120c09;
+  --mist-1: rgba(143, 184, 166, .13); --mist-2: rgba(143, 184, 166, .10);
   --font-serif: "Gowun Batang", "Noto Serif KR", "Apple SD Gothic Neo", "Malgun Gothic", serif;
   --font-ui: "Gowun Dodum", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   color-scheme: dark;
+}
+/* 낮에는 화면 본문(.app)만 밝은 색으로 바꿉니다. 대화상자는 항상 어두운 색을 씁니다. */
+body[data-time="day"] .app {
+  --hanji: #1f2b2c; --hanji-dim: #3f5456; --jade: #2a6554;
+  --line: rgba(31, 43, 44, .22); --panel: rgba(252, 249, 242, .78);
+  --btn-bg: rgba(255, 255, 255, .5); --pop-bg: #fbf8f0;
+  --tshadow: 0 1px 12px rgba(255, 255, 255, .8);
 }
 [hidden] { display: none !important; }
 * { box-sizing: border-box; }
@@ -48,82 +57,102 @@ button, input, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
 
 /* 배경 */
-.scene { position: fixed; inset: 0; background: linear-gradient(180deg, var(--night-0) 0%, var(--night-1) 48%, var(--night-2) 100%); }
-#sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scene { position: fixed; inset: 0; background: linear-gradient(180deg, var(--sky-0) 0%, var(--sky-1) 48%, var(--sky-2) 100%); }
 .ridges { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 36%; display: block; }
 .r-a { fill: var(--ridge-a); } .r-b { fill: var(--ridge-b); } .r-c { fill: var(--ridge-c); }
 .mist {
   position: absolute; left: -10%; right: -10%; bottom: 10%; height: 24%;
-  background: radial-gradient(60% 100% at 30% 60%, rgba(143,184,166,.13), transparent 70%),
-              radial-gradient(55% 90% at 72% 50%, rgba(143,184,166,.10), transparent 70%);
+  background: radial-gradient(60% 100% at 30% 60%, var(--mist-1), transparent 70%),
+              radial-gradient(55% 90% at 72% 50%, var(--mist-2), transparent 70%);
   animation: drift 40s ease-in-out infinite alternate;
 }
 @keyframes drift { from { transform: translateX(-4%); } to { transform: translateX(4%); } }
+#sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* 레이아웃 */
 .app {
   position: relative; z-index: 1; height: 100%;
+  color: var(--hanji);
   display: flex; flex-direction: column; overflow-y: auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 14px 18px;
 }
-.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .brand { display: flex; align-items: baseline; gap: 10px; }
-.brand-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.5rem; letter-spacing: .08em; }
+.brand-name { font-family: var(--font-serif); font-weight: 700; font-size: 1.5rem; letter-spacing: .08em; text-shadow: var(--tshadow); }
 .brand-name::after { content: ""; display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--lamp); box-shadow: 0 0 10px 3px rgba(244,199,119,.55); vertical-align: 2px; }
 .brand-sub { color: var(--hanji-dim); font-size: .85rem; }
-.top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: rgba(0,0,0,.18); }
-.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: .85rem; color: var(--hanji-dim); cursor: pointer; }
-.seg button[aria-pressed="true"] { background: rgba(244,199,119,.16); color: var(--hanji); }
-.ghost { border: 1px solid var(--line); background: rgba(0,0,0,.18); border-radius: 10px; padding: 6px 14px; font-size: .9rem; cursor: pointer; color: var(--hanji); }
-.ghost:hover { border-color: rgba(244,199,119,.5); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--btn-bg); }
+.seg button { border: 0; background: transparent; padding: 7px 13px; font-size: .88rem; color: var(--hanji-dim); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: rgba(244,199,119,.2); color: var(--hanji); }
+.ghost { border: 1px solid var(--line); background: var(--btn-bg); border-radius: 10px; padding: 6px 14px; font-size: .9rem; cursor: pointer; color: var(--hanji); }
+.ghost:hover { border-color: rgba(244,199,119,.6); }
 .ghost .n { color: var(--lamp); font-variant-numeric: tabular-nums; margin-left: 4px; }
+body[data-time="day"] .ghost .n { color: #a85d12; }
+
+/* 소리 고르기 */
+.pop { position: absolute; top: calc(100% + 8px); right: 0; width: min(320px, 100%); z-index: 20; background: var(--pop-bg); border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 14px 36px rgba(0,0,0,.35); }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.opt:hover { background: rgba(244,199,119,.14); }
+.opt[aria-pressed="true"] { background: rgba(244,199,119,.2); }
+.opt .t { display: block; font-size: .98rem; }
+.opt .d { display: block; font-size: .78rem; color: var(--hanji-dim); }
+.opt[aria-pressed="true"]::after { content: "재생 중"; font-size: .75rem; color: var(--jade); white-space: nowrap; }
+.opt[data-id="off"][aria-pressed="true"]::after { content: ""; }
+.vol { display: flex; align-items: center; gap: 12px; padding: 10px 12px 8px; font-size: .85rem; color: var(--hanji-dim); }
+.vol input { flex: 1; min-width: 0; accent-color: var(--lamp); }
+.pop-note { margin: 0; padding: 0 12px 8px; font-size: .78rem; color: var(--hanji-dim); }
 
 .center { margin: auto auto 0; text-align: center; max-width: 34rem; padding: 22px 0 16px; }
-.presence { margin: 0 0 14px; font-size: .9rem; color: var(--jade); letter-spacing: .02em; }
-.hero { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.45rem, 4.6vw, 2.1rem); line-height: 1.4; text-wrap: balance; text-shadow: 0 2px 18px rgba(0,0,0,.55); }
-.sub { margin: 12px auto 0; color: var(--hanji-dim); font-size: .95rem; max-width: 29rem; text-wrap: pretty; text-shadow: 0 1px 12px rgba(0,0,0,.6); }
-.timer { font-family: var(--font-serif); font-size: clamp(2.6rem, 11vw, 3.8rem); letter-spacing: .06em; font-variant-numeric: tabular-nums; line-height: 1.1; text-shadow: 0 2px 20px rgba(0,0,0,.6); }
+.presence { margin: 0 0 14px; font-size: .9rem; color: var(--jade); letter-spacing: .02em; text-shadow: var(--tshadow); min-height: 1.4em; }
+.hero { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: clamp(1.45rem, 4.6vw, 2.1rem); line-height: 1.4; text-wrap: balance; text-shadow: var(--tshadow); }
+.sub { margin: 12px auto 0; color: var(--hanji-dim); font-size: .95rem; max-width: 29rem; text-wrap: pretty; text-shadow: var(--tshadow); }
+.timer { font-family: var(--font-serif); font-size: clamp(2.6rem, 11vw, 3.8rem); letter-spacing: .06em; font-variant-numeric: tabular-nums; line-height: 1.1; text-shadow: var(--tshadow); }
 [data-state="idle"] .only-reading { display: none; }
 [data-state="reading"] .only-idle { display: none; }
-[data-state="reading"] .top, [data-state="reading"] .dock-note { opacity: .55; }
+[data-state="reading"] .top .brand, [data-state="reading"] .dock-note { opacity: .6; }
 
 .dock { width: 100%; max-width: 34rem; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; backdrop-filter: blur(8px); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .chip { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 7px 14px; font-size: .92rem; cursor: pointer; }
-.chip[aria-pressed="true"] { border-color: var(--lamp); background: rgba(244,199,119,.14); }
+.chip[aria-pressed="true"] { border-color: var(--lamp); background: rgba(244,199,119,.2); }
 .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .primary { flex: 1 1 10rem; border: 0; border-radius: 10px; padding: 12px 18px; background: var(--lamp); color: var(--lamp-ink); font-weight: 700; font-size: 1rem; cursor: pointer; }
 .primary:hover { filter: brightness(1.06); }
 .primary:disabled { opacity: .5; cursor: default; }
 .secondary { border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 12px 18px; cursor: pointer; }
-.secondary:hover { border-color: rgba(244,199,119,.5); }
+.secondary:hover { border-color: rgba(244,199,119,.6); }
 .dock-note { margin: 12px 0 0; font-size: .8rem; color: var(--hanji-dim); text-align: center; }
 
-/* 다이얼로그 */
-dialog { background: var(--panel-solid); color: var(--hanji); border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+/* 다이얼로그 (항상 어두운 색) */
+dialog { background: var(--panel-solid); color: #efe7d4; border: 1px solid rgba(239,231,212,.16); border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
 dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); }
+dialog .secondary { color: #efe7d4; border-color: rgba(239,231,212,.2); }
+dialog .seg button { color: #b4b9ad; }
+dialog .seg button[aria-pressed="true"] { color: #efe7d4; }
 .sheet { padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 6px; }
 .sheet h2 { margin: 0 0 6px; font-family: var(--font-serif); font-size: 1.3rem; }
-.sheet label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 10px; font-size: .9rem; color: var(--hanji-dim); }
+.sheet label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 10px; font-size: .9rem; color: #b4b9ad; }
 .count { font-variant-numeric: tabular-nums; font-size: .8rem; }
-.sheet input, .sheet textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 16px; line-height: 1.5; resize: none; }
+.sheet input, .sheet textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(239,231,212,.16); border-radius: 8px; padding: 10px 12px; font-size: 16px; line-height: 1.5; resize: none; }
 .sheet input::placeholder, .sheet textarea::placeholder { color: rgba(180,185,173,.6); }
 .combo { position: relative; }
-.results { list-style: none; margin: 4px 0 0; padding: 4px; position: absolute; left: 0; right: 0; z-index: 5; max-height: 220px; overflow: auto; background: #132a30; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
+.results { list-style: none; margin: 4px 0 0; padding: 4px; position: absolute; left: 0; right: 0; z-index: 5; max-height: 220px; overflow: auto; background: #132a30; border: 1px solid rgba(239,231,212,.16); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.45); }
 .results button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
 .results button:hover, .results button:focus-visible { background: rgba(244,199,119,.12); }
 .results .t { display: block; font-size: .95rem; }
-.results .a { display: block; font-size: .8rem; color: var(--hanji-dim); }
-.results .none { padding: 10px; color: var(--hanji-dim); font-size: .9rem; }
-.src { margin: 4px 0 0; font-size: .75rem; color: var(--hanji-dim); min-height: 1.2em; }
-.chosen { margin: 6px 0 0; font-size: .9rem; color: var(--jade); }
-.hint { margin: 8px 0 0; font-size: .78rem; color: var(--hanji-dim); }
-.err { margin: 6px 0 0; font-size: .85rem; color: var(--danger); min-height: 1.3em; }
+.results .a { display: block; font-size: .8rem; color: #b4b9ad; }
+.results .none { padding: 10px; color: #b4b9ad; font-size: .9rem; }
+.src { margin: 4px 0 0; font-size: .75rem; color: #b4b9ad; min-height: 1.2em; }
+.chosen { margin: 6px 0 0; font-size: .9rem; color: #8fb8a6; }
+.hint { margin: 8px 0 0; font-size: .78rem; color: #b4b9ad; }
+.err { margin: 6px 0 0; font-size: .85rem; color: #f0a08c; min-height: 1.3em; }
 .sheet .btn-row { margin-top: 8px; justify-content: flex-end; }
+.setrow { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.setlbl { font-size: .9rem; color: #b4b9ad; }
 
 /* 도착한 문장 카드 */
 .paper { background: var(--paper); color: var(--paper-ink); margin: 18px 18px 0; padding: 26px 22px 20px; border-radius: 6px; background-image: radial-gradient(120% 80% at 20% 0%, rgba(255,255,255,.35), transparent 60%); }
@@ -135,18 +164,22 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
 .card-actions { padding: 14px 18px 18px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .card-actions .primary { flex: 0 1 auto; padding: 10px 18px; }
 .card-actions .secondary { padding: 10px 16px; }
-.eg { margin: 10px 18px 0; font-size: .75rem; color: var(--hanji-dim); }
+.eg { margin: 10px 18px 0; font-size: .75rem; color: #b4b9ad; }
 
 /* 서랍 */
 .drawer-sec { margin-top: 6px; }
-.drawer-sec h3 { margin: 14px 0 8px; font-size: .95rem; color: var(--jade); font-weight: 400; }
-.entry { padding: 12px 0; border-top: 1px solid var(--line); }
+.drawer-sec h3 { margin: 14px 0 8px; font-size: .95rem; color: #8fb8a6; font-weight: 400; }
+.entry { padding: 12px 0; border-top: 1px solid rgba(239,231,212,.16); }
 .entry .q { margin: 0; font-family: var(--font-serif); font-size: 1.05rem; line-height: 1.65; }
-.entry .m { margin: 4px 0 0; font-size: .8rem; color: var(--hanji-dim); }
-.entry .nt { margin: 4px 0 0; font-size: .88rem; color: var(--hanji); }
-.empty { margin: 0; padding: 10px 0; font-size: .9rem; color: var(--hanji-dim); }
+.entry .m { margin: 4px 0 0; font-size: .8rem; color: #b4b9ad; }
+.entry .nt { margin: 4px 0 0; font-size: .88rem; }
+.empty { margin: 0; padding: 10px 0; font-size: .9rem; color: #b4b9ad; }
+.disc { margin: 0 0 4px; font-size: .78rem; color: #b4b9ad; }
+.stores { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.store { display: inline-block; border: 1px solid rgba(239,231,212,.22); border-radius: 8px; padding: 5px 12px; font-size: .85rem; color: #efe7d4; text-decoration: none; }
+.store:hover { border-color: #f4c777; background: rgba(244,199,119,.12); }
 
-.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: #1b3a40; border: 1px solid var(--line); padding: 10px 18px; border-radius: 10px; font-size: .92rem; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; z-index: 50; max-width: calc(100vw - 32px); text-align: center; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: #1b3a40; color: #efe7d4; border: 1px solid rgba(239,231,212,.16); padding: 10px 18px; border-radius: 10px; font-size: .92rem; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; z-index: 50; max-width: calc(100vw - 32px); text-align: center; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -157,31 +190,33 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
 </head>
 <body>
 <div class="scene" aria-hidden="true">
-  <canvas id="sky"></canvas>
-  <div class="mist"></div>
   <svg class="ridges" viewBox="0 0 1200 300" preserveAspectRatio="none" focusable="false">
     <path class="r-a" d="M0,170 C120,110 220,150 340,120 C470,88 560,150 700,128 C840,104 930,150 1060,118 C1130,102 1170,120 1200,126 L1200,300 L0,300 Z"/>
     <path class="r-b" d="M0,215 C100,170 210,200 320,176 C450,150 540,205 690,186 C830,168 930,208 1070,184 C1130,174 1170,186 1200,190 L1200,300 L0,300 Z"/>
     <path class="r-c" d="M0,262 C140,236 260,262 420,244 C560,228 680,268 820,252 C960,236 1080,262 1200,248 L1200,300 L0,300 Z"/>
   </svg>
+  <div class="mist"></div>
+  <canvas id="sky"></canvas>
 </div>
 
 <main class="app" id="app" data-state="idle">
   <header class="top">
-    <div class="brand"><span class="brand-name">책등</span><span class="brand-sub">함께 읽는 밤</span></div>
+    <div class="brand"><span class="brand-name">책등</span><span class="brand-sub" id="brandSub">함께 읽는 밤</span></div>
     <div class="top-actions">
-      <div class="seg" role="group" aria-label="불빛 모양">
-        <button type="button" data-skin="lamp" aria-pressed="true">독서등</button>
-        <button type="button" data-skin="candle" aria-pressed="false">촛불</button>
-        <button type="button" data-skin="dot" aria-pressed="false">점</button>
-      </div>
+      <button type="button" class="ghost" id="soundBtn" aria-expanded="false" aria-controls="soundPop">소리</button>
       <button type="button" class="ghost" id="openDrawer">서랍<span class="n" id="drawerCount">0</span></button>
+      <button type="button" class="ghost" id="openSettings">설정</button>
+    </div>
+    <div class="pop" id="soundPop" role="group" aria-label="소리 고르기" hidden>
+      <div id="soundList"></div>
+      <p class="pop-note" id="soundNote" hidden></p>
+      <label class="vol" for="vol">소리 크기<input id="vol" type="range" min="0" max="100" step="5"></label>
     </div>
   </header>
 
   <section class="center">
     <p class="presence" id="presence" aria-live="off"></p>
-    <h1 class="hero only-idle">오늘 밤, 같은 시간에 책을 읽는 불빛들</h1>
+    <h1 class="hero only-idle" id="heroText">오늘 밤, 같은 시간에 책을 읽는 불빛들</h1>
     <p class="sub only-idle">책을 읽다가 마음에 남은 한 줄을 남기면 어딘가의 독서등으로 날아가요. 쉬는 시간에는 낯선 독자의 한 줄이 도착해요.</p>
     <div class="timer only-reading" id="timer" role="timer" aria-live="off">25:00</div>
     <p class="sub only-reading">읽는 중이에요. 마음에 남는 문장이 생기면 언제든 남겨 주세요.</p>
@@ -199,7 +234,7 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
     </div>
     <div class="only-reading btn-row">
       <button type="button" class="primary" id="writeBtn">이 문장 남기기</button>
-      <button type="button" class="secondary" id="stopBtn">그만 읽기</button>
+      <button type="button" class="secondary" id="stopBtn" style="color:var(--hanji)">그만 읽기</button>
     </div>
     <p class="dock-note" id="dockNote">프로토타입입니다. 다른 독자의 불빛과 도착하는 문장은 예시예요.</p>
   </section>
@@ -248,8 +283,47 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
 <dialog id="drawerDlg" aria-labelledby="drawerTitle">
   <div class="sheet">
     <h2 id="drawerTitle">내 서랍</h2>
+    <div class="drawer-sec">
+      <h3>담은 문장의 책</h3>
+      <p class="disc">제휴 링크가 포함돼요. 링크로 구매하면 책등이 수수료를 받을 수 있어요.</p>
+      <div id="wishList"></div>
+    </div>
     <div class="drawer-sec"><h3>받은 문장</h3><div id="recvList"></div></div>
     <div class="drawer-sec"><h3>보낸 문장</h3><div id="sentList"></div></div>
+    <div class="btn-row"><button type="button" class="secondary" data-close>닫기</button></div>
+  </div>
+</dialog>
+
+<dialog id="settingsDlg" aria-labelledby="settingsTitle">
+  <div class="sheet">
+    <h2 id="settingsTitle">설정</h2>
+    <div class="setrow">
+      <span class="setlbl" id="lblScene">풍경</span>
+      <div class="seg" role="group" aria-labelledby="lblScene" data-setting="scene">
+        <button type="button" data-v="auto" aria-pressed="true">자동</button>
+        <button type="button" data-v="day" aria-pressed="false">낮</button>
+        <button type="button" data-v="night" aria-pressed="false">밤</button>
+      </div>
+    </div>
+    <div class="setrow">
+      <span class="setlbl" id="lblSeason">계절</span>
+      <div class="seg" role="group" aria-labelledby="lblSeason" data-setting="season">
+        <button type="button" data-v="auto" aria-pressed="true">자동</button>
+        <button type="button" data-v="spring" aria-pressed="false">봄</button>
+        <button type="button" data-v="summer" aria-pressed="false">여름</button>
+        <button type="button" data-v="autumn" aria-pressed="false">가을</button>
+        <button type="button" data-v="winter" aria-pressed="false">겨울</button>
+      </div>
+    </div>
+    <div class="setrow">
+      <span class="setlbl" id="lblSkin">불빛 모양</span>
+      <div class="seg" role="group" aria-labelledby="lblSkin" data-setting="skin">
+        <button type="button" data-v="lamp" aria-pressed="true">독서등</button>
+        <button type="button" data-v="candle" aria-pressed="false">촛불</button>
+        <button type="button" data-v="dot" aria-pressed="false">점</button>
+      </div>
+    </div>
+    <p class="hint">풍경 '자동'은 지금 시각(낮 6시~저녁 6시)과 계절에 맞춰 바뀌어요.</p>
     <div class="btn-row"><button type="button" class="secondary" data-close>닫기</button></div>
   </div>
 </dialog>
@@ -262,6 +336,7 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
 const $ = (s) => document.querySelector(s);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const DAILY = 3;
+const MIN_LAMPS = 10; // 서버가 연결된 초기에도 방이 비어 보이지 않도록 최소로 띄우는 분위기용 불빛
 
 /* ---------- 도서 검색 ---------- */
 // 서버(/api/books)가 연결되면 카카오·네이버 도서 검색을 쓰고, 아니면 Google Books나 샘플 목록으로 대체합니다.
@@ -309,6 +384,21 @@ async function searchBooks(q) {
   return { source: "샘플 도서 목록 (인터넷 검색이 연결되지 않았어요)", items: localSearch(q) };
 }
 
+/* ---------- 서점 링크 ---------- */
+const STORE_NAMES = { aladin: "알라딘", kyobo: "교보문고", yes24: "예스24", coupang: "쿠팡" };
+let stores = ["aladin", "kyobo", "yes24"];
+const DIRECT = {
+  aladin: (q) => "https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord=" + q,
+  kyobo: (q) => "https://search.kyobobook.co.kr/search?keyword=" + q,
+  yes24: (q) => "https://www.yes24.com/Product/Search?domain=BOOK&query=" + q
+};
+const firstAuthor = (a) => String(a || "").split(",")[0].trim();
+function storeUrl(id, b) {
+  if (state.live) return "/go?s=" + id + "&t=" + encodeURIComponent(b.book) + "&a=" + encodeURIComponent(b.author);
+  const f = DIRECT[id];
+  return f ? f(encodeURIComponent((b.book + " " + firstAuthor(b.author)).trim())) : "";
+}
+
 /* ---------- 예시 문장 (저작권이 만료된 작품) ---------- */
 const SEEDS = [
   { quote: "죽는 날까지 하늘을 우러러 한 점 부끄럼이 없기를", book: "하늘과 바람과 별과 시", author: "윤동주", note: "오늘은 그냥 버틴 것만으로도 충분해요." },
@@ -323,7 +413,7 @@ const SEEDS = [
 
 /* ---------- 저장소 ---------- */
 const KEY = "chaekdeung.v1";
-const defaults = () => ({ drawer: [], sent: [], skin: "lamp", day: "", count: 0, device: "" });
+const defaults = () => ({ drawer: [], sent: [], skin: "lamp", day: "", count: 0, device: "", scene: "auto", season: "auto", sound: "wind", soundOn: false, volume: 50 });
 function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return defaults(); }
 }
@@ -375,13 +465,58 @@ async function api(path, body, ms) {
   } finally { clearTimeout(t); }
 }
 
-/* ---------- 캔버스: 불빛 ---------- */
+/* ---------- 풍경: 시간과 계절 ---------- */
+const SEASON_NAMES = { spring: "봄", summer: "여름", autumn: "가을", winter: "겨울" };
+const THEMES = {
+  night: {
+    spring: { sky: ["#0b1416", "#122229", "#1c3236"], ridge: ["#142a2a", "#10201f", "#0a1514"] },
+    summer: { sky: ["#08141a", "#0f2630", "#173a40"], ridge: ["#0f2a26", "#0b1f1d", "#07130f"] },
+    autumn: { sky: ["#0f1214", "#1b1f22", "#2b2927"], ridge: ["#2b1d18", "#20150f", "#120c09"] },
+    winter: { sky: ["#0a1218", "#122230", "#1f3a4a"], ridge: ["#1a2a33", "#132029", "#0b141a"] }
+  },
+  day: {
+    spring: { sky: ["#bfd9e6", "#dbeadf", "#f0e6e6"], ridge: ["#a8cfae", "#84b898", "#5f9778"] },
+    summer: { sky: ["#a9d2e4", "#cfe5dd", "#e8efd9"], ridge: ["#6fae86", "#4f9672", "#357a5b"] },
+    autumn: { sky: ["#c6d7dc", "#e3dcc9", "#efd9bd"], ridge: ["#c4694a", "#a2512f", "#6e3a22"] },
+    winter: { sky: ["#c5d3dd", "#dce5ea", "#eef2f4"], ridge: ["#d6e0e6", "#b7c6cf", "#93a6b1"] }
+  }
+};
+const MIST = { night: ["rgba(143,184,166,.13)", "rgba(143,184,166,.10)"], day: ["rgba(255,255,255,.42)", "rgba(255,255,255,.32)"] };
+const PAL = {
+  night: { glow: "244,199,119", core: "255,230,180", body: "239,231,212", label: "rgba(180,185,173,.85)" },
+  day: { glow: "226,140,52", core: "205,112,32", body: "120,100,72", label: "rgba(52,70,68,.85)" }
+};
+const scene = { time: "night", season: "autumn" };
+let pal = PAL.night;
+
+function autoSeason(d) { const m = d.getMonth() + 1; return m >= 3 && m <= 5 ? "spring" : m >= 6 && m <= 8 ? "summer" : m >= 9 && m <= 11 ? "autumn" : "winter"; }
+function autoTime(d) { const h = d.getHours(); return h >= 6 && h < 18 ? "day" : "night"; }
+
+function applyScene() {
+  const now = new Date();
+  const time = store.scene === "auto" ? autoTime(now) : store.scene;
+  const season = store.season === "auto" ? autoSeason(now) : store.season;
+  const changed = time !== scene.time || season !== scene.season;
+  scene.time = time; scene.season = season; pal = PAL[time];
+  const th = THEMES[time][season], rs = document.documentElement.style;
+  th.sky.forEach((c, i) => rs.setProperty("--sky-" + i, c));
+  th.ridge.forEach((c, i) => rs.setProperty("--ridge-" + "abc"[i], c));
+  rs.setProperty("--mist-1", MIST[time][0]); rs.setProperty("--mist-2", MIST[time][1]);
+  document.body.dataset.time = time; document.body.dataset.season = season;
+  $("#brandSub").textContent = "함께 읽는 " + (time === "day" ? "낮" : "밤");
+  $("#heroText").textContent = SEASON_NAMES[season] + " " + (time === "day" ? "낮" : "밤") + ", 같은 시간에 책을 읽는 불빛들";
+  if (changed) seedParticles();
+  setPresenceText();
+}
+
+/* ---------- 캔버스 ---------- */
 const cv = $("#sky");
 const ctx = cv.getContext("2d");
 let W = 0, H = 0, base = 1;
 const own = { x: .5, y: .27 };
 const lamps = [];
 const flights = [];
+let parts = [];
 const stars = Array.from({ length: 70 }, () => ({ x: Math.random(), y: Math.random() * .55, r: Math.random() < .2 ? 2 : 1, a: .15 + Math.random() * .35, sp: .5 + Math.random() * 1.5, ph: Math.random() * 6.28 }));
 
 function resize() {
@@ -391,40 +526,88 @@ function resize() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   base = Math.max(.8, Math.min(1.5, Math.min(W, H) / 620));
 }
-window.addEventListener("resize", resize);
+window.addEventListener("resize", () => { resize(); seedParticles(); });
 
 function glow(x, y, rad, a) {
   const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
-  g.addColorStop(0, "rgba(244,199,119," + a + ")");
-  g.addColorStop(1, "rgba(244,199,119,0)");
+  g.addColorStop(0, "rgba(" + pal.glow + "," + a + ")");
+  g.addColorStop(1, "rgba(" + pal.glow + ",0)");
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.2832); ctx.fill();
 }
 function drawLight(x, y, s, a, t, ph) {
-  const skin = store.skin;
+  const skin = store.skin, k = scene.time === "day" ? .85 : 1;
+  a *= k;
   if (skin === "dot") {
-    glow(x, y, 9 * s, a * .45);
-    ctx.fillStyle = "rgba(255,230,180," + a + ")";
+    glow(x, y, 9 * s, a * .5);
+    ctx.fillStyle = "rgba(" + pal.core + "," + a + ")";
     ctx.beginPath(); ctx.arc(x, y, 1.9 * s, 0, 6.2832); ctx.fill();
   } else if (skin === "candle") {
     const f = 1 + Math.sin(t * 6 + ph) * .08 + Math.sin(t * 9.3 + ph * 2) * .05;
     glow(x, y - 3 * s, 24 * s * f, a * .42);
-    ctx.fillStyle = "rgba(239,231,212," + a * .55 + ")";
+    ctx.fillStyle = "rgba(" + pal.body + "," + a * .6 + ")";
     ctx.fillRect(x - 2 * s, y + 3 * s, 4 * s, 10 * s);
-    ctx.fillStyle = "rgba(255,214,140," + a + ")";
+    ctx.fillStyle = "rgba(" + pal.core + "," + a + ")";
     ctx.beginPath(); ctx.ellipse(x, y, 2 * s * f * .9, 4.6 * s * f, 0, 0, 6.2832); ctx.fill();
   } else {
-    glow(x, y + 8 * s, 28 * s, a * .34);
+    glow(x, y + 8 * s, 28 * s, a * .36);
     const g = ctx.createLinearGradient(x, y, x, y + 32 * s);
-    g.addColorStop(0, "rgba(244,199,119," + a * .5 + ")");
-    g.addColorStop(1, "rgba(244,199,119,0)");
+    g.addColorStop(0, "rgba(" + pal.glow + "," + a * .55 + ")");
+    g.addColorStop(1, "rgba(" + pal.glow + ",0)");
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.moveTo(x - 3 * s, y); ctx.lineTo(x + 3 * s, y); ctx.lineTo(x + 15 * s, y + 32 * s); ctx.lineTo(x - 15 * s, y + 32 * s); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "rgba(255,230,180," + a + ")";
+    ctx.fillStyle = "rgba(" + pal.core + "," + a + ")";
     ctx.beginPath(); ctx.ellipse(x, y, 4.2 * s, 2.3 * s, 0, 0, 6.2832); ctx.fill();
   }
 }
 
+/* 계절 입자: 봄 벚꽃, 여름 반딧불과 햇빛 알갱이, 가을 단풍, 겨울 눈 */
+const LEAF_COLORS = ["#c8452b", "#e0862e", "#d9a93c", "#a63d24"];
+const PETAL_COLORS = ["#ffd3dc", "#ffe4ea", "#f7bfcb"];
+function newPart(anyY) {
+  const s = scene.season, night = scene.time === "night";
+  const p = { x: Math.random(), y: anyY ? Math.random() : -.05, ph: Math.random() * 6.28, sw: .5 + Math.random(), rot: Math.random() * 6.28, vr: (Math.random() - .5) * 1.5, kind: "", vy: 0, sz: 1, c: "#fff", a: 1 };
+  if (s === "spring") { p.kind = "petal"; p.vy = .025 + Math.random() * .03; p.sz = 3 + Math.random() * 3; p.c = PETAL_COLORS[(Math.random() * 3) | 0]; p.a = night ? .6 : .95; }
+  else if (s === "autumn") { p.kind = "leaf"; p.vy = .03 + Math.random() * .035; p.sz = 4.5 + Math.random() * 3.5; p.c = LEAF_COLORS[(Math.random() * 4) | 0]; p.a = night ? .6 : .95; }
+  else if (s === "winter") { p.kind = "snow"; p.vy = .03 + Math.random() * .04; p.sz = 1.2 + Math.random() * 2; p.a = night ? .8 : .95; }
+  else if (night) { p.kind = "firefly"; p.y = .25 + Math.random() * .6; p.sz = 1.6 + Math.random(); p.c = "214,242,138"; }
+  else { p.kind = "mote"; p.vy = -(.008 + Math.random() * .014); p.sz = 1.2 + Math.random() * 1.6; p.a = .8; }
+  return p;
+}
+function seedParticles() {
+  const n = Math.round(Math.min(46, Math.max(20, W / 26)) * (reduce ? .5 : 1));
+  parts = Array.from({ length: n }, () => newPart(true));
+}
+function drawPart(p, t) {
+  const x = p.x * W, y = p.y * H;
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(p.rot); ctx.globalAlpha = p.a; ctx.fillStyle = p.c;
+  if (p.kind === "petal") {
+    ctx.beginPath(); ctx.moveTo(0, -p.sz); ctx.quadraticCurveTo(p.sz * .9, 0, 0, p.sz); ctx.quadraticCurveTo(-p.sz * .9, 0, 0, -p.sz); ctx.fill();
+  } else if (p.kind === "leaf") {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? p.sz * .45 : p.sz, a = (i / 10) * 6.2832 - 1.5708; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    ctx.closePath(); ctx.fill();
+  } else if (p.kind === "snow") {
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(0, 0, p.sz, 0, 6.2832); ctx.fill();
+    if (scene.time === "day") { ctx.strokeStyle = "rgba(110,140,160,.45)"; ctx.lineWidth = .8; ctx.stroke(); }
+  } else if (p.kind === "firefly") {
+    ctx.rotate(-p.rot);
+    const b = reduce ? .7 : .3 + .7 * Math.max(0, Math.sin(t * p.sw * 1.3 + p.ph));
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, p.sz * 6);
+    g.addColorStop(0, "rgba(" + p.c + "," + b * .85 + ")"); g.addColorStop(1, "rgba(" + p.c + ",0)");
+    ctx.globalAlpha = 1; ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, p.sz * 6, 0, 6.2832); ctx.fill();
+  } else {
+    ctx.fillStyle = "#fffdf0";
+    ctx.beginPath(); ctx.arc(0, 0, p.sz, 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// 서버에서 받은 실제 읽는 사람 수와 화면에 띄우는 불빛 수는 따로 관리합니다.
+let realN = 0, lampN = 12;
 function newLamp() {
   let x, y, tries = 0;
   const span = H / W > 1.3 ? .27 : .42;
@@ -432,14 +615,16 @@ function newLamp() {
   while (tries < 12 && Math.hypot((x - own.x) * W, (y - own.y) * H) < 90);
   return { x, y, s: .7 + Math.random() * .6, ph: Math.random() * 6.28, sp: .4 + Math.random() * .6, a: 0, target: 1 };
 }
-let presenceN = 14 + Math.floor(Math.random() * 22);
-function setPresence(n, instant) {
+function setLamps(n, instant) {
   const live = lamps.filter((l) => l.target === 1);
   while (live.length < n) { const l = newLamp(); if (instant) l.a = 1; lamps.push(l); live.push(l); }
   while (live.length > n) { const l = live.splice(Math.floor(Math.random() * live.length), 1)[0]; l.target = 0; }
-  $("#presence").textContent = n > 0
-    ? "지금 " + n + "개의 불빛이 책을 읽고 있어요"
-    : (state.reading ? "지금은 나 혼자 읽고 있어요" : "아직 책을 읽는 불빛이 없어요. 첫 불빛이 되어 보세요");
+}
+// 서버가 있을 때는 실제 사람 수만 말합니다. 불빛은 분위기이고, 숫자 문구는 거짓말을 하지 않습니다.
+function setPresenceText() {
+  const el = $("#presence");
+  if (!state.live) { el.textContent = "지금 " + lampN + "개의 불빛이 책을 읽고 있어요"; return; }
+  el.textContent = realN > 0 ? "지금 " + realN + "명이 함께 읽고 있어요" : (scene.time === "day" ? "고요한 낮이에요" : "고요한 밤이에요");
 }
 
 const ease = (u) => (u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
@@ -450,18 +635,37 @@ function flyOut() {
   flights.push({ kind: "out", x0: own.x, y0: own.y, cx: own.x + (Math.random() - .5) * .3, cy: own.y - .2, x1: own.x + (Math.random() - .5) * .6, y1: -.1, t0: performance.now(), dur: reduce ? 10 : 3400 });
 }
 
+let lastTs = 0;
 function frame(ts) {
   const t = reduce ? 0 : ts / 1000;
+  const dt = Math.min(.1, Math.max(0, (ts - lastTs) / 1000));
+  lastTs = ts;
   ctx.clearRect(0, 0, W, H);
-  for (const st of stars) {
-    const a = st.a * (reduce ? 1 : .7 + .3 * Math.sin(t * st.sp + st.ph));
-    ctx.fillStyle = "rgba(239,231,212," + a + ")";
-    ctx.fillRect(st.x * W, st.y * H, st.r, st.r);
+  const night = scene.time === "night";
+  if (night) {
+    for (const st of stars) {
+      const a = st.a * (reduce ? 1 : .7 + .3 * Math.sin(t * st.sp + st.ph));
+      ctx.fillStyle = "rgba(239,231,212," + a + ")";
+      ctx.fillRect(st.x * W, st.y * H, st.r, st.r);
+    }
   }
-  const mg = ctx.createRadialGradient(W * .86, H * .11, 0, W * .86, H * .11, 60 * base);
-  mg.addColorStop(0, "rgba(239,231,212,.22)"); mg.addColorStop(1, "rgba(239,231,212,0)");
-  ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(W * .86, H * .11, 60 * base, 0, 6.2832); ctx.fill();
-  ctx.fillStyle = "rgba(239,231,212,.8)"; ctx.beginPath(); ctx.arc(W * .86, H * .11, 7 * base, 0, 6.2832); ctx.fill();
+  const sx = W * .86, sy = H * .11;
+  const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, (night ? 60 : 90) * base);
+  sg.addColorStop(0, night ? "rgba(239,231,212,.22)" : "rgba(255,244,205,.7)"); sg.addColorStop(1, night ? "rgba(239,231,212,0)" : "rgba(255,244,205,0)");
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, sy, (night ? 60 : 90) * base, 0, 6.2832); ctx.fill();
+  ctx.fillStyle = night ? "rgba(239,231,212,.8)" : "rgba(255,250,228,.95)"; ctx.beginPath(); ctx.arc(sx, sy, (night ? 7 : 11) * base, 0, 6.2832); ctx.fill();
+
+  for (const p of parts) {
+    if (!reduce) {
+      p.y += p.vy * dt;
+      p.x += (Math.sin(t * p.sw + p.ph) * .012 + .005) * dt;
+      p.rot += p.vr * dt;
+      if (p.vy > 0 && p.y > 1.05) { p.y = -.05; p.x = Math.random(); }
+      if (p.vy < 0 && p.y < -.05) { p.y = 1.05; p.x = Math.random(); }
+      if (p.x > 1.05) p.x = -.05;
+    }
+    drawPart(p, t);
+  }
 
   for (let i = lamps.length - 1; i >= 0; i--) {
     const l = lamps[i];
@@ -469,15 +673,15 @@ function frame(ts) {
     if (l.target === 0 && l.a < .02) { lamps.splice(i, 1); continue; }
     const dx = reduce ? 0 : Math.sin(t * l.sp + l.ph) * 3;
     const dy = reduce ? 0 : Math.cos(t * l.sp * .8 + l.ph) * 2;
-    const pulse = reduce ? .6 : .55 + .25 * Math.sin(t * .7 + l.ph);
+    const pulse = reduce ? .65 : .6 + .25 * Math.sin(t * .7 + l.ph);
     drawLight(l.x * W + dx, l.y * H + dy, base * l.s, l.a * pulse, t, l.ph);
   }
 
   const ox = own.x * W, oy = own.y * H;
-  drawLight(ox, oy, base * 1.5, state.reading ? 1 : .8, t, 0);
+  drawLight(ox, oy, base * 1.5, state.reading ? 1 : .85, t, 0);
   ctx.font = "12px 'Gowun Dodum', sans-serif";
   ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(180,185,173,.85)";
+  ctx.fillStyle = pal.label;
   ctx.fillText("나", ox, oy + 52 * base);
 
   const now = performance.now();
@@ -514,6 +718,8 @@ function startReading() {
   beat();
   clearInterval(state.hb);
   state.hb = setInterval(beat, 30000);
+  // 지난번에 소리를 켜 둔 채로 나갔다면 읽기 시작과 함께 이어서 틀어 줍니다.
+  if (Sound.supported && store.soundOn && Sound.playing === "off") { Sound.set(store.sound); renderSound(); }
 }
 function beat() {
   if (state.live) api("/api/heartbeat", { device: store.device }).then(pollPresence);
@@ -521,8 +727,10 @@ function beat() {
 async function pollPresence(first) {
   const r = await api("/api/presence");
   if (!r.ok || !r.data) return;
-  presenceN = Math.max(0, (r.data.count | 0) - (state.reading ? 1 : 0));
-  setPresence(presenceN, first === true);
+  realN = Math.max(0, (r.data.count | 0) - (state.reading ? 1 : 0));
+  lampN = Math.max(MIN_LAMPS, realN);
+  setLamps(lampN, first === true);
+  setPresenceText();
 }
 function finishReading(done) {
   if (!state.reading) return;
@@ -552,11 +760,12 @@ async function receive() {
 
 /* ---------- 문장 카드 ---------- */
 let currentCard = null;
+const cite = (c) => (c.author ? c.author + ", " : "") + "《" + c.book + "》";
 function showCard(c) {
   if (anyDialogOpen()) { pendingCard = c; return; }
   currentCard = c;
   $("#cardQuote").textContent = c.quote;
-  $("#cardMeta").textContent = (c.author ? c.author + ", " : "") + "《" + c.book + "》";
+  $("#cardMeta").textContent = cite(c);
   $("#cardNote").textContent = c.note || "";
   $("#cardEg").hidden = !c.seed;
   const rb = $("#reportBtn");
@@ -582,11 +791,10 @@ $("#saveBtn").addEventListener("click", () => {
 });
 $("#copyBtn").addEventListener("click", async () => {
   if (!currentCard) return;
-  const text = "“" + currentCard.quote + "” — " + (currentCard.author ? currentCard.author + ", " : "") + "《" + currentCard.book + "》";
+  const text = "“" + currentCard.quote + "” — " + cite(currentCard);
   try { await navigator.clipboard.writeText(text); toast("문장을 복사했어요."); }
   catch (e) { toast("복사할 수 없어요. 문장을 길게 눌러 선택해 주세요."); }
 });
-
 $("#reportBtn").addEventListener("click", async () => {
   if (!currentCard || !currentCard.live) return;
   const b = $("#reportBtn");
@@ -599,21 +807,47 @@ $("#reportBtn").addEventListener("click", async () => {
 /* ---------- 서랍 ---------- */
 const dateLabel = (ts) => new Date(ts).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
 function renderDrawerCount() { $("#drawerCount").textContent = String(store.drawer.length); }
-function renderList(el, items, emptyText, withNote) {
+function emptyP(text) { const p = document.createElement("p"); p.className = "empty"; p.textContent = text; return p; }
+function renderList(el, items, emptyText) {
   el.textContent = "";
-  if (!items.length) { const p = document.createElement("p"); p.className = "empty"; p.textContent = emptyText; el.appendChild(p); return; }
+  if (!items.length) { el.appendChild(emptyP(emptyText)); return; }
   for (const it of items) {
     const d = document.createElement("div"); d.className = "entry";
     const q = document.createElement("p"); q.className = "q"; q.textContent = it.quote;
-    const m = document.createElement("p"); m.className = "m"; m.textContent = (it.author ? it.author + ", " : "") + "《" + it.book + "》 · " + dateLabel(it.at);
+    const m = document.createElement("p"); m.className = "m"; m.textContent = cite(it) + " · " + dateLabel(it.at);
     d.appendChild(q); d.appendChild(m);
-    if (withNote && it.note) { const n = document.createElement("p"); n.className = "nt"; n.textContent = it.note; d.appendChild(n); }
+    if (it.note) { const n = document.createElement("p"); n.className = "nt"; n.textContent = it.note; d.appendChild(n); }
+    el.appendChild(d);
+  }
+}
+// 서랍에 담은 문장의 책을 모아 서점으로 이어 줍니다.
+function renderWish(el) {
+  el.textContent = "";
+  const seen = new Map();
+  for (const d of store.drawer) { const k = d.book + "|" + (d.author || ""); if (!seen.has(k)) seen.set(k, { book: d.book, author: d.author || "" }); }
+  const books = [...seen.values()].slice(0, 20);
+  if (!books.length) { el.appendChild(emptyP("문장을 서랍에 담으면 그 책을 여기서 만날 수 있어요.")); return; }
+  for (const b of books) {
+    const d = document.createElement("div"); d.className = "entry";
+    const q = document.createElement("p"); q.className = "q"; q.textContent = "《" + b.book + "》";
+    const m = document.createElement("p"); m.className = "m"; m.textContent = b.author || "저자 정보 없음";
+    const row = document.createElement("div"); row.className = "stores";
+    for (const id of stores) {
+      const href = storeUrl(id, b);
+      if (!href) continue;
+      const a = document.createElement("a");
+      a.className = "store"; a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer sponsored";
+      a.textContent = STORE_NAMES[id] || id;
+      row.appendChild(a);
+    }
+    d.appendChild(q); d.appendChild(m); d.appendChild(row);
     el.appendChild(d);
   }
 }
 $("#openDrawer").addEventListener("click", () => {
-  renderList($("#recvList"), store.drawer, "아직 담은 문장이 없어요. 쉬는 시간에 도착하는 문장을 담아 보세요.", true);
-  renderList($("#sentList"), store.sent, "아직 보낸 문장이 없어요.", true);
+  renderWish($("#wishList"));
+  renderList($("#recvList"), store.drawer, "아직 담은 문장이 없어요. 쉬는 시간에 도착하는 문장을 담아 보세요.");
+  renderList($("#sentList"), store.sent, "아직 보낸 문장이 없어요.");
   $("#drawerDlg").showModal();
 });
 
@@ -703,6 +937,177 @@ $("#composerForm").addEventListener("submit", async (e) => {
   toast("문장이 불빛이 되어 떠났어요. 오늘 " + remaining + "번 더 보낼 수 있어요.");
 });
 
+/* ---------- 소리 (브라우저에서 직접 만들어 내는 소리라 음원 파일이 없어요) ---------- */
+const SOUNDS = [
+  { id: "off", label: "끔", desc: "" },
+  { id: "wind", label: "바람", desc: "숲을 지나는 바람" },
+  { id: "rain", label: "빗소리", desc: "처마 끝에 떨어지는 비" },
+  { id: "stream", label: "시냇물", desc: "낮게 흐르는 물소리" },
+  { id: "chime", label: "풍경", desc: "멀리서 울리는 풍경 소리" },
+  { id: "keys", label: "잔잔한 건반", desc: "천천히 이어지는 몇 개의 음" }
+];
+const Sound = (() => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const supported = !!AC;
+  let ac = null, master = null, white = null, brown = null, ir = null, track = null, playing = "off";
+  const volGain = () => Math.pow(store.volume / 100, 1.5);
+
+  function init() {
+    if (!supported) return false;
+    if (!ac) {
+      ac = new AC();
+      master = ac.createGain(); master.gain.value = volGain(); master.connect(ac.destination);
+      const len = ac.sampleRate * 4;
+      white = ac.createBuffer(1, len, ac.sampleRate);
+      const w = white.getChannelData(0);
+      for (let i = 0; i < len; i++) w[i] = Math.random() * 2 - 1;
+      brown = ac.createBuffer(1, len, ac.sampleRate);
+      const b = brown.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) { last = (last + .02 * w[i]) / 1.02; b[i] = last * 3.5; }
+      const il = Math.floor(ac.sampleRate * 2.6);
+      ir = ac.createBuffer(2, il, ac.sampleRate);
+      for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < il; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / il, 2.4); }
+    }
+    if (ac.state === "suspended") ac.resume();
+    return true;
+  }
+  const src = (buf) => { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.start(0, Math.random() * 3); return s; };
+  const osc = (f) => { const o = ac.createOscillator(); o.frequency.value = f; o.start(); return o; };
+  const gain = (v) => { const g = ac.createGain(); g.gain.value = v; return g; };
+  const filt = (type, f, q) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; return b; };
+
+  function wind(out, level) {
+    const n = src(brown), lp = filt("lowpass", 520, .7), bp = filt("bandpass", 950, .5), a = gain(.9 * level), b = gain(.3 * level);
+    n.connect(lp); lp.connect(a); a.connect(out);
+    n.connect(bp); bp.connect(b); b.connect(out);
+    const l1 = osc(.06), g1 = gain(240); l1.connect(g1); g1.connect(lp.frequency);
+    const l2 = osc(.1), g2 = gain(.3 * level); l2.connect(g2); g2.connect(a.gain);
+    return [n, l1, l2];
+  }
+  function rain(out) {
+    const n = src(white), hp = filt("highpass", 1100, .5), lp = filt("lowpass", 9000, .5), g = gain(.28);
+    n.connect(hp); hp.connect(lp); lp.connect(g); g.connect(out);
+    const n2 = src(white), bp = filt("bandpass", 2600, .4), g2 = gain(.16);
+    n2.connect(bp); bp.connect(g2); g2.connect(out);
+    const l = osc(.15), lg = gain(.05); l.connect(lg); lg.connect(g.gain);
+    return [n, n2, l];
+  }
+  function stream(out) {
+    const nodes = [];
+    [[700, 1.1, .9, .37], [1600, 2, .7, .61], [3200, 3, .5, 1.3]].forEach(([f, q, gv, rate]) => {
+      const n = src(white), bp = filt("bandpass", f, q), g = gain(gv);
+      n.connect(bp); bp.connect(g); g.connect(out);
+      const l = osc(rate), lg = gain(f * .3); l.connect(lg); lg.connect(bp.frequency);
+      nodes.push(n, l);
+    });
+    return nodes;
+  }
+  function chime(out, tr) {
+    const nodes = wind(out, .25), notes = [784, 988, 1175, 1568, 1976];
+    const strike = () => {
+      if (tr.dead) return;
+      const t0 = ac.currentTime + .02, f = notes[(Math.random() * notes.length) | 0] * (Math.random() < .3 ? .5 : 1), v = .06 + Math.random() * .06;
+      [[1, 1, 3.4], [2.76, .35, 1.8], [5.4, .12, .9]].forEach(([m, a, d]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = "sine"; o.frequency.value = f * m + (Math.random() - .5) * 1.5;
+        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v * a, t0 + .006); g.gain.exponentialRampToValueAtTime(.0001, t0 + d + 1);
+        o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + d + 1.2);
+      });
+      tr.timer = setTimeout(strike, 1800 + Math.random() * 4500);
+    };
+    tr.timer = setTimeout(strike, 600);
+    return nodes;
+  }
+  function keys(out, tr) {
+    const dry = gain(.75), wet = gain(.5), cv = ac.createConvolver();
+    cv.buffer = ir; dry.connect(out); cv.connect(wet); wet.connect(out);
+    const scale = [62, 64, 66, 69, 71, 74, 78].map((m) => 440 * Math.pow(2, (m - 69) / 12));
+    let i = 3;
+    const play = (f, v) => {
+      const t0 = ac.currentTime + .02;
+      [[1, 1, 4.2], [2, .22, 2.2], [3, .07, 1.2]].forEach(([m, a, d]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = "sine"; o.frequency.value = f * m;
+        g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v * a, t0 + .012); g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
+        o.connect(g); g.connect(dry); g.connect(cv); o.start(t0); o.stop(t0 + d + .1);
+      });
+    };
+    const step = () => {
+      if (tr.dead) return;
+      i = Math.max(0, Math.min(scale.length - 1, i + ((Math.random() * 5) | 0) - 2));
+      play(scale[i], .12 + Math.random() * .1);
+      if (Math.random() < .18) play(scale[Math.max(0, i - 2)] * .5, .08);
+      tr.timer = setTimeout(step, 1500 + Math.random() * 3500);
+    };
+    tr.timer = setTimeout(step, 500);
+    return [];
+  }
+  function fadeOut(tr) {
+    tr.dead = true; clearTimeout(tr.timer);
+    tr.out.gain.setTargetAtTime(0, ac.currentTime, .4);
+    setTimeout(() => { tr.nodes.forEach((n) => { try { n.stop(); } catch (e) { /* 이미 멈춤 */ } }); try { tr.out.disconnect(); } catch (e) { /* 무시 */ } }, 2400);
+  }
+  function set(id) {
+    if (id === playing) return true;
+    if (track) { fadeOut(track); track = null; }
+    playing = "off";
+    if (id === "off") return true;
+    if (!init()) return false;
+    const tr = { out: gain(0), nodes: [], timer: 0, dead: false };
+    tr.out.connect(master);
+    tr.nodes = { wind: (o) => wind(o, 1), rain, stream, chime, keys }[id](tr.out, tr);
+    tr.out.gain.setTargetAtTime(1, ac.currentTime, .6);
+    track = tr; playing = id;
+    return true;
+  }
+  function setVolume() { if (master) master.gain.setTargetAtTime(volGain(), ac.currentTime, .05); }
+  return { supported, set, setVolume, get playing() { return playing; } };
+})();
+
+const soundBtn = $("#soundBtn"), soundPop = $("#soundPop");
+function renderSound() {
+  const list = $("#soundList");
+  list.textContent = "";
+  for (const s of SOUNDS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "opt"; b.dataset.id = s.id;
+    b.setAttribute("aria-pressed", String(Sound.playing === s.id));
+    const box = document.createElement("span");
+    const t = document.createElement("span"); t.className = "t"; t.textContent = s.label; box.appendChild(t);
+    if (s.desc) { const d = document.createElement("span"); d.className = "d"; d.textContent = s.desc; box.appendChild(d); }
+    b.appendChild(box);
+    b.addEventListener("click", () => chooseSound(s.id));
+    list.appendChild(b);
+  }
+  const cur = SOUNDS.find((s) => s.id === Sound.playing);
+  soundBtn.textContent = Sound.playing === "off" ? "소리" : "소리 · " + cur.label;
+  const note = $("#soundNote");
+  const resume = SOUNDS.find((s) => s.id === store.sound);
+  note.hidden = !(store.soundOn && Sound.playing === "off" && resume);
+  if (!note.hidden) note.textContent = "읽기 시작을 누르면 '" + resume.label + "'이 다시 켜져요.";
+}
+function chooseSound(id) {
+  if (!Sound.set(id)) { toast("이 기기에서는 소리를 낼 수 없어요."); return; }
+  if (id === "off") store.soundOn = false; else { store.sound = id; store.soundOn = true; }
+  save(); renderSound();
+}
+function setPop(open) {
+  soundPop.hidden = !open;
+  soundBtn.setAttribute("aria-expanded", String(open));
+}
+soundBtn.addEventListener("click", () => setPop(soundPop.hidden));
+// 목록을 다시 그리면 눌린 버튼이 DOM에서 사라지므로, closest 대신 이벤트 경로로 안쪽 클릭인지 확인합니다.
+document.addEventListener("click", (e) => {
+  if (soundPop.hidden) return;
+  const path = e.composedPath();
+  if (!path.includes(soundPop) && !path.includes(soundBtn)) setPop(false);
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !soundPop.hidden) { setPop(false); soundBtn.focus(); } });
+$("#vol").value = String(store.volume);
+$("#vol").addEventListener("input", (e) => { store.volume = Number(e.target.value); Sound.setVolume(); save(); });
+if (!Sound.supported) soundBtn.hidden = true;
+
 /* ---------- 컨트롤 ---------- */
 document.querySelectorAll("dialog").forEach((d) => {
   d.addEventListener("close", () => {
@@ -723,17 +1128,27 @@ $("#chips").addEventListener("click", (e) => {
 $("#startBtn").addEventListener("click", startReading);
 $("#stopBtn").addEventListener("click", () => finishReading(false));
 $("#writeBtn").addEventListener("click", openComposer);
+$("#openSettings").addEventListener("click", () => { syncSettings(); $("#settingsDlg").showModal(); });
 
-function applySkin() {
-  document.querySelectorAll("[data-skin]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.skin === store.skin)));
+function syncSettings() {
+  document.querySelectorAll("[data-setting]").forEach((g) => {
+    g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(store[g.dataset.setting] === b.dataset.v)));
+  });
 }
-document.querySelectorAll("[data-skin]").forEach((b) => b.addEventListener("click", () => { store.skin = b.dataset.skin; save(); applySkin(); }));
+document.querySelectorAll("[data-setting]").forEach((g) => g.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-v]"); if (!b) return;
+  store[g.dataset.setting] = b.dataset.v;
+  save(); syncSettings();
+  if (g.dataset.setting !== "skin") applyScene();
+}));
 
 /* ---------- 시작 ---------- */
 resize();
-applySkin();
 renderDrawerCount();
+renderSound();
 $("#timer").textContent = fmt(state.dur);
+applyScene();
+setInterval(applyScene, 5 * 60 * 1000);
 requestAnimationFrame(frame);
 
 // 서버가 있으면 실제 읽는 사람 수와 문장 주고받기를 쓰고, 없으면 시뮬레이션 데모로 동작합니다.
@@ -742,14 +1157,21 @@ requestAnimationFrame(frame);
   if (r.ok && r.data && r.data.ok === true) {
     state.live = true;
     bookProxy = "/api/books";
+    if (Array.isArray(r.data.stores) && r.data.stores.length) stores = r.data.stores;
     $("#dockNote").textContent = LIVE_NOTE;
+    lampN = MIN_LAMPS;
+    setLamps(lampN, true);
+    setPresenceText();
     await pollPresence(true);
     setInterval(pollPresence, 15000);
   } else {
-    setPresence(presenceN, true);
+    lampN = 14 + Math.floor(Math.random() * 22);
+    setLamps(lampN, true);
+    setPresenceText();
     setInterval(() => {
-      presenceN = Math.max(12, Math.min(40, presenceN + Math.floor(Math.random() * 5) - 2));
-      setPresence(presenceN, false);
+      lampN = Math.max(12, Math.min(40, lampN + Math.floor(Math.random() * 5) - 2));
+      setLamps(lampN, false);
+      setPresenceText();
     }, 5000);
   }
 })();

@@ -7,9 +7,20 @@
 | 경로 | 역할 |
 |---|---|
 | `public/index.html` | 화면 전체 (한 파일). 서버가 없으면 시뮬레이션 데모로 동작합니다. |
-| `src/worker.js` | Cloudflare Worker. `/api/*` 와 정적 파일을 함께 제공합니다. |
+| `public/admin.html` | 관리자 화면 (`/admin.html`). 비밀번호가 있어야 데이터를 볼 수 있습니다. |
+| `src/worker.js` | Cloudflare Worker. `/api/*`, `/go`, 정적 파일을 한 주소에서 제공합니다. |
 | `schema.sql` | D1(SQLite) 테이블 정의 |
 | `test/books.test.mjs` | 도서 검색 응답 정리와 입력 필터 테스트 |
+
+## 화면 기능
+
+- **풍경:** 지금 시각(낮 6시~저녁 6시)과 계절에 맞춰 바뀝니다. 설정에서 낮·밤, 계절을 직접 고를 수도 있어요.
+  봄은 벚꽃, 여름은 반딧불(밤)과 햇빛 알갱이(낮), 가을은 단풍, 겨울은 눈이 내립니다.
+- **분위기용 불빛:** 서버가 연결되어 있어도 불빛은 항상 10개 이상 떠 있습니다 (`public/index.html`의 `MIN_LAMPS`).
+  화면의 숫자 문구("지금 N명이 함께 읽고 있어요")는 실제 접속자 수만 말하고, 0명이면 "고요한 밤이에요"라고만 합니다.
+- **소리:** 바람, 빗소리, 시냇물, 풍경, 잔잔한 건반. 브라우저가 직접 만들어 내는 소리라 음원 파일이 없고 저작권 문제도 없습니다.
+  기본은 꺼짐이고, 고르면 바로 재생됩니다. 지난번에 켜 둔 소리는 다음 방문에서 "읽기 시작"을 누를 때 이어서 켜집니다.
+- **서랍:** 담은 문장의 책을 모아 서점 링크(알라딘, 교보문고, 예스24)로 이어 줍니다.
 
 ### 문장이 전달되는 방식
 1. 독자 A가 문장을 보내면 서버에 쌓입니다. (A가 접속해 있지 않아도 됩니다.)
@@ -23,6 +34,7 @@
 - IP는 해시로만 보관하고, 하루 사용 횟수 제한에만 씁니다. (보내기 기기당 3회, IP당 12회 등)
 - 문장 1줄은 100자, 받는 분께 한 줄은 40자까지. 링크와 연락처 패턴은 서버에서도 막습니다.
 - 받은 문장만 신고할 수 있습니다.
+- 서점 링크 클릭은 서점과 책 이름만 세고, 누가 눌렀는지는 저장하지 않습니다.
 
 ## 로컬에서 실행
 
@@ -33,6 +45,14 @@ npm run dev
 ```
 
 http://localhost:8787 에서 열립니다. 브라우저 두 개(또는 시크릿 창)로 열어 한쪽에서 문장을 보내고 다른 쪽에서 읽기를 끝내 보세요.
+
+관리자 화면을 로컬에서 쓰려면 `.dev.vars` 파일(git에 올라가지 않아요)을 만들고 비밀번호를 적습니다.
+
+```
+ADMIN_TOKEN=아무_비밀번호
+```
+
+그 뒤 http://localhost:8787/admin.html 로 들어갑니다.
 
 테스트:
 
@@ -52,33 +72,48 @@ npx wrangler d1 create chaekdeung
 ```bash
 npm run db:init
 npx wrangler secret put KAKAO_REST_API_KEY
+npx wrangler secret put ADMIN_TOKEN
 npx wrangler secret put IP_SALT
 npm run deploy
 ```
 
-- `KAKAO_REST_API_KEY`: Kakao Developers에서 앱을 만들고 받은 REST API 키. 도서 검색은 카카오를 먼저 쓰고, 실패하면 네이버로 넘어갑니다.
-- 네이버를 쓰려면 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`도 같은 방식으로 등록합니다. (둘 중 하나만 있어도 됩니다.)
-- `IP_SALT`: 아무 긴 무작위 문자열. IP 해시에 섞여 들어갑니다.
-- 키가 하나도 없으면 도서 검색은 Google Books, 그것도 안 되면 샘플 목록으로 대체됩니다.
+| 이름 | 용도 |
+|---|---|
+| `KAKAO_REST_API_KEY` | 도서 검색. [Kakao Developers](https://developers.kakao.com)에서 로그인 후 내 애플리케이션 → 애플리케이션 추가하기 → 앱 요약 정보의 REST API 키. Admin 키가 아니라 REST API 키를 씁니다. |
+| `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | (선택) 카카오가 실패할 때 쓰는 두 번째 검색. 네이버가 개발자 센터에서 NAVER API HUB로 옮겨 가는 중이라, 새로 발급받는 키의 호출 방식이 코드와 다를 수 있어요. 처음에는 카카오만 쓰길 권합니다. |
+| `ADMIN_TOKEN` | 관리자 화면 비밀번호. 길고 무작위인 문자열로. |
+| `IP_SALT` | IP 해시에 섞는 무작위 문자열 |
+| `AFFILIATE_ALADIN`, `AFFILIATE_KYOBO`, `AFFILIATE_YES24`, `AFFILIATE_COUPANG` | (선택) 제휴 링크 주소. 아래 설명 참고 |
 
+키가 하나도 없으면 도서 검색은 Google Books, 그것도 안 되면 샘플 목록으로 대체됩니다.
 각 API의 이용약관(출처 표기, 하루 호출 한도)은 배포 전에 확인하세요.
 
-## 운영할 때
+## 서점 제휴 수익
 
-신고로 숨겨진 문장 확인:
-
-```bash
-npx wrangler d1 execute chaekdeung --remote --command "SELECT id, quote, book, reports FROM lights WHERE hidden = 1"
-```
-
-문장을 완전히 지우려면:
+서랍의 "담은 문장의 책"에서 서점 버튼을 누르면 `/go`가 클릭을 센 뒤 서점으로 보냅니다.
+기본값은 각 서점의 검색 주소(수익 없음)이고, 제휴 프로그램에서 받은 링크로 바꾸려면 환경 변수에 `{q}` 자리를 넣은 주소를 넣습니다.
 
 ```bash
-npx wrangler d1 execute chaekdeung --remote --command "DELETE FROM lights WHERE id = 123"
+npx wrangler secret put AFFILIATE_COUPANG
+# 입력 예: https://파트너_링크_주소...{q}
 ```
+
+- `{q}`는 책 제목과 첫 저자가 주소용으로 바뀐 값으로 대체됩니다.
+- `AFFILIATE_COUPANG`을 넣으면 쿠팡 버튼이 자동으로 나타납니다.
+- 제휴 프로그램마다 링크 형식과 허용 방식이 다릅니다. 가입 조건, 수수료, 표시 의무는 각 프로그램에서 직접 확인하세요.
+- 화면에는 "제휴 링크가 포함돼요" 안내가 이미 들어 있습니다.
+
+## 관리자 화면
+
+`/admin.html`에서 비밀번호(`ADMIN_TOKEN`)로 들어갑니다.
+
+- 지금 읽는 사람, 오늘 보낸 문장, 신고 대기 같은 숫자
+- 신고된 문장 / 숨긴 문장 / 최근 문장 목록과 숨기기, 복원, 삭제 (삭제는 두 번 눌러야 해요)
+- 서점별, 책별 클릭 수
+
+비밀번호를 20번 틀리면 그날은 그 IP에서 잠깁니다.
 
 ## 아직 하지 않은 것
-- 사운드(빗소리, 바람소리 등)
 - 공유 이미지 만들기
 - 저작권 침해 신고 접수 창구와 이용약관 문서
-- 관리자 화면 (지금은 SQL로 처리)
+- 사운드를 직접 들어 보며 하는 음량과 음색 조정

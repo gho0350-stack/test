@@ -34,7 +34,15 @@ CREATE TABLE IF NOT EXISTS presence (
   last_seen  INTEGER NOT NULL
 );
 
--- 하루 사용 횟수 제한 (보내기, 받기, 도서 검색)
+-- 서점 링크를 누른 횟수 (누가 눌렀는지는 저장하지 않습니다)
+CREATE TABLE IF NOT EXISTS clicks (
+  id     INTEGER PRIMARY KEY AUTOINCREMENT,
+  store  TEXT    NOT NULL,
+  book   TEXT    NOT NULL,
+  at     INTEGER NOT NULL
+);
+
+-- 하루 사용 횟수 제한 (보내기, 받기, 도서 검색, 관리자 로그인 실패)
 CREATE TABLE IF NOT EXISTS limits (
   k    TEXT    NOT NULL,
   day  TEXT    NOT NULL,
