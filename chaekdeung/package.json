@@ -1,0 +1,15 @@
+{
+  "name": "chaekdeung",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "db:init:local": "wrangler d1 execute chaekdeung --local --file=schema.sql",
+    "db:init": "wrangler d1 execute chaekdeung --remote --file=schema.sql",
+    "deploy": "wrangler deploy",
+    "test": "node test/books.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

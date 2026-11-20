@@ -1,0 +1,14 @@
+name = "chaekdeung"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+
+# public/ 의 정적 파일(index.html)과 /api/* 를 같은 주소에서 제공합니다.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chaekdeung"
+# `npx wrangler d1 create chaekdeung` 결과로 나온 id로 바꿔 주세요. (로컬 테스트는 이 값 그대로 써도 됩니다)
+database_id = "REPLACE_WITH_YOUR_D1_ID"

@@ -201,7 +201,7 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
       <button type="button" class="primary" id="writeBtn">이 문장 남기기</button>
       <button type="button" class="secondary" id="stopBtn">그만 읽기</button>
     </div>
-    <p class="dock-note">프로토타입입니다. 다른 독자의 불빛과 도착하는 문장은 예시예요.</p>
+    <p class="dock-note" id="dockNote">프로토타입입니다. 다른 독자의 불빛과 도착하는 문장은 예시예요.</p>
   </section>
 </main>
 
@@ -238,6 +238,7 @@ dialog::backdrop { background: rgba(3, 9, 11, .66); backdrop-filter: blur(3px); 
   </div>
   <p class="eg" id="cardEg" hidden>예시 문장입니다. 저작권이 만료된 작품에서 가져왔어요.</p>
   <div class="card-actions">
+    <button type="button" class="secondary" id="reportBtn" hidden>신고</button>
     <button type="button" class="secondary" id="copyBtn">복사</button>
     <button type="button" class="secondary" id="saveBtn">서랍에 담기</button>
     <button type="button" class="primary" data-close>고마워요</button>
@@ -263,9 +264,9 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const DAILY = 3;
 
 /* ---------- 도서 검색 ---------- */
-// 카카오/네이버 도서 검색을 쓰려면 키를 숨겨 주는 작은 프록시를 만들고 주소를 넣으세요.
-// 응답 형식은 카카오 책 검색과 같은 { documents: [{ title, authors: [] }] } 입니다.
-const BOOK_PROXY = "";
+// 서버(/api/books)가 연결되면 카카오·네이버 도서 검색을 쓰고, 아니면 Google Books나 샘플 목록으로 대체합니다.
+let bookProxy = "";
+const LIVE_NOTE = "문장은 익명으로 전달돼요. 링크와 연락처는 보낼 수 없어요.";
 
 const CATALOG = [
   ["어린 왕자", "앙투안 드 생텍쥐페리"], ["데미안", "헤르만 헤세"], ["인간 실격", "다자이 오사무"],
@@ -288,20 +289,22 @@ async function fetchTimeout(url, ms) {
   try { return await fetch(url, { signal: c.signal }); } finally { clearTimeout(t); }
 }
 async function searchBooks(q) {
+  if (bookProxy) {
+    try {
+      const r = await fetchTimeout(bookProxy + "?q=" + encodeURIComponent(q), 4000);
+      if (r.ok) {
+        const j = await r.json();
+        const items = (j.documents || []).map((d) => ({ title: d.title, authors: d.authors || "" })).filter((b) => b.title);
+        if (items.length) return { source: "도서 검색", items };
+      }
+    } catch (e) { /* 다음 방법으로 */ }
+  }
   try {
-    if (BOOK_PROXY) {
-      const r = await fetchTimeout(BOOK_PROXY + "?q=" + encodeURIComponent(q), 4000);
-      if (!r.ok) throw new Error(String(r.status));
-      const j = await r.json();
-      const items = (j.documents || []).slice(0, 8).map((d) => ({ title: d.title, authors: (d.authors || []).join(", ") }));
-      if (items.length) return { source: "도서 검색", items };
-    } else {
-      const r = await fetchTimeout("https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=8&q=" + encodeURIComponent(q), 4000);
-      if (!r.ok) throw new Error(String(r.status));
-      const j = await r.json();
-      const items = (j.items || []).map((v) => ({ title: v.volumeInfo.title, authors: (v.volumeInfo.authors || []).join(", ") })).filter((b) => b.title);
-      if (items.length) return { source: "Google Books 검색", items };
-    }
+    const r = await fetchTimeout("https://www.googleapis.com/books/v1/volumes?printType=books&maxResults=8&q=" + encodeURIComponent(q), 4000);
+    if (!r.ok) throw new Error(String(r.status));
+    const j = await r.json();
+    const items = (j.items || []).map((v) => ({ title: v.volumeInfo.title, authors: (v.volumeInfo.authors || []).join(", ") })).filter((b) => b.title);
+    if (items.length) return { source: "Google Books 검색", items };
   } catch (e) { /* 샘플 목록으로 대체 */ }
   return { source: "샘플 도서 목록 (인터넷 검색이 연결되지 않았어요)", items: localSearch(q) };
 }
@@ -320,18 +323,27 @@ const SEEDS = [
 
 /* ---------- 저장소 ---------- */
 const KEY = "chaekdeung.v1";
-const defaults = () => ({ drawer: [], sent: [], skin: "lamp", day: "", count: 0 });
+const defaults = () => ({ drawer: [], sent: [], skin: "lamp", day: "", count: 0, device: "" });
 function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return defaults(); }
 }
 let store = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* 저장 불가 */ } }
+// 로그인 없이 쓰기 위한 무작위 기기 ID. 이름이나 연락처와 연결되지 않습니다.
+function uuid() {
+  if (window.crypto && crypto.randomUUID) { try { return crypto.randomUUID(); } catch (e) { /* 아래로 */ } }
+  const b = new Uint8Array(16); crypto.getRandomValues(b);
+  b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+}
+if (!/^[0-9a-f-]{36}$/i.test(store.device)) { store.device = uuid(); save(); }
 function dayKey() { const d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
 function sentToday() { return store.day === dayKey() ? store.count : 0; }
 
 /* ---------- 상태 ---------- */
 const app = $("#app");
-const state = { reading: false, endAt: 0, dur: 25 * 60 * 1000, timerId: 0, chosen: null, lastSeed: -1 };
+const state = { reading: false, endAt: 0, dur: 25 * 60 * 1000, timerId: 0, hb: 0, live: false, chosen: null, lastSeed: -1 };
 let pendingCard = null, pendingReceive = false;
 
 let toastTimer = 0;
@@ -343,6 +355,25 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove("on"), 3200);
 }
 function anyDialogOpen() { return !!document.querySelector("dialog[open]"); }
+
+// 서버 호출. 실패해도 예외 없이 { ok: false }를 돌려줍니다.
+async function api(path, body, ms) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), ms || 6000);
+  try {
+    const r = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "content-type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: c.signal
+    });
+    let data = null;
+    try { data = await r.json(); } catch (e) { /* JSON이 아님 */ }
+    return { ok: r.ok, status: r.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: null };
+  } finally { clearTimeout(t); }
+}
 
 /* ---------- 캔버스: 불빛 ---------- */
 const cv = $("#sky");
@@ -406,7 +437,9 @@ function setPresence(n, instant) {
   const live = lamps.filter((l) => l.target === 1);
   while (live.length < n) { const l = newLamp(); if (instant) l.a = 1; lamps.push(l); live.push(l); }
   while (live.length > n) { const l = live.splice(Math.floor(Math.random() * live.length), 1)[0]; l.target = 0; }
-  $("#presence").textContent = "지금 " + n + "개의 불빛이 책을 읽고 있어요";
+  $("#presence").textContent = n > 0
+    ? "지금 " + n + "개의 불빛이 책을 읽고 있어요"
+    : (state.reading ? "지금은 나 혼자 읽고 있어요" : "아직 책을 읽는 불빛이 없어요. 첫 불빛이 되어 보세요");
 }
 
 const ease = (u) => (u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
@@ -478,20 +511,43 @@ function startReading() {
   tick();
   clearInterval(state.timerId);
   state.timerId = setInterval(tick, 250);
+  beat();
+  clearInterval(state.hb);
+  state.hb = setInterval(beat, 30000);
+}
+function beat() {
+  if (state.live) api("/api/heartbeat", { device: store.device }).then(pollPresence);
+}
+async function pollPresence(first) {
+  const r = await api("/api/presence");
+  if (!r.ok || !r.data) return;
+  presenceN = Math.max(0, (r.data.count | 0) - (state.reading ? 1 : 0));
+  setPresence(presenceN, first === true);
 }
 function finishReading(done) {
   if (!state.reading) return;
   clearInterval(state.timerId);
+  clearInterval(state.hb);
   state.reading = false;
   app.dataset.state = "idle";
   toast(done ? "수고했어요. 낯선 독자의 불빛이 오고 있어요." : "잠시 쉬어가요. 불빛이 오고 있어요.");
   if (anyDialogOpen()) pendingReceive = true; else receive();
 }
-function receive() {
-  let i;
-  do { i = Math.floor(Math.random() * SEEDS.length); } while (SEEDS.length > 1 && i === state.lastSeed);
-  state.lastSeed = i;
-  flyIn(() => showCard(SEEDS[i]));
+// 쉬는 시간이 되면 서버에서 다른 독자의 문장을 하나 받아 옵니다. 없거나 서버가 없으면 예시 문장을 보여 줘요.
+async function receive() {
+  let card = null;
+  if (state.live) {
+    const r = await api("/api/receive", { device: store.device });
+    const L = r.ok && r.data && r.data.light;
+    if (L) card = { id: L.id, live: true, quote: L.quote, book: L.book, author: L.author, note: L.note };
+  }
+  if (!card) {
+    let i;
+    do { i = Math.floor(Math.random() * SEEDS.length); } while (SEEDS.length > 1 && i === state.lastSeed);
+    state.lastSeed = i;
+    card = Object.assign({ seed: true }, SEEDS[i]);
+  }
+  flyIn(() => showCard(card));
 }
 
 /* ---------- 문장 카드 ---------- */
@@ -500,9 +556,13 @@ function showCard(c) {
   if (anyDialogOpen()) { pendingCard = c; return; }
   currentCard = c;
   $("#cardQuote").textContent = c.quote;
-  $("#cardMeta").textContent = c.author + ", 《" + c.book + "》";
+  $("#cardMeta").textContent = (c.author ? c.author + ", " : "") + "《" + c.book + "》";
   $("#cardNote").textContent = c.note || "";
-  $("#cardEg").hidden = false;
+  $("#cardEg").hidden = !c.seed;
+  const rb = $("#reportBtn");
+  rb.hidden = !c.live;
+  rb.disabled = false;
+  rb.textContent = "신고";
   refreshSaveBtn();
   $("#cardDlg").showModal();
 }
@@ -522,9 +582,18 @@ $("#saveBtn").addEventListener("click", () => {
 });
 $("#copyBtn").addEventListener("click", async () => {
   if (!currentCard) return;
-  const text = "“" + currentCard.quote + "” — " + currentCard.author + ", 《" + currentCard.book + "》";
+  const text = "“" + currentCard.quote + "” — " + (currentCard.author ? currentCard.author + ", " : "") + "《" + currentCard.book + "》";
   try { await navigator.clipboard.writeText(text); toast("문장을 복사했어요."); }
   catch (e) { toast("복사할 수 없어요. 문장을 길게 눌러 선택해 주세요."); }
+});
+
+$("#reportBtn").addEventListener("click", async () => {
+  if (!currentCard || !currentCard.live) return;
+  const b = $("#reportBtn");
+  b.disabled = true;
+  const r = await api("/api/report", { device: store.device, id: currentCard.id });
+  if (r.ok) { b.textContent = "신고했어요"; toast("신고했어요. 확인할게요."); }
+  else { b.disabled = false; toast("지금은 신고할 수 없어요."); }
 });
 
 /* ---------- 서랍 ---------- */
@@ -605,21 +674,33 @@ function openComposer() {
   bookQ.focus();
 }
 const BLOCK = /(https?:\/\/|www\.|@[a-z0-9_.]+|\d{2,3}[-\s]?\d{3,4}[-\s]?\d{4}|카톡|오픈채팅|open\.kakao)/i;
-$("#composerForm").addEventListener("submit", (e) => {
+$("#composerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const err = $("#formErr");
+  const sendBtn = $("#composerForm button[type=submit]");
+  const book = state.chosen;
   const quote = quoteEl.value.trim(), note = noteEl.value.trim();
-  if (!state.chosen) { err.textContent = "검색 결과에서 읽고 있는 책을 골라 주세요."; return; }
+  if (!book) { err.textContent = "검색 결과에서 읽고 있는 책을 골라 주세요."; return; }
   if (quote.length < 4) { err.textContent = "책에서 마음에 든 문장을 한 줄 적어 주세요."; return; }
   if (BLOCK.test(quote) || BLOCK.test(note)) { err.textContent = "링크나 연락처는 보낼 수 없어요."; return; }
-  if (sentToday() >= DAILY) { err.textContent = "오늘 보낼 수 있는 불빛을 모두 보냈어요. 내일 또 만나요."; return; }
-  store.day = dayKey(); store.count = sentToday() + 1;
-  store.sent.unshift({ at: Date.now(), quote, note, book: state.chosen.title, author: state.chosen.authors });
+  let remaining;
+  if (state.live) {
+    sendBtn.disabled = true;
+    const r = await api("/api/lights", { device: store.device, book: book.title, author: book.authors, quote, note });
+    sendBtn.disabled = false;
+    if (!r.ok) { err.textContent = (r.data && r.data.message) || "지금은 보낼 수 없어요. 잠시 뒤에 다시 시도해 주세요."; return; }
+    remaining = r.data.remaining;
+  } else {
+    if (sentToday() >= DAILY) { err.textContent = "오늘 보낼 수 있는 불빛을 모두 보냈어요. 내일 또 만나요."; return; }
+    store.day = dayKey(); store.count = sentToday() + 1;
+    remaining = DAILY - store.count;
+  }
+  store.sent.unshift({ at: Date.now(), quote, note, book: book.title, author: book.authors });
   store.sent = store.sent.slice(0, 100);
   save();
   $("#composer").close();
   flyOut();
-  toast("문장이 불빛이 되어 떠났어요. 오늘 " + (DAILY - store.count) + "번 더 보낼 수 있어요.");
+  toast("문장이 불빛이 되어 떠났어요. 오늘 " + remaining + "번 더 보낼 수 있어요.");
 });
 
 /* ---------- 컨트롤 ---------- */
@@ -653,12 +734,25 @@ resize();
 applySkin();
 renderDrawerCount();
 $("#timer").textContent = fmt(state.dur);
-setPresence(presenceN, true);
-setInterval(() => {
-  presenceN = Math.max(12, Math.min(40, presenceN + Math.floor(Math.random() * 5) - 2));
-  setPresence(presenceN, false);
-}, 5000);
 requestAnimationFrame(frame);
+
+// 서버가 있으면 실제 읽는 사람 수와 문장 주고받기를 쓰고, 없으면 시뮬레이션 데모로 동작합니다.
+(async () => {
+  const r = location.protocol === "file:" ? { ok: false } : await api("/api/health", null, 1500);
+  if (r.ok && r.data && r.data.ok === true) {
+    state.live = true;
+    bookProxy = "/api/books";
+    $("#dockNote").textContent = LIVE_NOTE;
+    await pollPresence(true);
+    setInterval(pollPresence, 15000);
+  } else {
+    setPresence(presenceN, true);
+    setInterval(() => {
+      presenceN = Math.max(12, Math.min(40, presenceN + Math.floor(Math.random() * 5) - 2));
+      setPresence(presenceN, false);
+    }, 5000);
+  }
+})();
 })();
 </script>
 </body>
