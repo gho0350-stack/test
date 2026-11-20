@@ -62,7 +62,6 @@ function renderHome() {
   $('#view').innerHTML = `
     <section class="hero">
       <h1>시간 날 때 하는<br><em>온라인 부업</em> 모음</h1>
-      <p class="sub">가서 뭘 하는지, 어떻게 돈이 되는지, 시간은 얼마나 드는지만 적었어요. 총 ${GIGS.length}곳이에요.</p>
     </section>
     <section class="picker" aria-label="내 상황 선택">
       <h2>한 번에 얼마나 낼 수 있어요?</h2>
@@ -109,15 +108,15 @@ function openDetail(id, push = true) {
     <div class="sheet-head">${logo(g, true)}
       <div><span class="tag">${esc(g.category)}</span><h2>${esc(g.name)}</h2></div></div>
     <p class="lead">${esc(g.doWhat)}</p>
-    ${block('어떻게 버나', g.how)}
-    ${block('얼마나 버나', g.amount)}
-    ${block('시간은 얼마나 드나', g.timeNote)}
-    ${g.steps.length ? `<h3>순서</h3><ol class="steps">${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
-    ${list('필요한 것', g.needs)}
-    <div class="proscons"><div>${list('좋은 점', g.pros)}</div><div>${list('걸리는 점', g.cons)}</div></div>
+    <dl class="rows">
+      <div class="row"><dt>수익</dt><dd>${g.amountShort ? `<b class="big">${esc(g.amountShort)}</b>` : ''}${g.amount ? `<span class="sm">${esc(g.amount)}</span>` : (g.amountShort ? '' : '<span class="none">아직 비어 있어요</span>')}</dd></div>
+      <div class="row"><dt>방식</dt><dd>${g.how ? esc(g.how) : '<span class="none">아직 비어 있어요</span>'}</dd></div>
+      <div class="row"><dt>시간</dt><dd>${g.timeNote ? esc(g.timeNote) : '<span class="none">아직 비어 있어요</span>'}</dd></div>
+      <div class="row"><dt>조건</dt><dd>${g.needs && g.needs.length && g.sources.length ? esc(g.needs.join(' · ')) : '<span class="none">아직 비어 있어요</span>'}</dd></div>
+    </dl>
     ${g.sources && g.sources.length
-      ? `<div class="srcs"><h3>출처</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul><p class="notice">${esc(g.checked)}에 공식 페이지에서 확인했어요. 조건은 바뀔 수 있어요.</p></div>`
-      : '<p class="notice">공식 페이지에서 수익과 조건을 확인하지 못한 서비스예요. 가입하기 전에 직접 확인하세요.</p>'}
+      ? `<div class="srcs"><h3>출처</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul><p class="notice">${esc(g.checked)} 확인. 조건은 바뀔 수 있어요.</p></div>`
+      : '<p class="notice">공식 페이지에서 확인한 내용이 아직 없어요. 가입 전에 직접 확인해 주세요.</p>'}
     <div class="cta-row">
       <button class="btn ghost" data-save="${g.id}">${saved ? '저장됨' : '저장'}</button>
       <a class="btn" data-go="${g.id}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">공식 사이트 가기</a>
