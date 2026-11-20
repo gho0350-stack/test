@@ -35,17 +35,23 @@ function logo(g, big) {
   return `<div class="${c}" style="--c:${g.color}">${g.logo ? `<img src="${esc(g.logo)}" alt="" loading="lazy" onerror="this.remove()">` : ''}<span>${tile}</span></div>`;
 }
 
+function timeLabel(g) {
+  const m = Math.min(...g.time.map(Number));
+  return m >= 60 ? '1시간 이상' : `${m}분 이상`;
+}
+
 function card(g, why = []) {
   const saved = state.saved.has(g.id);
   return `<article class="card" data-open="${g.id}" tabindex="0" role="button" aria-label="${esc(g.name)} 자세히 보기">
     ${logo(g)}
     <div class="card-body">
       <div class="card-top"><h3>${esc(g.name)}</h3><span class="tag">${esc(g.category)}</span></div>
-      <p>${esc(g.tagline)}</p>
-      <div class="meta"><span>💰 ${esc(g.earnType)}</span><span>${'●'.repeat(g.difficulty)}${'○'.repeat(3 - g.difficulty)} 난이도</span></div>
-      ${why.length ? `<div class="why">✓ ${why.map(esc).join(' · ')}</div>` : ''}
+      <p>${esc(g.doWhat)}</p>
+      <dl class="mini"><div><dt>수익</dt><dd class="${g.amountShort ? '' : 'none'}">${esc(g.amountShort || '확인 전')}</dd></div>
+      <div><dt>시간</dt><dd>${timeLabel(g)}</dd></div></dl>
+      ${why.length ? `<div class="why">${why.map(esc).join(' · ')}</div>` : ''}
     </div>
-    <button class="heart${saved ? ' on' : ''}" data-save="${g.id}" aria-label="저장">${saved ? '♥' : '♡'}</button>
+    <button class="heart${saved ? ' on' : ''}" data-save="${g.id}" aria-label="${saved ? '저장 취소' : '저장'}">${saved ? '저장됨' : '저장'}</button>
   </article>`;
 }
 
@@ -56,7 +62,7 @@ function renderHome() {
   $('#view').innerHTML = `
     <section class="hero">
       <h1>시간 날 때 하는<br><em>온라인 부업</em> 모음</h1>
-      <p class="sub">사진 팔기, 번역, 데이터 작업, 뉴스레터까지. 온라인 부업 ${GIGS.length}가지를 모았어요. 내 사정에 맞는 것만 골라 보세요.</p>
+      <p class="sub">가서 뭘 하는지, 어떻게 돈이 되는지, 시간은 얼마나 드는지만 적었어요. 총 ${GIGS.length}곳이에요.</p>
     </section>
     <section class="picker" aria-label="내 상황 선택">
       <h2>한 번에 얼마나 낼 수 있어요?</h2>
@@ -86,33 +92,35 @@ function render() {
 }
 
 // ── 상세 (바텀시트) ─────────────────────────────────────
+function list(title, arr) {
+  return arr && arr.length ? `<h3>${title}</h3><ul class="plain">${arr.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>` : '';
+}
+function block(title, text) {
+  return `<section class="blk"><h3>${title}</h3><p class="${text ? '' : 'none'}">${esc(text || '확인하지 못했어요.')}</p></section>`;
+}
+
 function openDetail(id, push = true) {
   const g = GIGS.find((x) => x.id === id); if (!g) return;
   track('ViewGig', { gig: id });
   const saved = state.saved.has(id);
+  const href = g.url || 'https://www.google.com/search?q=' + encodeURIComponent(g.name + ' 부업');
   $('#sheet').innerHTML = `<div class="sheet-card" role="dialog" aria-modal="true" aria-label="${esc(g.name)}">
-    <button class="close" data-close aria-label="닫기">✕</button>
+    <button class="close" data-close aria-label="닫기">닫기</button>
     <div class="sheet-head">${logo(g, true)}
       <div><span class="tag">${esc(g.category)}</span><h2>${esc(g.name)}</h2></div></div>
-    <p class="lead">${esc(g.summary)}</p>
-    <div class="facts">
-      <div><small>수익 방식</small><b>${esc(g.earnType)}</b></div>
-      <div><small>진행 주기</small><b>${esc(g.cadence)}</b></div>
-      <div><small>난이도</small><b>${['쉬움', '보통', '어려움'][g.difficulty - 1]}</b></div>
-    </div>
-    <h3>이렇게 시작해요</h3>
-    <ol class="steps">${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
-    <h3>필요한 것</h3><ul class="plain">${g.needs.map((s) => `<li>${esc(s)}</li>`).join('')}</ul>
-    <div class="proscons">
-      <div><h3>괜찮은 점</h3><ul class="plain">${g.pros.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
-      <div><h3>걸리는 점</h3><ul class="plain">${g.cons.map((s) => `<li>${esc(s)}</li>`).join('')}</ul></div>
-    </div>
+    <p class="lead">${esc(g.doWhat)}</p>
+    ${block('어떻게 버나', g.how)}
+    ${block('얼마나 버나', g.amount)}
+    ${block('시간은 얼마나 드나', g.timeNote)}
+    ${g.steps.length ? `<h3>순서</h3><ol class="steps">${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}
+    ${list('필요한 것', g.needs)}
+    <div class="proscons"><div>${list('좋은 점', g.pros)}</div><div>${list('걸리는 점', g.cons)}</div></div>
     ${g.sources && g.sources.length
-      ? `<div class="srcs"><h3>출처</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul><p class="notice">${esc(g.checked)}에 공식 페이지에서 확인한 내용이에요. 조건은 바뀔 수 있어요.</p></div>`
-      : '<p class="notice">공식 페이지에서 정산·가입 조건을 확인하지 못한 항목이에요. 아래 내용은 참고만 하고, 가입 전에 공식 사이트에서 확인해 주세요.</p>'}
+      ? `<div class="srcs"><h3>출처</h3><ul class="plain">${g.sources.map((x) => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a></li>`).join('')}</ul><p class="notice">${esc(g.checked)}에 공식 페이지에서 확인했어요. 조건은 바뀔 수 있어요.</p></div>`
+      : '<p class="notice">공식 페이지에서 수익과 조건을 확인하지 못한 서비스예요. 가입하기 전에 직접 확인하세요.</p>'}
     <div class="cta-row">
       <button class="btn ghost" data-save="${g.id}">${saved ? '저장됨' : '저장'}</button>
-      <a class="btn" data-go="${g.id}" href="${esc(g.url || 'https://www.google.com/search?q=' + encodeURIComponent(g.name + ' 부업'))}" target="_blank" rel="noopener noreferrer">${g.url ? '공식 사이트 가기' : '검색해서 찾기'}</a>
+      <a class="btn" data-go="${g.id}" href="${esc(href)}" target="_blank" rel="noopener noreferrer">공식 사이트 가기</a>
     </div></div>`;
   $('#sheet').classList.add('open');
   document.body.classList.add('lock');

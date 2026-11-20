@@ -63,3 +63,8 @@ h1 em{font-style:normal;background:linear-gradient(transparent 62%,#B8F0D2 62%)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 .cats{margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-right:-20px;padding-right:20px}.cats::-webkit-scrollbar{display:none}.cats .chip{flex:none;padding:8px 13px;font-size:13.5px;background:var(--card)}.cats .chip.on{background:var(--soft)}
 .logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#fff;padding:8px;border:1px solid var(--line);border-radius:inherit}.srcs a{color:var(--accent-d)}
+.mini{display:flex;gap:16px;margin:0;font-size:13px}.mini div{display:flex;gap:6px}.mini dt{color:var(--sub)}.mini dd{margin:0;font-weight:700}.none{color:#9aa39d!important;font-weight:500!important}
+.heart{width:auto;height:auto;padding:6px 10px;font-size:13px;font-weight:700;border-radius:10px;color:var(--sub)}.heart.on{color:var(--accent-d)}
+.close{width:auto;height:auto;padding:8px 12px;font-size:13px;font-weight:700;border-radius:12px}
+.blk{margin:14px 0}.blk h3{margin:0 0 4px!important}.blk p{font-size:14.5px;line-height:1.6}
+.card p{margin-bottom:8px}
