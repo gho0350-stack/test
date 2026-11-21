@@ -290,7 +290,7 @@ dialog .seg button[aria-pressed="true"] { color: #efe7d4; }
     <h2 id="drawerTitle">내 서랍</h2>
     <div class="drawer-sec"><h3>담은 문장의 책</h3><div id="wishList"></div></div>
     <div class="drawer-sec"><h3>받은 문장</h3><div id="recvList"></div></div>
-    <div class="drawer-sec"><h3>내 밑줄</h3><div id="sentList"></div></div>
+    <div class="drawer-sec"><h3 id="mineTitle">내 밑줄</h3><div id="sentList"></div></div>
     <div class="btn-row"><button type="button" class="secondary" data-close>닫기</button></div>
   </div>
 </dialog>
@@ -337,6 +337,9 @@ dialog .seg button[aria-pressed="true"] { color: #efe7d4; }
 const $ = (s) => document.querySelector(s);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const DAILY = 3;
+// 끝까지 읽으면 문장이 항상 도착하고, 중간에 "그만 읽기"를 누르면 가끔만 도착해요.
+const EARLY_CHANCE = 0.25;              // 중간에 그만 읽었을 때 도착할 확률
+const EARLY_COOLDOWN_MS = 30 * 60 * 1000; // 마지막 도착 뒤 이 시간 안에는 중간에 그만 읽어도 오지 않아요
 const MIN_LAMPS = 10; // 서버가 연결된 초기에도 방이 비어 보이지 않도록 최소로 띄우는 분위기용 불빛
 
 /* ---------- 도서 검색 ---------- */
@@ -414,7 +417,7 @@ const SEEDS = [
 
 /* ---------- 저장소 ---------- */
 const KEY = "chaekdeung.v1";
-const defaults = () => ({ drawer: [], sent: [], dismissed: [], skin: "lamp", day: "", count: 0, device: "", scene: "auto", season: "auto", sound: "wind", soundOn: false, volume: 50 });
+const defaults = () => ({ drawer: [], sent: [], dismissed: [], skin: "lamp", day: "", count: 0, device: "", scene: "auto", season: "auto", sound: "wind", soundOn: false, volume: 50, lastArrival: 0 });
 function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { return defaults(); }
 }
@@ -740,6 +743,9 @@ function finishReading(done) {
   clearInterval(state.hb);
   state.reading = false;
   app.dataset.state = "idle";
+  const arrives = done || (Date.now() - (store.lastArrival || 0) > EARLY_COOLDOWN_MS && Math.random() < EARLY_CHANCE);
+  if (!arrives) { toast("잠시 쉬어가요."); return; }
+  store.lastArrival = Date.now(); save();
   toast(done ? "수고했어요. 낯선 독자의 불빛이 오고 있어요." : "잠시 쉬어가요. 불빛이 오고 있어요.");
   if (anyDialogOpen()) pendingReceive = true; else receive();
 }
@@ -813,16 +819,19 @@ $("#reportBtn").addEventListener("click", async () => {
   else { b.disabled = false; toast("지금은 신고할 수 없어요."); }
 });
 // "고마워요"는 글 없이 마음만 보냅니다. 받은 사람에게는 개수로만 쌓여요.
+// 누른 뒤에도 카드는 "닫기"를 누를 때까지 그대로 열려 있어요.
 $("#thanksBtn").addEventListener("click", async () => {
-  const c = currentCard;
-  if (c && c.live) {
-    $("#thanksBtn").disabled = true;
+  const c = currentCard, b = $("#thanksBtn");
+  if (!c) return;
+  b.disabled = true;
+  if (c.live) {
     const r = await api("/api/thanks", { device: store.device, id: c.id });
-    toast(r.ok ? "고마운 마음을 전했어요." : "지금은 전할 수 없어요.");
+    if (!r.ok) { b.disabled = false; toast("지금은 전할 수 없어요."); return; }
+    toast("고마운 마음을 전했어요.");
   } else {
     toast("마음에 담았어요.");
   }
-  $("#cardDlg").close();
+  b.textContent = "♥ 전했어요";
 });
 
 /* ---------- 서랍 ---------- */
@@ -893,6 +902,8 @@ function renderReceived(el) {
 // 내가 밑줄 친 문장은 책과 문장만 보여 줘요. 고마워요를 받았다면 개수만 작게 붙습니다.
 function renderMine(el) {
   el.textContent = "";
+  const hearts = store.sent.reduce((n, s) => n + (s.thanks || 0), 0);
+  $("#mineTitle").textContent = hearts > 0 ? "내 밑줄 · ♡ 받은 고마워요 " + hearts : "내 밑줄";
   if (!store.sent.length) { el.appendChild(emptyP("아직 밑줄 친 문장이 없어요.")); return; }
   for (const it of store.sent) {
     const body = document.createElement("div");
