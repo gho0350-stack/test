@@ -1,0 +1,16 @@
+# 정적 파일(화면, 소리)을 [assets] 대신 KV에 넣어 두는 배포 설정입니다.
+# 사용법: scripts/kv_bulk.py 로 만든 파일을 `wrangler kv bulk put` 으로 올린 뒤 `wrangler deploy -c wrangler.kv.toml`
+name = "chaekdeung"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+workers_dev = true
+preview_urls = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chaekdeung"
+database_id = "f168a76c-aaeb-4721-a8c2-5993fffa8799"
+
+[[kv_namespaces]]
+binding = "SITE"
+id = "672fafb335be41b68b15bcd25c1d7d4e"

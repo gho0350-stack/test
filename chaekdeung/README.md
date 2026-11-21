@@ -72,6 +72,26 @@ ADMIN_TOKEN=아무_비밀번호
 npm test
 ```
 
+## 지금 배포된 서비스
+
+- 주소: https://chaekdeung.chaekdeung.workers.dev (관리자: `/admin.html`)
+- 이 배포는 정적 파일(화면, 소리)을 KV에 넣는 방식(`wrangler.kv.toml`)으로 올렸습니다.
+  화면이나 소리를 고친 뒤 다시 올리려면:
+
+```bash
+python3 scripts/kv_bulk.py kv-bulk.json
+```
+
+```bash
+npx wrangler kv bulk put kv-bulk.json --namespace-id=672fafb335be41b68b15bcd25c1d7d4e --remote
+```
+
+```bash
+npx wrangler deploy -c wrangler.kv.toml
+```
+
+- 아래의 "배포 (Cloudflare)"는 `wrangler.toml`의 `[assets]`를 쓰는 기본 방식입니다. 둘 중 하나만 쓰면 돼요.
+
 ## 배포 (Cloudflare)
 
 ```bash

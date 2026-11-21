@@ -417,13 +417,38 @@ async function route(request, env, ctx, url) {
   }
 }
 
+/* ---------- 정적 파일 ---------- */
+// 기본은 wrangler.toml 의 [assets] 를 씁니다. 그게 없고 SITE(KV)가 있으면 KV에서 꺼내 줍니다. (wrangler.kv.toml)
+const MIME = {
+  html: "text/html; charset=utf-8", css: "text/css; charset=utf-8", js: "text/javascript; charset=utf-8", json: "application/json; charset=utf-8",
+  md: "text/markdown; charset=utf-8", txt: "text/plain; charset=utf-8", mp3: "audio/mpeg", ogg: "audio/ogg", jpg: "image/jpeg", jpeg: "image/jpeg",
+  png: "image/png", svg: "image/svg+xml", ico: "image/x-icon", webp: "image/webp"
+};
+async function serveStatic(request, env) {
+  if (env.ASSETS) return env.ASSETS.fetch(request);
+  if (!env.SITE) return new Response("Not found", { status: 404 });
+  if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method not allowed", { status: 405 });
+  let key;
+  try { key = decodeURIComponent(new URL(request.url).pathname).replace(/^\/+/, ""); } catch (e) { return new Response("Bad request", { status: 400 }); }
+  if (key === "") key = "index.html";
+  if (key.includes("..")) return new Response("Not found", { status: 404 });
+  const body = await env.SITE.get(key, "arrayBuffer");
+  if (body === null) return new Response("Not found", { status: 404 });
+  const ext = key.split(".").pop().toLowerCase();
+  const isPage = ext === "html";
+  return new Response(request.method === "HEAD" ? null : body, {
+    headers: {
+      "content-type": MIME[ext] || "application/octet-stream",
+      "cache-control": isPage ? "no-cache" : "public, max-age=86400"
+    }
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const isApi = url.pathname.startsWith("/api/");
-    if (!isApi && url.pathname !== "/go") {
-      return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
-    }
+    if (!isApi && url.pathname !== "/go") return serveStatic(request, env);
     try {
       if (url.pathname === "/go") return await handleGo(env, url);
       return await route(request, env, ctx, url);

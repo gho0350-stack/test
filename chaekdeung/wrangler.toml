@@ -11,4 +11,4 @@ binding = "ASSETS"
 binding = "DB"
 database_name = "chaekdeung"
 # `npx wrangler d1 create chaekdeung` 결과로 나온 id로 바꿔 주세요. (로컬 테스트는 이 값 그대로 써도 됩니다)
-database_id = "REPLACE_WITH_YOUR_D1_ID"
+database_id = "f168a76c-aaeb-4721-a8c2-5993fffa8799"
