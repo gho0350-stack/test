@@ -11,19 +11,27 @@ window.SG = {
     seoul: '인서울 주요 대학 진학 비중이 높은 학교'
   },
 
+
+  /* 샘플 진학 실적 [의대, SKY, 인서울] — 시연용 가상 수치 */
+  STATS: {
+    sookmyung: [38, 96, 241], sehwa: [35, 110, 252], hwimun: [28, 118, 249], jinmyeong: [33, 84, 228],
+    yangjeong: [22, 92, 236], jamsil: [20, 88, 244], cheongwon: [14, 71, 205], hanyoung: [12, 66, 198],
+    banpo: [15, 58, 214], boin: [9, 47, 196], seorabeol: [8, 41, 187], baejae: [7, 38, 176]
+  },
+
   REGIONS: [
     { id: 'gangnam',   gu: '강남구', dong: '대치·도곡', tag: '국내 최대 규모 학원가',
-      infra: { subway: ['대치역', '도곡역', '학여울역'], academy: ['대치동 학원가', '은마사거리 학원가'], park: ['양재천 산책로', '대모산 입구'], library: ['대치도서관', '도곡도서관'], hospital: ['강남 종합병원', '대치 소아과 거리'], mart: ['대치 대형마트', '도곡 마트'] } },
+      infra: { edu: ['대치초','도곡중'], subway: ['대치역', '도곡역', '학여울역'], academy: ['대치동 학원가', '은마사거리 학원가'], park: ['양재천 산책로', '대모산 입구'], library: ['대치도서관', '도곡도서관'], hospital: ['강남 종합병원', '대치 소아과 거리'], mart: ['대치 대형마트', '도곡 마트'] } },
     { id: 'seocho',    gu: '서초구', dong: '반포·잠원', tag: '한강변 신축 대단지',
-      infra: { subway: ['고속터미널역', '잠원역', '신반포역'], academy: ['반포 학원가', '서초 학원가'], park: ['반포한강공원', '서리풀공원'], library: ['반포도서관', '잠원도서관'], hospital: ['반포 종합병원', '잠원 소아과'], mart: ['반포 대형마트', '잠원 마트'] } },
+      infra: { edu: ['반포초','잠원중'], subway: ['고속터미널역', '잠원역', '신반포역'], academy: ['반포 학원가', '서초 학원가'], park: ['반포한강공원', '서리풀공원'], library: ['반포도서관', '잠원도서관'], hospital: ['반포 종합병원', '잠원 소아과'], mart: ['반포 대형마트', '잠원 마트'] } },
     { id: 'songpa',    gu: '송파구', dong: '잠실·신천·방이', tag: '대단지 + 롯데월드 생활권',
-      infra: { subway: ['잠실역', '잠실새내역', '방이역'], academy: ['잠실 학원가', '송파 학원가'], park: ['석촌호수', '올림픽공원'], library: ['송파도서관', '잠실도서관'], hospital: ['송파 종합병원', '잠실 소아과'], mart: ['잠실 대형마트', '방이 마트'] } },
+      infra: { edu: ['잠실초','신천중'], subway: ['잠실역', '잠실새내역', '방이역'], academy: ['잠실 학원가', '송파 학원가'], park: ['석촌호수', '올림픽공원'], library: ['송파도서관', '잠실도서관'], hospital: ['송파 종합병원', '잠실 소아과'], mart: ['잠실 대형마트', '방이 마트'] } },
     { id: 'yangcheon', gu: '양천구', dong: '목동', tag: '목동 학원가 · 신시가지',
-      infra: { subway: ['목동역', '오목교역', '양천향교역'], academy: ['목동 학원가', '오목교 학원가'], park: ['안양천 산책로', '파리공원'], library: ['목동도서관', '양천도서관'], hospital: ['이대목동병원 인근', '목동 소아과'], mart: ['목동 대형마트', '오목교 마트'] } },
+      infra: { edu: ['목동초','목동중'], subway: ['목동역', '오목교역', '양천향교역'], academy: ['목동 학원가', '오목교 학원가'], park: ['안양천 산책로', '파리공원'], library: ['목동도서관', '양천도서관'], hospital: ['이대목동병원 인근', '목동 소아과'], mart: ['목동 대형마트', '오목교 마트'] } },
     { id: 'nowon',     gu: '노원구', dong: '중계·상계', tag: '은행사거리 학원가',
-      infra: { subway: ['중계역', '하계역', '노원역'], academy: ['중계 은행사거리 학원가', '노원 학원가'], park: ['불암산 둘레길', '중계근린공원'], library: ['노원도서관', '중계도서관'], hospital: ['노원 종합병원', '중계 소아과'], mart: ['중계 대형마트', '하계 마트'] } },
+      infra: { edu: ['중계초','중계중'], subway: ['중계역', '하계역', '노원역'], academy: ['중계 은행사거리 학원가', '노원 학원가'], park: ['불암산 둘레길', '중계근린공원'], library: ['노원도서관', '중계도서관'], hospital: ['노원 종합병원', '중계 소아과'], mart: ['중계 대형마트', '하계 마트'] } },
     { id: 'gangdong',  gu: '강동구', dong: '고덕·상일', tag: '신축 대단지 · 학령기 가구 급증',
-      infra: { subway: ['고덕역', '상일동역', '강일역'], academy: ['고덕 학원가', '강동 학원가'], park: ['고덕천 산책로', '암사생태공원'], library: ['고덕도서관', '강동도서관'], hospital: ['강동 종합병원', '고덕 소아과'], mart: ['고덕 대형마트', '상일 마트'] } }
+      infra: { edu: ['고덕초','상일중'], subway: ['고덕역', '상일동역', '강일역'], academy: ['고덕 학원가', '강동 학원가'], park: ['고덕천 산책로', '암사생태공원'], library: ['고덕도서관', '강동도서관'], hospital: ['강동 종합병원', '고덕 소아과'], mart: ['고덕 대형마트', '상일 마트'] } }
   ],
 
   SCHOOLS: [
@@ -98,6 +106,7 @@ window.SG = {
 
   INFRA: {
     subway:   { icon: '🚇', label: '지하철' },
+    edu:      { icon: '🎒', label: '초·중학교' },
     academy:  { icon: '📚', label: '학원가' },
     park:     { icon: '🌳', label: '공원' },
     library:  { icon: '📖', label: '도서관' },
@@ -107,8 +116,8 @@ window.SG = {
 
   USERS_SEED: [
     { id: 'demo', nick: '체험계정',   email: 'demo@sample.kr', pw: 'demo1234', region: 'gangnam' },
-    { id: 'u1',   nick: '대치맘',     email: 'u1@sample.kr', pw: 'sample1234', region: 'gangnam' },
-    { id: 'u2',   nick: '반포아빠',   email: 'u2@sample.kr', pw: 'sample1234', region: 'seocho' },
+    { id: 'u1',   nick: '대치맘', verified: true,     email: 'u1@sample.kr', pw: 'sample1234', region: 'gangnam' },
+    { id: 'u2',   nick: '반포아빠', verified: true,   email: 'u2@sample.kr', pw: 'sample1234', region: 'seocho' },
     { id: 'u3',   nick: '잠실러',     email: 'u3@sample.kr', pw: 'sample1234', region: 'songpa' },
     { id: 'u4',   nick: '목동언니',   email: 'u4@sample.kr', pw: 'sample1234', region: 'yangcheon' },
     { id: 'u5',   nick: '중계삼남매', email: 'u5@sample.kr', pw: 'sample1234', region: 'nowon' },

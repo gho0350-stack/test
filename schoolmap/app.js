@@ -6,284 +6,472 @@
   const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const hash = (str) => { let h = 5381; for (const c of String(str)) h = ((h << 5) + h + c.charCodeAt(0)) | 0; return 'h' + (h >>> 0).toString(36); };
-  const rng = (seed) => { let a = typeof seed === 'string' ? parseInt(hash(seed).slice(1), 36) : seed; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+  const rng = (seed) => { let a = parseInt(hash(seed).slice(1), 36); return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const r1 = (x) => Math.round(x * 10) / 10;
+  const avg = (a) => a.reduce((s, v) => s + v, 0) / (a.length || 1);
   const TODAY = '2026-11-22';
+  const AREA_F = { 59: 0.74, 84: 1 };
+  const METRIC = { med: ['의대', 0], sky: ['SKY', 1], seoul: ['인서울', 2] };
 
   /* ---------- 금액 포맷 ---------- */
   const eokS = (x) => (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '') + '억';
   const eokL = (x) => { const e = Math.floor(x + 1e-9); const m = Math.round((x - e) * 10) * 1000; return m ? `${e}억 ${m.toLocaleString()}만` : `${e}억`; };
   const range = (a, b) => (a === b ? eokS(a) : `${eokS(a)} ~ ${eokS(b)}`);
 
+  /* ---------- UI 상태 ---------- */
+  const ui = {
+    area: 59, metric: 'sky', region: 'all', sortKey: 'metric', preSel: null,
+    layers: { zone: true, apt: true, edu: true, academy: true, life: true, culture: true, transit: true }, sel: null, vb: null, listKind: 'sale',
+    budget: { kind: 'sale', sale: 15, jeonse: 6 }, cmp: ['sookmyung', 'sehwa', 'hwimun'],
+    aptTab: 'chart', aptKind: 'both', aptRange: 3, aptCmp: [],
+    cRegion: 'all', cCat: 'all', cQuery: '', mTab: 'in', mOpen: null
+  };
+  const view = $('#view');
+
   /* ---------- 데이터 모델 ---------- */
   const REG = Object.fromEntries(D.REGIONS.map((r) => [r.id, r]));
-  const SCHOOLS = D.SCHOOLS.map((s) => {
-    const apts = s.apts.map((a, i) => ({ id: s.id + '-' + i, letter: String.fromCharCode(65 + i), name: a[0], hh: a[1], year: a[2], sale: a[3], jeonse: a[4], elem: a[5], mid: a[6], hi: a[7] }));
-    return Object.assign({}, s, {
-      apts,
-      saleMin: Math.min(...apts.map((a) => a.sale)), saleMax: Math.max(...apts.map((a) => a.sale)),
-      jMin: Math.min(...apts.map((a) => a.jeonse)), jMax: Math.max(...apts.map((a) => a.jeonse))
-    });
-  });
+  const SCHOOLS = D.SCHOOLS.map((s) => Object.assign({}, s, {
+    stats: D.STATS[s.id],
+    apts: s.apts.map((a, i) => ({ id: s.id + '-' + i, sid: s.id, letter: String.fromCharCode(65 + i), name: a[0], hh: a[1], year: a[2], sale: a[3], jeonse: a[4], elem: a[5], mid: a[6], hi: a[7] }))
+  }));
+  const APTS = SCHOOLS.flatMap((s) => s.apts);
   const schoolById = (id) => SCHOOLS.find((s) => s.id === id);
+  const aptById = (id) => APTS.find((a) => a.id === id);
+  const schoolOf = (a) => schoolById(a.sid);
+  const pr = (a, k) => r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]);
+  const agg = (s) => { const sv = s.apts.map((a) => pr(a, 'sale')), jv = s.apts.map((a) => pr(a, 'jeonse')); return { sMin: Math.min(...sv), sMax: Math.max(...sv), jMin: Math.min(...jv), jMax: Math.max(...jv), sAvg: avg(sv), jAvg: avg(jv) }; };
+  const regOf = (s) => REG[s.region];
 
   function tradesOf(a) {
     const r = rng(a.id);
-    const mk = (base, n, spread) => {
-      let t = new Date(TODAY).getTime(); const out = [];
-      for (let i = 0; i < n; i++) {
-        t -= (r() * 22 + 6) * 864e5;
-        out.push({ date: new Date(t).toISOString().slice(0, 10), floor: Math.floor(r() * 24) + 2, price: Math.round((base + (r() - 0.5) * spread) * 10) / 10 });
-      }
-      return out;
-    };
+    const mk = (base, n, spread) => { let t = new Date(TODAY).getTime(); const out = []; for (let i = 0; i < n; i++) { t -= (r() * 22 + 6) * 864e5; out.push({ date: new Date(t).toISOString().slice(0, 10), floor: Math.floor(r() * 24) + 2, price: r1((base + (r() - 0.5) * spread) * AREA_F[ui.area]) }); } return out; };
     return { sale: mk(a.sale, 4, 1.6), jeonse: mk(a.jeonse, 3, 0.8) };
   }
+  const facCache = {};
+  function factors(a, kind) {
+    const key = a.id + kind; if (facCache[key]) return facCache[key];
+    const r = rng(key), start = kind === 'sale' ? 0.74 + r() * 0.14 : 0.82 + r() * 0.1, phase = r() * 6, f = [];
+    for (let i = 0; i < 60; i++) {
+      let v = start + (1 - start) * (i / 59); const dip = (kind === 'sale' ? -0.09 : -0.04) * Math.exp(-Math.pow((i - 30) / 9, 2));
+      f.push(v * (1 + dip + 0.012 * Math.sin(i / 3 + phase) + (r() - 0.5) * 0.012));
+    }
+    return (facCache[key] = f.map((x) => x / f[59]));
+  }
+  const seriesOf = (a, kind) => factors(a, kind).map((x) => x * pr(a, kind));
+  const change1y = (a, kind) => { const f = factors(a, kind); return f[59] / f[47] - 1; };
+  const chgHtml = (c) => `<span class="${c >= 0 ? 'up' : 'down'}">${c >= 0 ? '▲' : '▼'} ${c >= 0 ? '+' : ''}${(c * 100).toFixed(1)}%</span> <small class="muted">(1년)</small>`;
 
-  /* ---------- 저장소 (localStorage 실패 대비 메모리 폴백) ---------- */
-  const KEY = 'schoolmap.v1';
+  /* ---------- 저장소 ---------- */
+  const KEY = 'schoolmap.v2';
   let db;
   function seed() {
-    return {
-      users: D.USERS_SEED.map((u) => ({ id: u.id, nick: u.nick, email: u.email, pw: hash(u.pw), region: u.region })),
-      posts: JSON.parse(JSON.stringify(D.POSTS_SEED)), msgs: JSON.parse(JSON.stringify(D.MSGS_SEED)), session: null
-    };
+    return { users: D.USERS_SEED.map((u) => ({ id: u.id, nick: u.nick, email: u.email, pw: hash(u.pw), region: u.region, verified: !!u.verified })), posts: JSON.parse(JSON.stringify(D.POSTS_SEED)), msgs: JSON.parse(JSON.stringify(D.MSGS_SEED)), session: null };
   }
   function load() { try { const v = localStorage.getItem(KEY); db = v ? JSON.parse(v) : seed(); } catch (e) { db = seed(); } }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* 메모리만 사용 */ } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) { /* 메모리만 */ } }
   const me = () => db.users.find((u) => u.id === db.session) || null;
   const uid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
   const unreadCount = () => { const u = me(); return u ? db.msgs.filter((m) => m.to === u.nick && !m.read).length : 0; };
-
-  /* ---------- UI 상태 ---------- */
-  const ui = { homeCat: 'all', homeRegion: 'all', sort: 'cat', sel: null, infra: { subway: true, academy: true, park: true, library: true, hospital: true, mart: true }, vb: null, cRegion: 'all', cCat: 'all', cQuery: '', mTab: 'in', mOpen: null };
-  const view = $('#view');
+  const nickHtml = (n) => { const u = db.users.find((x) => x.nick === n); return esc(n) + (u && u.verified ? '<span class="ver" title="실거주 인증">✔</span>' : ''); };
 
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200); }
   const badge = (cat) => `<span class="badge b-${cat}">${D.CAT_LABEL[cat]}</span>`;
+  const areaSeg = () => `<span class="seg" role="group" aria-label="평형">${[59, 84].map((v) => `<button class="${ui.area === v ? 'on' : ''}" data-act="area" data-v="${v}">${v}㎡</button>`).join('')}</span>`;
 
-  /* =====================================================================
-   * 홈: 의대 / SKY / 인서울 학교 리스트
-   * ===================================================================== */
-  function viewHome() {
-    const aptCount = SCHOOLS.reduce((n, s) => n + s.apts.length, 0);
-    let list = SCHOOLS.filter((s) => (ui.homeCat === 'all' || s.cat === ui.homeCat) && (ui.homeRegion === 'all' || s.region === ui.homeRegion));
-    const order = { med: 0, sky: 1, seoul: 2 };
-    const sorters = { cat: (a, b) => order[a.cat] - order[b.cat] || b.saleMax - a.saleMax, sale_desc: (a, b) => b.saleMax - a.saleMax, sale_asc: (a, b) => a.saleMin - b.saleMin, jeonse_desc: (a, b) => b.jMax - a.jMax, jeonse_asc: (a, b) => a.jMin - b.jMin };
-    list = list.slice().sort(sorters[ui.sort]);
-    const row = (s, i) => `
-      <a class="trow" href="#/school/${s.id}" aria-label="${esc(s.name)} 선택">
-        <span class="no">${i + 1}</span>
-        <span class="cat">${badge(s.cat)}</span>
-        <span class="name"><b>${esc(s.name)}</b></span>
-        <span class="reg">${REG[s.region].gu} <small>${REG[s.region].dong}</small></span>
-        <span class="sale"><small>매매</small><b>${range(s.saleMin, s.saleMax)}</b></span>
-        <span class="jeonse"><small>전세</small><b>${range(s.jMin, s.jMax)}</b></span>
-        <span class="go"><span class="btn primary sm">선택</span></span>
-      </a>`;
-    view.innerHTML = `
-      <section class="hero">
-        <h2>학군 한눈에</h2>
-        <p>의대 · SKY · 인서울 고등학교와 배정 지역 아파트의 매매·전세 가격대를 비교하고, 마음에 드는 학교를 선택하세요.</p>
-        <div class="stats">
-          <div class="stat"><b>${D.REGIONS.length}</b><span>지역구</span></div>
-          <div class="stat"><b>${SCHOOLS.length}</b><span>고등학교</span></div>
-          <div class="stat"><b>${aptCount}</b><span>배정 아파트</span></div>
-        </div>
-      </section>
-      <div class="notice">⚠️ 샘플 화면입니다. 모든 수치는 시연용 가상 데이터이며 실제와 다를 수 있어요.</div>
-      <div class="chips" role="tablist" aria-label="학군 구분">
-        ${[['all', '전체'], ['med', '의대'], ['sky', 'SKY'], ['seoul', '인서울']].map(([v, l]) => `<button class="chip ${ui.homeCat === v ? 'on' : ''}" data-act="home-cat" data-v="${v}">${l}</button>`).join('')}
-      </div>
-      <div class="chips" aria-label="지역">
-        <button class="chip ${ui.homeRegion === 'all' ? 'on' : ''}" data-act="home-region" data-v="all">전체 지역</button>
-        ${D.REGIONS.map((r) => `<button class="chip ${ui.homeRegion === r.id ? 'on' : ''}" data-act="home-region" data-v="${r.id}">${r.gu}</button>`).join('')}
-      </div>
-      <div class="toolbar"><span class="muted">${list.length}개 학교</span>
-        <select class="inline" id="sort" aria-label="정렬">
-          ${[['cat', '구분순 (의대·SKY·인서울)'], ['sale_desc', '매매가 높은순'], ['sale_asc', '매매가 낮은순'], ['jeonse_desc', '전세가 높은순'], ['jeonse_asc', '전세가 낮은순']].map(([v, l]) => `<option value="${v}" ${ui.sort === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select>
-      </div>
-      <div class="thead trow" aria-hidden="true"><span class="no">#</span><span class="cat">구분</span><span class="name">학교</span><span class="reg">지역</span><span class="sale">매매 min~max</span><span class="jeonse">전세 min~max</span><span class="go"></span></div>
-      <div class="tlist">${list.map(row).join('') || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}</div>`;
-    $('#sort').onchange = (e) => { ui.sort = e.target.value; viewHome(); };
+  /* ---------- 일러스트 / 차트 ---------- */
+  function bldg() {
+    const bs = [[24, 62, 58], [92, 34, 66], [168, 54, 60], [238, 72, 52]];
+    const g = bs.map(([x, y, w], i) => {
+      let win = ''; for (let yy = y + 10; yy < 138; yy += 15) for (let xx = x + 9; xx < x + w - 9; xx += 13) win += `<rect x="${xx}" y="${yy}" width="7" height="9" rx="1" fill="#fff" opacity=".55"/>`;
+      return `<rect x="${x}" y="${y}" width="${w}" height="${150 - y}" rx="3" fill="${i % 2 ? 'var(--accent)' : 'var(--c2)'}" opacity="${0.6 + i * 0.08}"/>${win}`;
+    }).join('');
+    return `<svg viewBox="0 0 320 160" role="img" aria-label="단지 일러스트"><rect width="320" height="160" fill="var(--accent-soft)"/><circle cx="34" cy="122" r="32" fill="var(--accent)" opacity=".16"/><circle cx="292" cy="118" r="38" fill="var(--accent)" opacity=".16"/>${g}<rect y="148" width="320" height="12" fill="var(--accent)" opacity=".28"/></svg>`;
+  }
+  const monthLabel = (idx59) => { const t = 2026 * 12 + 10 - (59 - idx59); return `${String(Math.floor(t / 12)).slice(2)}.${String((t % 12) + 1).padStart(2, '0')}`; };
+  function lineChart(lines, N) {
+    const W = 640, H = 250, L = 46, R = 64, T = 14, B = 26;
+    const all = lines.flatMap((l) => l.vals.slice(-N)); let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.14 || 1; lo -= pad; hi += pad;
+    const x = (i) => L + ((W - L - R) * i) / (N - 1), y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+    let g = '';
+    for (let k = 0; k <= 4; k++) { const v = lo + ((hi - lo) * k) / 4; g += `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${eokS(v)}</text>`; }
+    const step = N <= 12 ? 3 : N <= 36 ? 6 : 12;
+    for (let i = N - 1; i >= 0; i -= step) g += `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === N - 1 ? 'end' : 'middle'}">${monthLabel(59 - (N - 1 - i))}</text>`;
+    lines.forEach((l) => {
+      const v = l.vals.slice(-N), d = v.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join('');
+      g += `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${x(N - 1).toFixed(1)}" cy="${y(v[N - 1]).toFixed(1)}" r="4.5" fill="${l.color}"/><text x="${(x(N - 1) + 8).toFixed(1)}" y="${(y(v[N - 1]) + 4).toFixed(1)}" style="fill:${l.color};font-weight:800;font-size:12px">${eokS(v[N - 1])}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="실거래가 추이 차트">${g}</svg>`;
+  }
+  function spark(vals, color) {
+    const v = vals.slice(-24), lo = Math.min(...v), hi = Math.max(...v), d = v.map((p, i) => `${i ? 'L' : 'M'}${((i / 23) * 200).toFixed(1)},${(40 - ((p - lo) / (hi - lo || 1)) * 34).toFixed(1)}`).join('');
+    return `<svg viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`;
   }
 
   /* =====================================================================
-   * 학교 상세: 지도 + 배정 아파트
+   * 01 메인
+   * ===================================================================== */
+  function viewHome() {
+    const regs = D.REGIONS.map((r) => { const ss = SCHOOLS.filter((s) => s.region === r.id); return { r, st: [0, 1, 2].map((k) => ss.reduce((n, s) => n + s.stats[k], 0)), avg: avg(ss.map((s) => agg(s).sAvg)) }; }).sort((a, b) => b.st[1] - a.st[1]);
+    const mx = Math.max(...regs.map((x) => x.avg));
+    view.innerHTML = `
+      <section class="hero2">
+        <div>
+          <h1>좋은 학교, 합리적인 주거비로 찾으세요</h1>
+          <p class="lead">학교 배정권역 아파트, 시세, 교육·생활정보까지 한 번에</p>
+          <div class="cta2" style="margin:14px 0">
+            <a class="cta green" href="#/schools"><b>학교부터 찾기</b><span>원하는 학교의 배정 아파트 보기</span></a>
+            <a class="cta gold" href="#/budget"><b>예산부터 찾기</b><span>예산 내에서 가능한 학군 찾기</span></a>
+          </div>
+          <form id="sform" class="searchbar" role="search"><input id="q" type="text" placeholder="학교명·지역·아파트명을 입력하세요" aria-label="검색"><button type="submit" aria-label="검색">🔍</button></form>
+          <div class="quick" style="margin-top:12px">
+            <a href="#/schools?metric=med">🩺 의대 진학 우수</a><a href="#/schools?metric=sky">🏅 SKY 진학 우수</a><a href="#/schools?metric=seoul">🎓 인서울 진학 우수</a>
+            <a href="#/schools">📍 핵심 학군지</a><a href="#/search?new=1">🏢 신축 아파트</a><a href="#/schools">🔎 전체 찾기</a>
+          </div>
+        </div>
+        <div class="hero-art">${bldg()}</div>
+      </section>
+      <div class="notice">⚠️ 샘플 화면입니다. 학교 진학 실적·가격·세대수 등 모든 수치는 시연용 가상 데이터이며 실제와 다릅니다.</div>
+      <div class="home-grid">
+        <section class="card pad">
+          <div class="sec-h"><h2>🏆 주요 학군지 TOP ${regs.length}</h2><small>샘플 진학 실적 합계 기준</small></div>
+          <div style="margin-top:6px">${regs.map((x, i) => `<a class="toprow" href="#/schools?region=${x.r.id}"><span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span><span><b>${x.r.dong}</b> <small class="muted">(${x.r.gu})</small></span><span class="st">의대 <b>${x.st[0]}</b> · SKY <b>${x.st[1]}</b> · 인서울 <b>${x.st[2]}</b></span><span class="muted">›</span></a>`).join('')}</div>
+        </section>
+        <section class="card pad bubble">
+          <h2>학군 가격 비교</h2>
+          <p>비슷한 교육환경이라면 어느 지역이 진입하기 좋을까요? 지역별 평균 59㎡ 매매가를 비교해 보세요.</p>
+          <div class="mini" aria-hidden="true">${regs.map((x) => `<i style="height:${Math.round((x.avg / mx) * 100)}%"></i>`).join('')}</div>
+          <a class="btn primary block" href="#/compare">지금 비교하기 ›</a>
+        </section>
+      </div>`;
+    $('#sform').onsubmit = (e) => { e.preventDefault(); location.hash = '#/search?q=' + encodeURIComponent($('#q').value.trim()); };
+  }
+
+  /* =====================================================================
+   * 02 학교 / 학교 목록
+   * ===================================================================== */
+  function viewSchools(q) {
+    if (q.has('metric') && METRIC[q.get('metric')]) { ui.metric = q.get('metric'); ui.sortKey = 'metric'; }
+    if (q.has('region')) ui.region = q.get('region');
+    const mk = METRIC[ui.metric][1];
+    let list = SCHOOLS.filter((s) => ui.region === 'all' || s.region === ui.region);
+    const sorters = { metric: (a, b) => b.stats[mk] - a.stats[mk], sale_desc: (a, b) => agg(b).sMax - agg(a).sMax, sale_asc: (a, b) => agg(a).sMin - agg(b).sMin, jeonse_desc: (a, b) => agg(b).jMax - agg(a).jMax, jeonse_asc: (a, b) => agg(a).jMin - agg(b).jMin };
+    list = list.slice().sort(sorters[ui.sortKey]);
+    const pre = list.find((s) => s.id === ui.preSel) || list[0];
+    const hl = (k) => (mk === k ? 'hl' : '');
+    const row = (s, i) => { const g = agg(s); return `
+      <a class="srow ${pre && pre.id === s.id ? 'on' : ''}" href="#/school/${s.id}" data-act="pre" data-v="${s.id}">
+        <span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span>
+        <span class="name"><b>${esc(s.name)}</b> ${badge(s.cat)}</span>
+        <span class="reg">${regOf(s).gu}</span>
+        <span class="stat">의대 <b>${s.stats[0]}</b> · SKY <b>${s.stats[1]}</b> · 인서울 <b>${s.stats[2]}</b></span>
+        <span class="m c num ${hl(0)}">${s.stats[0]}</span><span class="k c num ${hl(1)}">${s.stats[1]}</span><span class="si c num ${hl(2)}">${s.stats[2]}</span>
+        <span class="ap c num">${s.apts.length}개</span>
+        <span class="sale c num"><small>매매</small><b>${range(g.sMin, g.sMax)}</b></span><span class="jeo c num"><small>전세</small><b>${range(g.jMin, g.jMax)}</b></span>
+      </a>`; };
+    const pg = pre ? agg(pre) : null;
+    view.innerHTML = `
+      <h2 class="page-title">학교 목록</h2><p class="sub">진학 실적 기준으로 학교를 비교하고 선택하세요 · 진학 실적은 샘플 수치입니다</p>
+      <div class="tabs" style="margin-top:12px">${Object.entries(METRIC).map(([k, [l]]) => `<button class="${ui.metric === k ? 'on' : ''}" data-act="metric" data-v="${k}">${l} 진학 우수</button>`).join('')}</div>
+      <div class="toolbar">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select class="inline" id="fr" aria-label="지역"><option value="all">지역 전체</option>${D.REGIONS.map((r) => `<option value="${r.id}" ${ui.region === r.id ? 'selected' : ''}>${r.gu} ${r.dong}</option>`).join('')}</select>
+          <select class="inline" id="fs" aria-label="정렬">${[['metric', METRIC[ui.metric][0] + ' 진학자 수순'], ['sale_desc', '매매가 높은순'], ['sale_asc', '매매가 낮은순'], ['jeonse_desc', '전세가 높은순'], ['jeonse_asc', '전세가 낮은순']].map(([v, l]) => `<option value="${v}" ${ui.sortKey === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        </div>${areaSeg()}
+      </div>
+      <div class="s-layout">
+        <div>
+          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대</span><span class="k ${hl(1)}">SKY</span><span class="si ${hl(2)}">인서울</span><span class="ap">배정</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
+          <div class="tlist">${list.map(row).join('') || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}</div>
+        </div>
+        ${pre ? `<aside class="card pad preview pv" aria-label="선택한 학교">
+          <div class="pv-img">${bldg()}</div>
+          <h3>${esc(pre.name)} ${badge(pre.cat)}</h3><p class="muted">${regOf(pre).gu} ${regOf(pre).dong}</p>
+          <div class="stats"><span>의대<b>${pre.stats[0]}</b></span><span>SKY<b>${pre.stats[1]}</b></span><span>인서울<b>${pre.stats[2]}</b></span></div>
+          <p style="font-size:14px">배정 아파트 <b>${pre.apts.length}단지</b></p>
+          <p style="font-size:14px;margin:2px 0 12px">${ui.area}㎡ 매매 <b>${range(pg.sMin, pg.sMax)}</b><br>${ui.area}㎡ 전세 <b>${range(pg.jMin, pg.jMax)}</b></p>
+          <a class="btn primary block" href="#/school/${pre.id}">학교 상세·지도 보기 ›</a></aside>` : ''}
+      </div>`;
+    $('#fr').onchange = (e) => { ui.region = e.target.value; viewSchools(new URLSearchParams()); };
+    $('#fs').onchange = (e) => { ui.sortKey = e.target.value; viewSchools(new URLSearchParams()); };
+  }
+
+  /* =====================================================================
+   * 03 지도 · 배정 아파트
    * ===================================================================== */
   const MW = 800, MH = 580, CX = 400, CY = 290, SX = 1.3;
+  const LAYERS = [['zone', '배정 통학구역'], ['apt', '주변 아파트'], ['edu', '학교·교육시설'], ['academy', '학원가'], ['life', '생활편의'], ['culture', '공원·문화'], ['transit', '지하철']];
+  const LAYER_OF = { subway: 'transit', edu: 'edu', academy: 'academy', hospital: 'life', mart: 'life', park: 'culture', library: 'culture' };
   const layoutCache = {};
   function blobPath(cx, cy, r, rand) {
     const n = 12, pts = [];
-    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; const rr = r * (0.82 + rand() * 0.3); pts.push([cx + Math.cos(a) * rr * 1.1, cy + Math.sin(a) * rr]); }
+    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2, rr = r * (0.82 + rand() * 0.3); pts.push([cx + Math.cos(a) * rr * 1.1, cy + Math.sin(a) * rr]); }
     let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
     for (let i = 0; i < n; i++) {
       const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
-      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
-      d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      d += `C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
     }
     return d + 'Z';
   }
+  function hull(points) {
+    const p = points.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]), cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = [];
+    p.forEach((pt) => { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], pt) <= 0) lo.pop(); lo.push(pt); });
+    p.slice().reverse().forEach((pt) => { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], pt) <= 0) up.pop(); up.push(pt); });
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
   function layoutOf(s) {
     if (layoutCache[s.id]) return layoutCache[s.id];
-    const r = rng(s.id), n = s.apts.length, off = r() * Math.PI * 2;
+    const r = rng(s.id), n = s.apts.length, off = r() * Math.PI * 2, hp = [];
     const zones = s.apts.map((a, i) => {
-      const ang = off + (i * 2 * Math.PI) / n + (r() - 0.5) * 0.35;
-      const rad = 70 + (clamp(a.hi, 5, 15) - 5) * 11;
-      const cx = CX + Math.cos(ang) * rad * SX, cy = CY + Math.sin(ang) * rad;
-      const zr = clamp(20 + Math.sqrt(a.hh) * 0.4, 28, 46);
+      const ang = off + (i * 2 * Math.PI) / n + (r() - 0.5) * 0.35, rad = 70 + (clamp(a.hi, 5, 15) - 5) * 11;
+      const cx = CX + Math.cos(ang) * rad * SX, cy = CY + Math.sin(ang) * rad, zr = clamp(20 + Math.sqrt(a.hh) * 0.4, 28, 46);
+      for (let k = 0; k < 10; k++) { const t = (k / 10) * Math.PI * 2; hp.push([cx + Math.cos(t) * (zr + 34) * 1.15, cy + Math.sin(t) * (zr + 34)]); }
       return { id: a.id, cx, cy, path: blobPath(cx, cy, zr, r) };
     });
-    const reg = REG[s.region], pois = [];
-    const order = ['subway', 'subway', 'academy', 'academy', 'park', 'park', 'library', 'hospital', 'mart', 'subway'];
-    const count = {}; const a0 = r() * Math.PI * 2;
+    const reg = regOf(s), pois = [], count = {}, a0 = r() * Math.PI * 2;
+    const order = ['subway', 'edu', 'academy', 'subway', 'park', 'edu', 'academy', 'library', 'hospital', 'subway', 'mart', 'park'];
     order.forEach((t, i) => {
-      const k = (count[t] = (count[t] || 0) + 1) - 1;
-      const pool = reg.infra[t]; const name = pool[(k + Math.floor(r() * 2)) % pool.length];
-      const ang = a0 + (i / order.length) * Math.PI * 2;
+      const k = (count[t] = (count[t] || 0) + 1) - 1, pool = reg.infra[t], name = pool[(k + Math.floor(r() * 2)) % pool.length], ang = a0 + (i / order.length) * Math.PI * 2;
       pois.push({ type: t, name, x: CX + Math.cos(ang) * 360, y: CY + Math.sin(ang) * 255 });
     });
-    const roads = [0, 1, 2].map((i) => { const y1 = 80 + r() * 420, y2 = 80 + r() * 420; return `M0,${y1.toFixed(0)} Q${(300 + r() * 200).toFixed(0)},${(y1 + y2) / 2 + (r() - 0.5) * 160} ${MW},${y2.toFixed(0)}`; });
+    const roads = [0, 1, 2].map(() => { const y1 = 80 + r() * 420, y2 = 80 + r() * 420; return `M0,${y1.toFixed(0)} Q${(300 + r() * 200).toFixed(0)},${((y1 + y2) / 2 + (r() - 0.5) * 160).toFixed(0)} ${MW},${y2.toFixed(0)}`; });
     roads.push(`M${(150 + r() * 100).toFixed(0)},0 Q${(CX + (r() - 0.5) * 200).toFixed(0)},${CY} ${(550 + r() * 100).toFixed(0)},${MH}`);
-    return (layoutCache[s.id] = { zones, pois, roads });
+    return (layoutCache[s.id] = { zones, pois, roads, hull: hull(hp) });
   }
 
   function viewSchool(id) {
     const s = schoolById(id);
-    if (!s) { view.innerHTML = '<div class="empty">학교를 찾을 수 없어요. <a href="#/" class="chip">홈으로</a></div>'; return; }
+    if (!s) { view.innerHTML = '<div class="empty">학교를 찾을 수 없어요. <a href="#/schools" class="chip">학교 목록</a></div>'; return; }
     ui.sel = null; ui.vb = { x: 0, y: 0, w: MW, h: MH };
-    const reg = REG[s.region];
+    const reg = regOf(s);
     view.innerHTML = `
-      <a class="back" href="#/">← 학교 목록</a>
+      <a class="back" href="#/schools">← 학교 목록</a>
       <div class="s-head">
-        <div><h2>${esc(s.name)} ${badge(s.cat)}</h2><p class="sub">📍 ${reg.gu} ${reg.dong} · ${esc(reg.tag)} · 배정 아파트 ${s.apts.length}곳</p></div>
+        <div><h2>${esc(s.name)} ${badge(s.cat)}</h2><p class="sub">📍 ${reg.gu} ${reg.dong} · ${esc(reg.tag)} · 의대 ${s.stats[0]} · SKY ${s.stats[1]} · 인서울 ${s.stats[2]} <small>(샘플)</small></p></div>
+        <a class="btn primary" href="#/community?region=${s.region}">💬 ${reg.gu} 커뮤니티</a>
       </div>
-      <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도" style="margin-top:12px">
-        <div class="mapbar"><div class="chips" id="infra-chips"></div></div>
-        <div class="mapbox">
-          <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 배정 아파트 영역 지도"><g id="map-g"></g></svg>
-          <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">+</button><button data-act="zoom" data-v="-1" aria-label="축소">−</button><button data-act="zoom" data-v="0" aria-label="원래대로">⤾</button></div>
-        </div>
-        <div class="legend"><span>🏫 학교</span><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선 = 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세</span></div>
-      </section>
-      <section class="card" id="panel" aria-live="polite" style="margin-top:12px"></section>
-      <a class="btn primary bigbtn" href="#/community?region=${s.region}">💬 ${reg.gu} ${reg.dong} 지역 커뮤니티 가기</a>`;
-    drawChips(s); drawMap(s); drawPanel(s); bindMap(s);
+      <div class="m-layout">
+        <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도">
+          <div class="mapbar"><div class="chips" id="layer-chips"></div></div>
+          <div class="mapbox">
+            <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 배정 아파트 영역 지도"><g id="map-g"></g></svg>
+            <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">+</button><button data-act="zoom" data-v="-1" aria-label="축소">−</button><button data-act="zoom" data-v="0" aria-label="원래대로">⤾</button></div>
+          </div>
+          <div class="legend"><span>🏫 학교</span><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선 = 도보 5·10·15분</span><span>영역을 누르면 상세</span></div>
+        </section>
+        <aside class="card" id="panel" aria-live="polite"></aside>
+      </div>`;
+    drawLayers(s); drawMap(s); drawPanel(s); bindMap(s);
   }
-
-  function drawChips(s) {
-    const L = layoutOf(s); const cnt = {}; L.pois.forEach((p) => { cnt[p.type] = (cnt[p.type] || 0) + 1; });
-    $('#infra-chips').innerHTML = Object.entries(D.INFRA).map(([t, m]) => `<button class="chip ${ui.infra[t] ? 'on' : ''}" data-act="infra" data-v="${t}">${m.icon} ${m.label} ${cnt[t] || 0}</button>`).join('');
+  function drawLayers(s) {
+    const L = layoutOf(s), cnt = {}; L.pois.forEach((p) => { const k = LAYER_OF[p.type]; cnt[k] = (cnt[k] || 0) + 1; });
+    $('#layer-chips').innerHTML = LAYERS.map(([k, l]) => `<button class="chip ${ui.layers[k] ? 'on' : ''}" data-act="layer" data-v="${k}">${ui.layers[k] ? '✓ ' : ''}${l}${cnt[k] ? ' ' + cnt[k] : ''}</button>`).join('');
   }
-
   function drawMap(s) {
-    const L = layoutOf(s), r = rng(s.id + 'park');
-    const parks = L.pois.filter((p) => p.type === 'park').map((p) => `<ellipse cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" rx="${(48 + r() * 22).toFixed(0)}" ry="${(30 + r() * 14).toFixed(0)}" fill="var(--map-park)"/>`).join('');
+    const L = layoutOf(s), r = rng(s.id + 'park'), ly = ui.layers;
+    const parks = ly.culture ? L.pois.filter((p) => p.type === 'park').map((p) => `<ellipse cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" rx="${(48 + r() * 22).toFixed(0)}" ry="${(30 + r() * 14).toFixed(0)}" fill="var(--map-park)"/>`).join('') : '';
     const roads = L.roads.map((d) => `<path d="${d}" fill="none" stroke="var(--map-road)" stroke-width="9" stroke-linecap="round"/>`).join('');
     const rings = [[5, 70], [10, 125], [15, 180]].map(([m, rad]) => `<ellipse cx="${CX}" cy="${CY}" rx="${rad * SX}" ry="${rad}" fill="none" stroke="var(--map-ring)" stroke-dasharray="4 5" opacity=".7"/><text x="${CX + rad * SX + 3}" y="${CY - 3}" font-size="9" fill="var(--map-ring)">도보 ${m}분</text>`).join('');
-    const aptsMin = s.saleMin, span = s.saleMax - s.saleMin || 1;
-    const zones = s.apts.map((a, i) => {
-      const z = L.zones[i], t = (a.sale - aptsMin) / span, op = (0.2 + 0.55 * t).toFixed(2), on = ui.sel === a.id;
-      return `<g class="zone ${on ? 'sel' : ''}" data-apt="${a.id}" tabindex="0" role="button" aria-label="${a.letter} ${esc(a.name)} 매매 ${eokS(a.sale)}">
-        <path d="${z.path}" style="fill-opacity:${op}"/>
+    const hullEl = ly.zone ? `<polygon points="${L.hull.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".1" stroke="var(--map-zone)" stroke-width="3" stroke-dasharray="10 6" stroke-linejoin="round"/>` : '';
+    const g = agg(s), span = g.sMax - g.sMin || 1;
+    const zones = ly.apt ? s.apts.map((a, i) => {
+      const z = L.zones[i], t = (pr(a, 'sale') - g.sMin) / span, on = ui.sel === a.id;
+      return `<g class="zone ${on ? 'sel' : ''}" data-apt="${a.id}" tabindex="0" role="button" aria-label="${a.letter} ${esc(a.name)} 매매 ${eokS(pr(a, 'sale'))}">
+        <path d="${z.path}" style="fill-opacity:${(0.2 + 0.55 * t).toFixed(2)}"/>
         <text class="ltr" x="${z.cx.toFixed(0)}" y="${(z.cy - 2).toFixed(0)}" text-anchor="middle">${a.letter}</text>
-        <text class="pr" x="${z.cx.toFixed(0)}" y="${(z.cy + 13).toFixed(0)}" text-anchor="middle">${eokS(a.sale)}</text>
+        <text class="pr" x="${z.cx.toFixed(0)}" y="${(z.cy + 13).toFixed(0)}" text-anchor="middle">${eokS(pr(a, 'sale'))}</text>
         <text class="nm" x="${z.cx.toFixed(0)}" y="${(z.cy + 56).toFixed(0)}" text-anchor="middle">${esc(a.name)}</text></g>`;
-    }).join('');
-    const pois = L.pois.filter((p) => ui.infra[p.type]).map((p) => `<g class="poi"><title>${esc(p.name)}</title><circle cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" r="15"/><text class="ic" x="${p.x.toFixed(0)}" y="${(p.y + 6).toFixed(0)}">${D.INFRA[p.type].icon}</text><text class="lb" x="${p.x.toFixed(0)}" y="${(p.y + 28).toFixed(0)}">${esc(p.name)}</text></g>`).join('');
-    $('#map-g').innerHTML = `${parks}${roads}
-      <ellipse cx="${CX}" cy="${CY}" rx="318" ry="240" fill="var(--map-zone)" fill-opacity=".05" stroke="var(--map-zone)" stroke-width="2" stroke-dasharray="10 6"/>
-      <text x="14" y="24" font-size="12" font-weight="700" fill="var(--map-zone)">▭ ${esc(s.name)} 배정 권역 (샘플)</text>
-      ${rings}${zones}
-      <g><circle cx="${CX}" cy="${CY}" r="24" fill="var(--accent)" stroke="#fff" stroke-width="3"/><text x="${CX}" y="${CY + 8}" text-anchor="middle" font-size="22">🏫</text><text x="${CX}" y="${CY + 42}" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">${esc(s.name)}</text></g>
-      ${pois}`;
+    }).join('') : '';
+    const pois = L.pois.filter((p) => ly[LAYER_OF[p.type]]).map((p) => `<g class="poi"><title>${esc(p.name)}</title><circle cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" r="15"/><text class="ic" x="${p.x.toFixed(0)}" y="${(p.y + 6).toFixed(0)}">${D.INFRA[p.type].icon}</text><text class="lb" x="${p.x.toFixed(0)}" y="${(p.y + 28).toFixed(0)}">${esc(p.name)}</text></g>`).join('');
+    $('#map-g').innerHTML = `${parks}${roads}${hullEl}${rings}${zones}
+      <g><circle cx="${CX}" cy="${CY}" r="24" fill="var(--accent)" stroke="#fff" stroke-width="3"/><text x="${CX}" y="${CY + 8}" text-anchor="middle" font-size="22">🏫</text><text x="${CX}" y="${CY + 42}" text-anchor="middle" font-size="12" font-weight="800" fill="var(--ink)">${esc(s.name)}</text></g>${pois}`;
   }
-
   function drawPanel(s) {
-    const mins = (m) => (m <= 15 ? `<b>${m}분</b>` : '<span class="no">15분↑</span>');
-    const rows = s.apts.map((a) => {
-      const t = tradesOf(a), on = a.id === ui.sel;
-      let detail = '';
-      if (on) {
-        const age = 2026 - a.year, ratio = Math.round((a.jeonse / a.sale) * 100);
-        const tb = (arr) => `<table><tr><th>계약일</th><th>층</th><th>금액</th></tr>${arr.map((x) => `<tr><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table>`;
-        detail = `<div class="detail">
-          <div class="kv"><div><span>최근 실거래 (매매)</span><b>${eokL(t.sale[0].price)}</b></div><div><span>전세</span><b>${eokL(a.jeonse)}</b></div><div><span>전세가율</span><b>${ratio}%</b></div><div><span>세대수 · 준공</span><b>${a.hh.toLocaleString()}세대 · ${a.year}년 (${age}년차)</b></div></div>
-          <h4 class="h4">초·중·고 도보 거리</h4>
-          <table><tr><td>초등학교</td><td class="ok">✓ 도보 ${a.elem}분 <span class="muted">(약 ${(a.elem * 80).toLocaleString()}m)</span></td></tr><tr><td>중학교</td><td class="ok">✓ 도보 ${a.mid}분 <span class="muted">(약 ${(a.mid * 80).toLocaleString()}m)</span></td></tr><tr><td>${esc(s.name)}</td><td class="ok">✓ 도보 ${a.hi}분 <span class="muted">(약 ${(a.hi * 80).toLocaleString()}m)</span></td></tr></table>
-          <div class="two"><div><h4 class="h4">최근 매매 실거래</h4>${tb(t.sale)}</div><div><h4 class="h4">최근 전세 실거래</h4>${tb(t.jeonse)}</div></div>
-          <div class="actions" style="margin-top:12px"><a class="btn sm" href="#/community?region=${s.region}&cat=life">🏢 아파트생활</a><a class="btn sm" href="#/community?region=${s.region}&cat=moving">🚚 입주정보</a></div>
-        </div>`;
-      }
-      return `<div class="arow2 ${on ? 'on' : ''}"><button class="ar" data-act="pick" data-v="${a.id}" aria-expanded="${on}">
-        <span class="l">${a.letter}</span><span class="nm"><b>${esc(a.name)}</b></span>
-        <span class="c sale"><small>실거래</small><b>${eokS(t.sale[0].price)}</b></span>
-        <span class="c jeo"><small>전세</small><b>${eokS(a.jeonse)}</b></span>
-        <span class="c hh"><small>세대수</small>${a.hh.toLocaleString()}</span>
-        <span class="c yr"><small>준공</small>${a.year}</span>
-        <span class="c sch"><small>도보</small>초 ${mins(a.elem)} · 중 ${mins(a.mid)} · 고 ${mins(a.hi)}</span>
-      </button>${detail}</div>`;
+    const k = ui.listKind, list = s.apts.slice().sort((a, b) => pr(b, k) - pr(a, k));
+    const rows = list.map((a) => {
+      const on = a.id === ui.sel;
+      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${a.letter}</span><span><b>${esc(a.name)}</b></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
+        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${a.hh.toLocaleString()}</b></div><div><span>준공연도</span><b>${a.year}년</b></div><div><span>${esc(s.name)} 도보</span><b>${a.hi}분</b></div><div><span>초등 도보</span><b>${a.elem}분</b></div><div><span>중등 도보</span><b>${a.mid}분</b></div><div><span>전세가율</span><b>${Math.round((a.jeonse / a.sale) * 100)}%</b></div></div><a class="btn primary block sm" href="#/apt/${a.id}">단지 상세·실거래가 보기 ›</a></div>` : ''}`;
     }).join('');
-    $('#panel').innerHTML = `<div class="p-sec"><h3>배정 아파트 ${s.apts.length}곳</h3>
-      <p class="muted" style="font-size:13px">매매 ${range(s.saleMin, s.saleMax)} · 전세 ${range(s.jMin, s.jMax)} · 전용 84㎡ 기준 · 눌러서 상세 보기</p></div>
-      <div class="ahead arow2"><span class="ar"><span class="l"></span><span class="nm">단지</span><span class="c">매매 실거래</span><span class="c">전세</span><span class="c">세대수</span><span class="c">준공</span><span class="c sch">초·중·고 도보</span></span></div>
-      ${rows}`;
+    $('#panel').innerHTML = `<div class="plist-h"><h3>배정 아파트 목록 (${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
+      <div style="padding:0 14px 8px;display:flex;justify-content:space-between;align-items:center"><span class="muted" style="font-size:13px">매매 ${range(agg(s).sMin, agg(s).sMax)} · 전세 ${range(agg(s).jMin, agg(s).jMax)}</span>${areaSeg()}</div>${rows}`;
   }
-
-  function pick(s, id) {
-    ui.sel = ui.sel === id ? null : id; drawMap(s); drawPanel(s);
-    const el = $('.arow2.on'); if (el && window.innerWidth < 960) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
+  function pick(s, id) { ui.sel = ui.sel === id ? null : id; drawMap(s); drawPanel(s); }
   function setVB() { const v = ui.vb; $('#map').setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); }
   function zoomBy(f, cx, cy) {
-    const v = ui.vb; const nw = clamp(v.w * f, MW / 4, MW), nh = nw * (MH / MW);
-    const px = cx == null ? v.x + v.w / 2 : cx, py = cy == null ? v.y + v.h / 2 : cy;
+    const v = ui.vb, nw = clamp(v.w * f, MW / 4, MW), nh = nw * (MH / MW), px = cx == null ? v.x + v.w / 2 : cx, py = cy == null ? v.y + v.h / 2 : cy;
     v.x = clamp(px - ((px - v.x) * nw) / v.w, 0, MW - nw); v.y = clamp(py - ((py - v.y) * nh) / v.h, 0, MH - nh); v.w = nw; v.h = nh; setVB();
   }
+  let cleanup = null;
   function bindMap(s) {
     const svg = $('#map'); let drag = null, moved = false;
     const kOf = (r) => Math.min(r.width / ui.vb.w, r.height / ui.vb.h);
     const toSvg = (e) => { const r = svg.getBoundingClientRect(), k = kOf(r); return [ui.vb.x + (e.clientX - r.left - (r.width - ui.vb.w * k) / 2) / k, ui.vb.y + (e.clientY - r.top - (r.height - ui.vb.h * k) / 2) / k]; };
     svg.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, vx: ui.vb.x, vy: ui.vb.y }; moved = false; });
+    const onMove = (e) => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; svg.classList.add('drag'); } if (!moved) return; const k = kOf(svg.getBoundingClientRect()); ui.vb.x = clamp(drag.vx - dx / k, 0, MW - ui.vb.w); ui.vb.y = clamp(drag.vy - dy / k, 0, MH - ui.vb.h); setVB(); };
+    const onUp = () => { drag = null; svg.classList.remove('drag'); };
     window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
-    function onMove(e) {
-      if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-      if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; svg.classList.add('drag'); }
-      if (!moved) return; const k = kOf(svg.getBoundingClientRect());
-      ui.vb.x = clamp(drag.vx - dx / k, 0, MW - ui.vb.w); ui.vb.y = clamp(drag.vy - dy / k, 0, MH - ui.vb.h); setVB();
-    }
-    function onUp() { drag = null; svg.classList.remove('drag'); }
     svg.addEventListener('click', (e) => { if (moved) { moved = false; return; } const g = e.target.closest('.zone'); if (g) pick(s, g.dataset.apt); });
     svg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { const g = e.target.closest('.zone'); if (g) { e.preventDefault(); pick(s, g.dataset.apt); } } });
     svg.addEventListener('wheel', (e) => { e.preventDefault(); const [x, y] = toSvg(e); zoomBy(e.deltaY < 0 ? 0.85 : 1.18, x, y); }, { passive: false });
     cleanup = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
   }
-  let cleanup = null;
 
   /* =====================================================================
-   * 커뮤니티
+   * 04 아파트 상세 · 비교
+   * ===================================================================== */
+  function viewApt(id) {
+    const a = aptById(id);
+    if (!a) { view.innerHTML = '<div class="empty">단지를 찾을 수 없어요. <a href="#/schools" class="chip">학교 목록</a></div>'; return; }
+    const s = schoolOf(a), reg = regOf(s), t = tradesOf(a), edu = reg.infra.edu;
+    const cSale = change1y(a, 'sale'), cJ = change1y(a, 'jeonse'), sv = seriesOf(a, 'sale'), jv = seriesOf(a, 'jeonse');
+    const sims = APTS.filter((x) => x.id !== a.id && schoolOf(x).region === s.region).sort((x, y) => Math.abs(x.sale - a.sale) - Math.abs(y.sale - a.sale)).slice(0, 4);
+    ui.aptCmp = ui.aptCmp.filter((x) => sims.some((z) => z.id === x));
+    const tabs = [['chart', '실거래가 추이'], ['price', '시세비교'], ['feat', '단지 특징'], ['review', '입주민 후기']];
+    let main = '';
+    if (ui.aptTab === 'chart') {
+      const kind = ui.aptCmp.length && ui.aptKind === 'both' ? 'sale' : ui.aptKind, N = ui.aptRange * 12, lines = [];
+      if (kind === 'both') { lines.push({ name: '매매', color: 'var(--c1)', vals: sv }, { name: '전세', color: 'var(--c2)', vals: jv }); }
+      else {
+        lines.push({ name: a.name, color: 'var(--c1)', vals: kind === 'sale' ? sv : jv });
+        ui.aptCmp.forEach((cid, i) => { const o = aptById(cid); lines.push({ name: o.name, color: `var(--c${i + 2})`, vals: seriesOf(o, kind) }); });
+      }
+      main = `<div class="ctl"><span class="seg">${[['both', '매매+전세'], ['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${kind === v ? 'on' : ''}" data-act="apt-kind" data-v="${v}">${l}</button>`).join('')}</span>
+        <span class="seg">${[1, 3, 5].map((y) => `<button class="${ui.aptRange === y ? 'on' : ''}" data-act="apt-range" data-v="${y}">${y}년</button>`).join('')}</span></div>
+        <div class="chart">${lineChart(lines, N)}</div><div class="lg">${lines.map((l) => `<span><i style="background:${l.color}"></i>${esc(l.name)}</span>`).join('')}<span>· ${ui.area}㎡ 기준 · 샘플</span></div>
+        <div class="tbox"><table><tr><th>구분</th><th>계약일</th><th>층</th><th>금액</th></tr>${t.sale.slice(0, 3).map((x) => `<tr><td>매매</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}${t.jeonse.slice(0, 2).map((x) => `<tr><td>전세</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table></div>`;
+    } else if (ui.aptTab === 'price') {
+      const rg = avg(APTS.filter((x) => schoolOf(x).region === s.region).map((x) => x.sale)), diff = a.sale / rg - 1;
+      main = `<div class="tbox"><table style="margin-top:8px"><tr><th>평형</th><th>매매</th><th>전세</th><th>전세가율</th></tr>${[59, 84].map((p) => `<tr><td>${p}㎡</td><td><b>${eokL(r1(a.sale * AREA_F[p]))}</b></td><td>${eokL(r1(a.jeonse * AREA_F[p]))}</td><td>${Math.round((a.jeonse / a.sale) * 100)}%</td></tr>`).join('')}</table>
+        <p style="margin-top:12px;font-size:14px">${reg.dong} 지역 평균 대비 매매가 <span class="${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(1)}%</span></p></div>`;
+    } else if (ui.aptTab === 'feat') {
+      const f = []; if (a.elem <= 5) f.push('초품아'); if (a.hh >= 2000) f.push('대단지'); else if (a.hh >= 1000) f.push('1천세대 이상'); if (2026 - a.year <= 10) f.push('준신축'); if (2026 - a.year >= 30) f.push('재건축 기대'); if (a.hi <= 8) f.push('고교 도보 8분 이내'); f.push('학원가 접근 양호'); f.push(`${reg.infra.subway[0]} 이용`);
+      main = `<div class="feat">${f.map((x) => `<span>${x}</span>`).join('')}</div><p class="muted" style="padding:0 14px 14px;font-size:13px">단지 특징은 입력된 정보로 자동 생성한 샘플입니다.</p>`;
+    } else {
+      const rv = db.posts.filter((p) => p.region === s.region && (p.cat === 'life' || p.cat === 'moving')).slice(0, 3);
+      main = `<div style="padding:6px 14px 14px">${rv.map((p) => `<a class="prow" href="#/post/${p.id}"><span class="tag">${catOf(p.cat).label}</span><h3>${esc(p.title)}</h3><span class="cnt">💬 ${p.comments.length}</span><span class="meta">${nickHtml(p.author)} · ${p.date}</span></a>`).join('') || '<div class="empty">아직 후기가 없어요.</div>'}<p class="muted" style="font-size:13px;margin-top:8px">실거주 인증 회원의 후기는 서비스 오픈 후 단지별로 모아 보여줍니다.</p></div>`;
+    }
+    view.innerHTML = `
+      <a class="back" href="#/school/${s.id}">← ${esc(s.name)} 지도</a>
+      <div class="a-top">
+        <section class="card a-hero"><div class="pv-img">${bldg()}</div>
+          <div><h2>${esc(a.name)}</h2><p class="muted">📍 서울 ${reg.gu} ${reg.dong}</p>
+            <p style="margin:8px 0"><a href="#/school/${s.id}" class="tag">배정: ${esc(s.name)}</a> <span class="tag">${ui.area}㎡</span></p>${areaSeg()}</div></section>
+        <div class="a-metrics">
+          <div class="card mc"><small>최근 매매 실거래가</small><div class="big">${eokL(t.sale[0].price)}</div>${chgHtml(cSale)}${spark(sv, 'var(--c1)')}</div>
+          <div class="card mc"><small>최근 전세 실거래가</small><div class="big">${eokL(t.jeonse[0].price)}</div>${chgHtml(cJ)}${spark(jv, 'var(--c2)')}</div>
+          <div class="facts" style="grid-column:1/-1">
+            <div class="card fact"><i>🎒</i>${esc(edu[0])}<b>도보 ${a.elem}분</b></div><div class="card fact"><i>🏫</i>${esc(edu[1])}<b>도보 ${a.mid}분</b></div><div class="card fact"><i>🎓</i>${esc(s.name)}<b>도보 ${a.hi}분</b></div>
+            <div class="card fact"><i>🏘️</i>세대수<b>${a.hh.toLocaleString()}세대</b></div><div class="card fact"><i>📅</i>준공연도<b>${a.year}년 (${2026 - a.year}년차)</b></div><div class="card fact"><i>💱</i>전세가율<b>${Math.round((a.jeonse / a.sale) * 100)}%</b></div>
+          </div></div>
+      </div>
+      <div class="a-low">
+        <section class="card"><div class="subtabs">${tabs.map(([v, l]) => `<button class="${ui.aptTab === v ? 'on' : ''}" data-act="apt-tab" data-v="${v}">${l}</button>`).join('')}</div>${main}</section>
+        <section class="card"><div class="plist-h"><h3>유사 단지 비교 <small class="muted">(${ui.area}㎡)</small></h3></div><div class="tbox"><table>
+          <tr><th></th><th>단지명</th><th>매매</th><th>전세</th><th>도보(학교)</th></tr>
+          <tr class="me"><td>●</td><td>${esc(a.name)}</td><td>${eokS(pr(a, 'sale'))}</td><td>${eokS(pr(a, 'jeonse'))}</td><td>${a.hi}분</td></tr>
+          ${sims.map((x) => `<tr><td><input type="checkbox" data-act="apt-cmp" data-v="${x.id}" aria-label="${esc(x.name)} 추이 비교" ${ui.aptCmp.includes(x.id) ? 'checked' : ''}></td><td><a href="#/apt/${x.id}">${esc(x.name)}</a></td><td>${eokS(pr(x, 'sale'))}</td><td>${eokS(pr(x, 'jeonse'))}</td><td>${x.hi}분</td></tr>`).join('')}
+        </table><p class="muted" style="font-size:12px;margin-top:8px">체크하면 추이 차트에 함께 표시돼요 (최대 3개)</p></div></section>
+      </div>`;
+  }
+
+  /* =====================================================================
+   * 예산탐색 / 학군비교 / 가이드 / 검색
+   * ===================================================================== */
+  function viewBudget() {
+    const b = ui.budget, kinds = [['sale', '매매'], ['jeonse', '전세']], cfg = b.kind === 'sale' ? { min: 4, max: 50, step: 0.5 } : { min: 1.5, max: 16, step: 0.5 };
+    view.innerHTML = `
+      <h2 class="page-title">예산부터 찾기</h2><p class="sub">예산 안에서 들어갈 수 있는 배정 아파트와 학교를 찾아보세요</p>
+      <section class="card bud">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center"><span class="seg">${kinds.map(([v, l]) => `<button class="${b.kind === v ? 'on' : ''}" data-act="bud-kind" data-v="${v}">${l}</button>`).join('')}</span>${areaSeg()}</div>
+        <div><small class="muted">최대 예산 (${ui.area}㎡ ${b.kind === 'sale' ? '매매' : '전세'} 기준)</small><div class="val" id="bval">${eokS(b[b.kind])}</div>
+          <input type="range" id="bud" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${b[b.kind]}" aria-label="최대 예산"></div>
+        <div class="tabs">${Object.entries(METRIC).map(([k, [l]]) => `<button class="${ui.metric === k ? 'on' : ''}" data-act="bud-metric" data-v="${k}">${l} 우수순</button>`).join('')}</div>
+      </section><div class="bres" id="bres"></div>`;
+    drawBudget(); $('#bud').oninput = (e) => { b[b.kind] = +e.target.value; $('#bval').textContent = eokS(b[b.kind]); drawBudget(); };
+  }
+  function drawBudget() {
+    const b = ui.budget, mk = METRIC[ui.metric][1], lim = b[b.kind];
+    const rows = SCHOOLS.map((s) => ({ s, ok: s.apts.filter((a) => pr(a, b.kind) <= lim).sort((x, y) => pr(x, b.kind) - pr(y, b.kind)) })).filter((x) => x.ok.length).sort((x, y) => y.s.stats[mk] - x.s.stats[mk]);
+    $('#bres').innerHTML = (rows.length ? `<p class="muted">${eokS(lim)} 이하 단지가 있는 학교 <b>${rows.length}곳</b> · 단지 ${rows.reduce((n, x) => n + x.ok.length, 0)}곳</p>` : '') +
+      (rows.map(({ s, ok }) => `<div class="card bcard"><div class="r1"><h3><a href="#/school/${s.id}">${esc(s.name)}</a> ${badge(s.cat)}</h3><a class="btn sm" href="#/school/${s.id}">지도 ›</a></div>
+        <div class="stat">${regOf(s).gu} ${regOf(s).dong} · 의대 <b>${s.stats[0]}</b> · SKY <b>${s.stats[1]}</b> · 인서울 <b>${s.stats[2]}</b> · 예산 내 ${ok.length}/${s.apts.length}단지</div>
+        <div class="pills">${ok.map((a) => `<a class="pill" href="#/apt/${a.id}">${esc(a.name)} <b>${eokS(pr(a, b.kind))}</b></a>`).join('')}</div></div>`).join('') || '<div class="empty card">이 예산으로 들어갈 수 있는 배정 아파트가 없어요. 예산을 올려 보세요.</div>');
+  }
+
+  function viewCompare(q) {
+    if (q.get('ids')) ui.cmp = q.get('ids').split(',').filter((id) => schoolById(id)).slice(0, 3);
+    const ss = ui.cmp.map(schoolById).filter(Boolean);
+    const idx = (s) => (s.stats[0] + s.stats[1]) / (agg(s).sAvg || 1);
+    const rows = [
+      ['지역', (s) => `${regOf(s).gu} ${regOf(s).dong}`, null], ['의대 진학자', (s) => s.stats[0], 'max'], ['SKY 진학자', (s) => s.stats[1], 'max'], ['인서울 진학자', (s) => s.stats[2], 'max'],
+      ['배정 아파트', (s) => s.apts.length + '개', null], [`${ui.area}㎡ 평균 매매가`, (s) => agg(s).sAvg, 'min', eokS], [`${ui.area}㎡ 평균 전세가`, (s) => agg(s).jAvg, 'min', eokS],
+      ['평균 고교 도보', (s) => avg(s.apts.map((a) => a.hi)), 'min', (v) => v.toFixed(1) + '분'], ['평균 준공연도', (s) => avg(s.apts.map((a) => a.year)), 'max', (v) => Math.round(v) + '년'],
+      ['총 세대수', (s) => s.apts.reduce((n, a) => n + a.hh, 0), 'max', (v) => v.toLocaleString()], ['억당 의대·SKY 진학자', idx, 'max', (v) => v.toFixed(1) + '명']
+    ];
+    const body = rows.map(([l, fn, best, fmt]) => { const vals = ss.map(fn), bv = best ? (best === 'max' ? Math.max(...vals.filter((v) => typeof v === 'number')) : Math.min(...vals.filter((v) => typeof v === 'number'))) : null; return `<tr><th scope="row">${l}</th>${vals.map((v) => `<td class="${best && v === bv && ss.length > 1 ? 'best' : ''}">${fmt ? fmt(v) : v}</td>`).join('')}</tr>`; }).join('');
+    const all = SCHOOLS.slice().sort((a, b) => idx(b) - idx(a)), mx = idx(all[0]);
+    view.innerHTML = `
+      <h2 class="page-title">학군 비교</h2><p class="sub">학교를 최대 3곳까지 골라 진학 실적과 주거비를 비교하세요 (샘플 수치)</p>
+      <div class="chips" style="margin-top:12px">${SCHOOLS.map((s) => `<button class="chip ${ui.cmp.includes(s.id) ? 'on' : ''}" data-act="cmp-toggle" data-v="${s.id}">${esc(s.name)}</button>`).join('')}</div>
+      <div class="toolbar"><span class="muted">초록 배경은 항목별 가장 유리한 값</span>${areaSeg()}</div>
+      ${ss.length ? `<div class="card cmp-wrap"><table><tr><th></th>${ss.map((s) => `<th><a href="#/school/${s.id}" style="font-size:15px;color:var(--ink)">${esc(s.name)}</a> ${badge(s.cat)}</th>`).join('')}</tr>${body}</table></div>` : '<div class="empty card">비교할 학교를 선택하세요.</div>'}
+      <section class="card pad" style="margin-top:14px"><div class="sec-h"><h2>학군 가성비</h2><small>평균 ${ui.area}㎡ 매매가 1억 원당 의대·SKY 진학자 수 (샘플)</small></div>
+        <div class="bars" style="margin-top:12px">${all.map((s) => `<div class="bar-row"><a href="#/school/${s.id}">${esc(s.name)}</a><div class="trk"><i style="width:${Math.round((idx(s) / mx) * 100)}%"></i></div><b class="num">${idx(s).toFixed(1)}</b></div>`).join('')}</div></section>`;
+  }
+
+  function viewGuide() {
+    const G = [
+      ['학군지로 이사할 때 체크리스트', '<ol><li>희망 학교의 통학구역(배정 아파트 목록)을 교육청·학교에서 확인</li><li>잔금일과 전입신고 날짜, 학기 일정을 함께 맞추기</li><li>전입 후 배정 통지와 전학 서류 확인</li><li>학원 이동 동선과 하교 시간대 교통 확인</li></ol>'],
+      ['실거래가 읽는 법', '<ul><li>같은 단지라도 평형·층·동에 따라 가격이 다릅니다</li><li>계약일과 신고일이 다를 수 있어 최근 거래가 늦게 보일 수 있어요</li><li>직거래·특수관계 거래는 시세와 차이가 날 수 있습니다</li></ul>'],
+      ['전세가율이란?', '<p style="color:var(--muted);margin:0 0 12px">전세가율은 매매가 대비 전세가의 비율입니다. 높을수록 매매·전세 차이가 작아 갭 투자 위험과 보증금 안전성을 함께 살펴봐야 합니다.</p>'],
+      ['진학 실적 데이터 볼 때 주의할 점', '<ul><li>졸업생 수가 다른 학교끼리는 비율로 비교하세요</li><li>해마다 편차가 있어 여러 해를 함께 보세요</li><li>이 앱의 수치는 샘플이며, 서비스에서는 공시 자료 출처를 함께 표시할 예정입니다</li></ul>']
+    ];
+    view.innerHTML = `<h2 class="page-title">정보·가이드</h2><p class="sub">학군지 이사와 입시 정보를 읽는 기본기</p><div class="guide">${G.map(([t, b], i) => `<details class="card" ${i === 0 ? 'open' : ''}><summary>${t}</summary>${b}</details>`).join('')}</div>`;
+  }
+
+  function viewSearch(q) {
+    const kw = (q.get('q') || '').trim(), isNew = q.get('new') === '1';
+    let ss = [], as = [];
+    if (isNew) as = APTS.filter((a) => a.year >= 2015).sort((a, b) => b.year - a.year);
+    else if (kw) { ss = SCHOOLS.filter((s) => (s.name + regOf(s).gu + regOf(s).dong).includes(kw)); as = APTS.filter((a) => a.name.includes(kw) || (schoolOf(a).name + regOf(schoolOf(a)).gu + regOf(schoolOf(a)).dong).includes(kw)); }
+    view.innerHTML = `<h2 class="page-title">${isNew ? '신축 아파트 (2015년 이후)' : `‘${esc(kw)}’ 검색 결과`}</h2>
+      <form id="sf2" class="searchbar" style="margin-top:12px"><input id="q2" type="text" value="${esc(kw)}" placeholder="학교명·지역·아파트명" aria-label="검색"><button type="submit" aria-label="검색">🔍</button></form>
+      ${ss.length ? `<div class="sec-h" style="margin:16px 0 8px"><h2>학교 ${ss.length}곳</h2></div><div class="tlist">${ss.map((s, i) => `<a class="card pad" href="#/school/${s.id}"><b>${esc(s.name)}</b> ${badge(s.cat)} <span class="muted">${regOf(s).gu} ${regOf(s).dong}</span></a>`).join('')}</div>` : ''}
+      ${as.length ? `<div class="sec-h" style="margin:16px 0 8px"><h2>아파트 ${as.length}곳</h2></div><div class="tlist">${as.map((a) => `<a class="card pad" href="#/apt/${a.id}"><b>${esc(a.name)}</b> <span class="muted">${a.year}년 · ${a.hh.toLocaleString()}세대 · ${esc(schoolOf(a).name)} 배정 · ${ui.area}㎡ ${eokS(pr(a, 'sale'))}</span></a>`).join('')}</div>` : ''}
+      ${!ss.length && !as.length ? '<div class="empty">검색 결과가 없어요. 학교명(예: 휘문고), 지역(예: 목동), 아파트명(예: 은마)으로 찾아보세요.</div>' : ''}`;
+    $('#sf2').onsubmit = (e) => { e.preventDefault(); location.hash = '#/search?q=' + encodeURIComponent($('#q2').value.trim()); };
+  }
+
+  /* =====================================================================
+   * 05 커뮤니티
    * ===================================================================== */
   const catOf = (id) => D.CATS.find((c) => c.id === id);
   function viewCommunity(q) {
     if (q.has('region')) ui.cRegion = q.get('region'); if (q.has('cat')) ui.cCat = q.get('cat');
     let posts = db.posts.filter((p) => (ui.cRegion === 'all' || p.region === ui.cRegion) && (ui.cCat === 'all' || p.cat === ui.cCat) && (!ui.cQuery || (p.title + p.body).includes(ui.cQuery)));
     posts = posts.slice().sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
-    const regName = ui.cRegion === 'all' ? '전체 지역' : REG[ui.cRegion].gu + ' ' + REG[ui.cRegion].dong;
+    const hot = db.posts.filter((p) => ui.cRegion === 'all' || p.region === ui.cRegion).sort((a, b) => b.views - a.views).slice(0, 4);
+    const cats = [{ id: 'all', label: '전체 글', icon: '☰' }].concat(D.CATS);
+    const u = me(), name = ui.cRegion === 'all' ? '전체 지역' : REG[ui.cRegion].gu + ' ' + REG[ui.cRegion].dong;
     view.innerHTML = `
-      <h2 class="page-title">지역 커뮤니티</h2><p class="sub">${esc(regName)} · 학교, 육아·교육, 학원, 아파트생활, 입주, 인프라 이야기</p>
-      <div class="chips" style="margin-top:12px"><button class="chip ${ui.cRegion === 'all' ? 'on' : ''}" data-act="c-region" data-v="all">전체 지역</button>
-        ${D.REGIONS.map((r) => `<button class="chip ${ui.cRegion === r.id ? 'on' : ''}" data-act="c-region" data-v="${r.id}">${r.gu}</button>`).join('')}</div>
-      <div class="chips"><button class="chip ${ui.cCat === 'all' ? 'on' : ''}" data-act="c-cat" data-v="all">전체 주제</button>
-        ${D.CATS.map((c) => `<button class="chip ${ui.cCat === c.id ? 'on' : ''}" data-act="c-cat" data-v="${c.id}">${c.icon} ${c.label}</button>`).join('')}</div>
-      <div class="toolbar"><input type="text" id="cq" placeholder="글 검색" value="${esc(ui.cQuery)}" style="max-width:320px" aria-label="글 검색"><span class="muted">${posts.length}개의 글</span></div>
-      <div class="plist">${posts.map((p) => `
-        <a class="card prow" href="#/post/${p.id}">
-          <div class="r1"><span class="tag">${catOf(p.cat).icon} ${catOf(p.cat).label}</span><span>${REG[p.region].gu}</span></div>
-          <h3>${esc(p.title)}</h3><p>${esc(p.body)}</p>
-          <div class="meta">${esc(p.author)} · ${p.date} · 👁 ${p.views} · ❤ ${p.likes.length} · 💬 ${p.comments.length}</div>
-        </a>`).join('') || '<div class="empty">아직 글이 없어요. 첫 글을 남겨보세요!</div>'}</div>
+      <h2 class="page-title">지역 커뮤니티</h2><p class="sub">학교, 입주민, 학부모가 만들어가는 학군 이야기 · ${esc(name)}</p>
+      <div class="chips catchips" style="margin-top:10px">${cats.map((c) => `<button class="chip ${ui.cCat === c.id ? 'on' : ''}" data-act="c-cat" data-v="${c.id}">${c.icon} ${c.label}</button>`).join('')}</div>
+      <div class="comm">
+        <aside class="card side" aria-label="주제">${cats.map((c) => `<button class="${ui.cCat === c.id ? 'on' : ''}" data-act="c-cat" data-v="${c.id}"><span>${c.icon}</span>${c.label}</button>`).join('')}</aside>
+        <section class="card" style="overflow:hidden">
+          <div class="scopes"><button class="${ui.cRegion === 'all' ? 'on' : ''}" data-act="c-region" data-v="all">전체</button>${D.REGIONS.map((r) => `<button class="${ui.cRegion === r.id ? 'on' : ''}" data-act="c-region" data-v="${r.id}">${r.gu} 학군</button>`).join('')}</div>
+          <div class="toolbar" style="padding:0 14px"><input type="text" id="cq" placeholder="글 검색" value="${esc(ui.cQuery)}" style="max-width:260px" aria-label="글 검색"><span class="muted">${posts.length}개의 글</span></div>
+          <div class="plist" style="padding:0 14px 6px">${posts.map((p) => `
+            <a class="prow" href="#/post/${p.id}"><span class="tag">${catOf(p.cat).label}</span><h3>${esc(p.title)}</h3><span class="cnt">💬 ${p.comments.length}</span><span class="meta">${nickHtml(p.author)} · ${REG[p.region].gu} · ${p.date} · 👁 ${p.views}</span></a>`).join('') || '<div class="empty">아직 글이 없어요. 첫 글을 남겨보세요!</div>'}</div>
+        </section>
+        <aside class="cright">
+          <div class="two"><a class="btn primary" href="#/write${ui.cRegion !== 'all' ? '?region=' + ui.cRegion : ''}">✏️ 글쓰기</a><a class="btn" href="#/messages">✉️ 쪽지함</a></div>
+          <div class="card pop"><h3>🔥 지역 인기 정보</h3>${hot.map((p, i) => `<a href="#/post/${p.id}">${i + 1}. ${esc(p.title)}</a>`).join('')}</div>
+          <div class="cta-v"><b>${u && u.verified ? '✔ 실거주 인증 완료' : '지금 가입하고 실거주 인증하면'}</b>${u && u.verified ? '인증 배지가 글과 댓글에 표시돼요.' : '더 많은 정보를 이용할 수 있어요!'}</div>
+        </aside>
+      </div>
       <a class="btn primary fab" href="#/write${ui.cRegion !== 'all' ? '?region=' + ui.cRegion : ''}">✏️ 글쓰기</a>`;
     $('#cq').onchange = (e) => { ui.cQuery = e.target.value.trim(); viewCommunity(new URLSearchParams()); };
   }
@@ -295,9 +483,8 @@
     view.innerHTML = `
       <a class="back" href="#/community?region=${p.region}">← ${REG[p.region].gu} 커뮤니티</a>
       <article class="card post">
-        <div class="r1" style="display:flex;gap:8px;align-items:center"><span class="tag">${catOf(p.cat).icon} ${catOf(p.cat).label}</span><span class="muted">${REG[p.region].gu} ${REG[p.region].dong}</span></div>
-        <h2>${esc(p.title)}</h2>
-        <div class="meta" style="margin:0">${esc(p.author)} · ${p.date} · 👁 ${p.views}</div>
+        <div style="display:flex;gap:8px;align-items:center"><span class="tag">${catOf(p.cat).icon} ${catOf(p.cat).label}</span><span class="muted">${REG[p.region].gu} ${REG[p.region].dong}</span></div>
+        <h2>${esc(p.title)}</h2><div class="meta">${nickHtml(p.author)} · ${p.date} · 👁 ${p.views}</div>
         <div class="body">${esc(p.body)}</div>
         <div class="actions">
           <button class="btn sm ${liked ? 'primary' : ''}" data-act="like" data-v="${p.id}">❤ 공감 ${p.likes.length}</button>
@@ -305,7 +492,7 @@
         </div>
       </article>
       <h3 style="margin:18px 0 4px">댓글 ${p.comments.length}</h3>
-      <div class="card" style="padding:4px 16px">${p.comments.map((c) => `<div class="cmt"><b>${esc(c.author)}</b><small>${c.date}</small><p>${esc(c.body)}</p></div>`).join('') || '<div class="empty">첫 댓글을 남겨보세요.</div>'}</div>
+      <div class="card" style="padding:4px 16px">${p.comments.map((c) => `<div class="cmt"><b>${nickHtml(c.author)}</b><small>${c.date}</small><p>${esc(c.body)}</p></div>`).join('') || '<div class="empty">첫 댓글을 남겨보세요.</div>'}</div>
       <form id="cform" class="card" style="padding:14px;margin-top:12px">
         <textarea id="ctext" rows="3" placeholder="${u ? '댓글을 입력하세요' : '로그인 후 댓글을 쓸 수 있어요'}" ${u ? '' : 'disabled'} maxlength="500"></textarea>
         <div class="actions" style="margin-top:8px;justify-content:flex-end">${u ? '<button class="btn primary sm" type="submit">등록</button>' : '<button class="btn primary sm" type="button" data-act="login">로그인 / 가입</button>'}</div>
@@ -332,12 +519,10 @@
     };
   }
 
-  /* =====================================================================
-   * 쪽지
-   * ===================================================================== */
+  /* ---------- 쪽지 ---------- */
   function viewMessages(q) {
     const u = me();
-    if (!u) { view.innerHTML = '<h2 class="page-title">쪽지</h2><div class="empty">쪽지는 로그인 후 이용할 수 있어요.<br><br><button class="btn primary" data-act="login">로그인 / 회원가입</button></div>'; return; }
+    if (!u) { view.innerHTML = '<h2 class="page-title">쪽지함</h2><div class="empty">쪽지는 로그인 후 이용할 수 있어요.<br><br><button class="btn primary" data-act="login">로그인 / 회원가입</button></div>'; return; }
     if (q.has('to')) ui.mTab = 'new';
     const box = ui.mTab === 'out' ? db.msgs.filter((m) => m.from === u.nick) : db.msgs.filter((m) => m.to === u.nick);
     const list = box.slice().sort((a, b) => b.date.localeCompare(a.date));
@@ -347,48 +532,45 @@
         <input type="text" id="mto" list="nicks" value="${esc(q.get('to') || '')}" required><datalist id="nicks">${db.users.filter((x) => x.id !== u.id).map((x) => `<option value="${esc(x.nick)}">`).join('')}</datalist>
         <label class="f" for="mb">내용</label><textarea id="mb" rows="6" maxlength="1000" required></textarea>
         <div class="actions" style="margin-top:12px;justify-content:flex-end"><button class="btn primary" type="submit">보내기</button></div>
-      </form>` : `<div class="plist">${list.map((m) => {
+      </form>` : `<div>${list.map((m) => {
         const open = ui.mOpen === m.id, other = ui.mTab === 'out' ? '받는이 ' + m.to : m.from;
         return `<button class="card mrow ${!m.read && ui.mTab === 'in' ? 'unread' : ''} ${open ? '' : 'clip'}" data-act="open-msg" data-v="${m.id}"><div class="r1"><b style="color:var(--ink)">${esc(other)}</b><span>${m.date.slice(0, 16).replace('T', ' ')}</span></div><div class="t">${esc(m.body)}</div>${open && ui.mTab === 'in' ? `<div class="actions" style="margin-top:10px"><span class="btn sm" data-act="dm" data-v="${esc(m.from)}">↩ 답장</span></div>` : ''}</button>`;
       }).join('') || '<div class="empty">쪽지가 없어요.</div>'}</div>`;
-    view.innerHTML = `<h2 class="page-title">쪽지</h2>
-      <div class="chips" style="margin-top:10px">${[['in', '받은 쪽지'], ['out', '보낸 쪽지'], ['new', '✏️ 새 쪽지']].map(([v, l]) => `<button class="chip ${ui.mTab === v ? 'on' : ''}" data-act="m-tab" data-v="${v}">${l}</button>`).join('')}</div>${body}`;
+    view.innerHTML = `<h2 class="page-title">쪽지함</h2>
+      <div class="chips" style="margin:10px 0">${[['in', '받은 쪽지'], ['out', '보낸 쪽지'], ['new', '✏️ 새 쪽지']].map(([v, l]) => `<button class="chip ${ui.mTab === v ? 'on' : ''}" data-act="m-tab" data-v="${v}">${l}</button>`).join('')}</div>${body}`;
     if (ui.mTab === 'new') $('#mform').onsubmit = (e) => {
-      e.preventDefault(); const to = $('#mto').value.trim(), t = $('#mb').value.trim(); const target = db.users.find((x) => x.nick === to);
+      e.preventDefault(); const to = $('#mto').value.trim(), t = $('#mb').value.trim(), target = db.users.find((x) => x.nick === to);
       if (!target) return toast('존재하지 않는 닉네임이에요'); if (target.id === u.id) return toast('나에게는 보낼 수 없어요'); if (!t) return;
       db.msgs.push({ id: uid('m'), from: u.nick, to: target.nick, date: new Date().toISOString().slice(0, 19), read: false, body: t }); save(); ui.mTab = 'out'; toast('쪽지를 보냈어요'); viewMessages(new URLSearchParams()); refreshChrome();
     };
   }
 
-  /* =====================================================================
-   * 내 정보 / 인증
-   * ===================================================================== */
+  /* ---------- 내 정보 / 인증 ---------- */
   function viewMe() {
     const u = me();
-    if (!u) { view.innerHTML = '<h2 class="page-title">내 정보</h2><div class="empty">로그인하면 글쓰기와 쪽지를 사용할 수 있어요.<br><br><button class="btn primary" data-act="login">로그인 / 회원가입</button></div>'; return; }
+    const menu = `<div class="menu"><a class="card" href="#/compare">⚖️ 학군비교 <span>›</span></a><a class="card" href="#/guide">📖 정보·가이드 <span>›</span></a><a class="card" href="#/messages">✉️ 쪽지함 <span>${unreadCount() ? '● ' + unreadCount() : '›'}</span></a></div>`;
+    if (!u) { view.innerHTML = `<h2 class="page-title">더보기</h2><div class="card pad" style="margin-top:12px">로그인하면 글쓰기와 쪽지를 사용할 수 있어요.<div class="actions" style="margin-top:12px"><button class="btn primary" data-act="login">로그인</button><button class="btn" data-act="signup">회원가입</button></div></div>${menu}`; return; }
     view.innerHTML = `<h2 class="page-title">내 정보</h2>
-      <div class="card" style="padding:18px;margin-top:12px"><h3 style="font-size:20px">${esc(u.nick)}</h3><p class="muted">${esc(u.email)} · 관심지역 ${REG[u.region] ? REG[u.region].gu : '-'}</p>
-        <div class="kv"><div><span>내가 쓴 글</span><b>${db.posts.filter((p) => p.author === u.nick).length}개</b></div><div><span>안 읽은 쪽지</span><b>${unreadCount()}통</b></div></div>
-        <div class="actions"><button class="btn" data-act="logout">로그아웃</button><button class="btn danger" data-act="reset">샘플 데이터 초기화</button></div></div>
-      <div class="notice">회원 정보·글·쪽지는 이 브라우저에만 저장되는 시연용입니다. 앱 출시 시 서버 인증/DB 로 교체해야 해요.</div>`;
+      <div class="card pad" style="margin-top:12px"><h3 style="font-size:20px">${nickHtml(u.nick)}</h3><p class="muted">${esc(u.email)} · 관심지역 ${REG[u.region] ? REG[u.region].gu : '-'}</p>
+        <div class="kv" style="grid-template-columns:repeat(2,1fr)"><div style="background:var(--bg)"><span>내가 쓴 글</span><b>${db.posts.filter((p) => p.author === u.nick).length}개</b></div><div style="background:var(--bg)"><span>안 읽은 쪽지</span><b>${unreadCount()}통</b></div></div>
+        <div class="actions">${u.verified ? '<span class="tag">✔ 실거주 인증 완료 (샘플)</span>' : '<button class="btn primary" data-act="verify">실거주 인증하기 (샘플)</button>'}<button class="btn" data-act="logout">로그아웃</button><button class="btn danger" data-act="reset">샘플 데이터 초기화</button></div></div>${menu}
+      <div class="notice">회원 정보·글·쪽지는 이 브라우저에만 저장되는 시연용입니다. 실제 서비스에서는 서버 인증, 실거주 인증(서류·위치 등)으로 교체해야 해요.</div>`;
   }
 
   function openAuth(mode) {
     mode = mode || 'login';
-    const root = $('#modal-root');
-    root.innerHTML = `<div class="overlay" data-act="close-modal"><div class="card modal" role="dialog" aria-modal="true" aria-label="로그인">
+    $('#modal-root').innerHTML = `<div class="overlay" data-act="close-modal"><div class="card modal" role="dialog" aria-modal="true" aria-label="로그인">
       <h3>학군맵 시작하기</h3>
       <div class="tabs2"><button class="${mode === 'login' ? 'on' : ''}" data-act="auth-tab" data-v="login">로그인</button><button class="${mode === 'signup' ? 'on' : ''}" data-act="auth-tab" data-v="signup">회원가입</button></div>
       <form id="aform">
-        ${mode === 'signup' ? `<label class="f" for="an">닉네임 (2~10자)</label><input type="text" id="an" maxlength="10" required>` : ''}
+        ${mode === 'signup' ? '<label class="f" for="an">닉네임 (2~10자)</label><input type="text" id="an" maxlength="10" required>' : ''}
         <label class="f" for="ae">이메일</label><input type="email" id="ae" required autocomplete="email">
         <label class="f" for="ap">비밀번호 (6자 이상)</label><input type="password" id="ap" minlength="6" required autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}">
         ${mode === 'signup' ? `<label class="f" for="ar">관심 지역</label><select id="ar">${D.REGIONS.map((r) => `<option value="${r.id}">${r.gu} ${r.dong}</option>`).join('')}</select>` : ''}
         <div class="err" id="aerr"></div>
-        <button class="btn primary" type="submit" style="width:100%;margin-top:6px">${mode === 'signup' ? '가입하고 시작' : '로그인'}</button>
-        ${mode === 'login' ? '<button class="btn" type="button" data-act="demo" style="width:100%;margin-top:8px">체험 계정으로 둘러보기</button>' : ''}
-      </form>
-      <p class="muted" style="font-size:12px;margin-top:12px">시연용: 정보는 이 기기 브라우저에만 저장됩니다.</p></div></div>`;
+        <button class="btn primary block" type="submit" style="margin-top:6px">${mode === 'signup' ? '가입하고 시작' : '로그인'}</button>
+        ${mode === 'login' ? '<button class="btn block" type="button" data-act="demo" style="margin-top:8px">체험 계정으로 둘러보기</button>' : ''}
+      </form><p class="muted" style="font-size:12px;margin-top:12px">시연용: 정보는 이 기기 브라우저에만 저장됩니다.</p></div></div>`;
     $('#aform').onsubmit = (e) => {
       e.preventDefault(); const err = $('#aerr'), email = $('#ae').value.trim().toLowerCase(), pw = $('#ap').value;
       if (mode === 'signup') {
@@ -396,9 +578,9 @@
         if (nick.length < 2) return (err.textContent = '닉네임은 2자 이상이어야 해요.');
         if (db.users.some((x) => x.nick === nick)) return (err.textContent = '이미 사용 중인 닉네임이에요.');
         if (db.users.some((x) => x.email === email)) return (err.textContent = '이미 가입된 이메일이에요.');
-        const nu = { id: uid('u'), nick, email, pw: hash(pw), region: $('#ar').value }; db.users.push(nu); db.session = nu.id;
+        const nu = { id: uid('u'), nick, email, pw: hash(pw), region: $('#ar').value, verified: false }; db.users.push(nu); db.session = nu.id;
+        if (!db.users.some((x) => x.nick === '학군맵')) db.users.push({ id: 'sys', nick: '학군맵', email: 'noreply@sample.kr', pw: hash(uid('x')), region: 'gangnam', verified: true });
         db.msgs.push({ id: uid('m'), from: '학군맵', to: nick, date: new Date().toISOString().slice(0, 19), read: false, body: `${nick}님, 가입을 환영합니다! 지역 커뮤니티에서 이야기를 나눠보세요.` });
-        if (!db.users.some((x) => x.nick === '학군맵')) db.users.push({ id: 'sys', nick: '학군맵', email: 'noreply@sample.kr', pw: hash(uid('x')), region: 'gangnam' });
       } else {
         const found = db.users.find((x) => x.email === email && x.pw === hash(pw));
         if (!found) return (err.textContent = '이메일 또는 비밀번호가 올바르지 않아요.'); db.session = found.id;
@@ -407,9 +589,8 @@
     };
   }
   const closeModal = () => { $('#modal-root').innerHTML = ''; };
-
   function refreshChrome() {
-    const u = me(); $('#authbtn').textContent = u ? u.nick : '로그인';
+    const u = me(); $('#authbtn').textContent = u ? u.nick : '로그인'; $('#joinbtn').hidden = !!u;
     const n = unreadCount(); $$('.dot').forEach((d) => { d.hidden = !n; });
   }
 
@@ -418,49 +599,59 @@
    * ===================================================================== */
   function route() {
     if (cleanup) { cleanup(); cleanup = null; }
-    const h = location.hash.slice(1) || '/'; const [path, qs] = h.split('?'); const q = new URLSearchParams(qs || ''); const seg = path.split('/').filter(Boolean);
-    const page = seg[0] || 'home';
-    if (page === 'school') viewSchool(seg[1]);
-    else if (page === 'community') viewCommunity(q);
-    else if (page === 'post') viewPost(seg[1]);
-    else if (page === 'write') viewWrite(q);
-    else if (page === 'messages') viewMessages(q);
-    else if (page === 'me') viewMe();
-    else viewHome();
-    const nav = { home: 'home', school: 'home', community: 'community', post: 'community', write: 'community', messages: 'messages', me: 'me' }[page] || 'home';
+    const h = location.hash.slice(1) || '/', [path, qs] = h.split('?'), q = new URLSearchParams(route.last === h ? '' : qs || ''), seg = path.split('/').filter(Boolean), page = seg[0] || 'home';
+    const R = { school: () => viewSchool(seg[1]), schools: () => viewSchools(q), apt: () => viewApt(seg[1]), budget: viewBudget, compare: () => viewCompare(q), guide: viewGuide, search: () => viewSearch(q), community: () => viewCommunity(q), post: () => viewPost(seg[1]), write: () => viewWrite(q), messages: () => viewMessages(q), me: viewMe };
+    route.last = h;
+    (R[page] || viewHome)();
+    const nav = { home: 'home', school: 'schools', schools: 'schools', apt: 'schools', search: 'schools', budget: 'budget', compare: 'compare', guide: 'guide', community: 'community', post: 'community', write: 'community', me: 'me', messages: 'me' }[page] || 'home';
     $$('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === nav));
-    refreshChrome(); if (page !== 'school' || !ui.sel) window.scrollTo(0, 0);
+    refreshChrome(); window.scrollTo(0, 0);
   }
+  const curSchool = () => schoolById((location.hash.match(/^#\/school\/([^?]+)/) || [])[1]);
+  const rerender = () => route2();
+  function route2() { const y = window.scrollY; route(); window.scrollTo(0, y); }
 
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]'); if (!el) return;
-    const act = el.dataset.act, v = el.dataset.v, s = (location.hash.match(/^#\/school\/([^?]+)/) || [])[1];
+    const act = el.dataset.act, v = el.dataset.v;
     if (act === 'close-modal') { if (e.target === el) closeModal(); return; }
-    if (act === 'home-cat') { ui.homeCat = v; viewHome(); }
-    else if (act === 'home-region') { ui.homeRegion = v; viewHome(); }
-    else if (act === 'infra') { ui.infra[v] = !ui.infra[v]; const sc = schoolById(s); drawChips(sc); drawMap(sc); }
-    else if (act === 'pick') pick(schoolById(s), v);
-    else if (act === 'zoom') { if (v === '0') { ui.vb = { x: 0, y: 0, w: MW, h: MH }; setVB(); } else zoomBy(v === '1' ? 0.75 : 1.33); }
-    else if (act === 'c-region') { ui.cRegion = v; viewCommunity(new URLSearchParams()); }
-    else if (act === 'c-cat') { ui.cCat = v; viewCommunity(new URLSearchParams()); }
-    else if (act === 'login') openAuth('login');
-    else if (act === 'auth-tab') openAuth(v);
-    else if (act === 'demo') { db.session = 'demo'; save(); closeModal(); refreshChrome(); toast('체험 계정으로 로그인했어요'); route(); }
-    else if (act === 'logout') { db.session = null; save(); refreshChrome(); toast('로그아웃 했어요'); route(); }
-    else if (act === 'reset') { db = seed(); save(); refreshChrome(); toast('샘플 데이터를 초기화했어요'); route(); }
-    else if (act === 'like') { const u = me(); if (!u) return openAuth('login'); const p = db.posts.find((x) => x.id === v); const i = p.likes.indexOf(u.id); if (i < 0) p.likes.push(u.id); else p.likes.splice(i, 1); save(); p.views--; viewPost(v); }
-    else if (act === 'del-post') { if (confirm('이 글을 삭제할까요?')) { db.posts = db.posts.filter((x) => x.id !== v); save(); toast('삭제했어요'); location.hash = '#/community'; } }
-    else if (act === 'dm') { if (!me()) return openAuth('login'); ui.mTab = 'new'; location.hash = '#/messages?to=' + encodeURIComponent(v); e.stopPropagation(); }
-    else if (act === 'm-tab') { ui.mTab = v; viewMessages(new URLSearchParams()); }
-    else if (act === 'open-msg') { const m = db.msgs.find((x) => x.id === v); ui.mOpen = ui.mOpen === v ? null : v; if (m && m.to === me().nick && !m.read) { m.read = true; save(); refreshChrome(); } viewMessages(new URLSearchParams()); }
+    if (act === 'apt-cmp') return; // change 이벤트에서 처리
+    if (act === 'pre') { if (window.innerWidth >= 900) { e.preventDefault(); ui.preSel = v; const y = window.scrollY; viewSchools(new URLSearchParams()); window.scrollTo(0, y); } return; }
+    const S = {
+      area: () => { ui.area = +v; const s = curSchool(); if (s) { drawMap(s); drawPanel(s); } else rerender(); },
+      metric: () => { ui.metric = v; ui.sortKey = 'metric'; rerender(); },
+      'bud-kind': () => { ui.budget.kind = v; rerender(); }, 'bud-metric': () => { ui.metric = v; rerender(); },
+      'cmp-toggle': () => { const i = ui.cmp.indexOf(v); if (i >= 0) ui.cmp.splice(i, 1); else if (ui.cmp.length < 3) ui.cmp.push(v); else toast('최대 3개까지 비교할 수 있어요'); rerender(); },
+      layer: () => { ui.layers[v] = !ui.layers[v]; const s = curSchool(); drawLayers(s); drawMap(s); },
+      pick: () => pick(curSchool(), v), 'list-kind': () => { ui.listKind = v; drawPanel(curSchool()); },
+      zoom: () => { if (v === '0') { ui.vb = { x: 0, y: 0, w: MW, h: MH }; setVB(); } else zoomBy(v === '1' ? 0.75 : 1.33); },
+      'apt-tab': () => { ui.aptTab = v; rerender(); }, 'apt-kind': () => { ui.aptKind = v; rerender(); }, 'apt-range': () => { ui.aptRange = +v; rerender(); },
+      'c-region': () => { ui.cRegion = v; viewCommunity(new URLSearchParams()); }, 'c-cat': () => { ui.cCat = v; viewCommunity(new URLSearchParams()); },
+      login: () => openAuth('login'), signup: () => openAuth('signup'), 'auth-tab': () => openAuth(v),
+      demo: () => { db.session = 'demo'; save(); closeModal(); refreshChrome(); toast('체험 계정으로 로그인했어요'); route(); },
+      logout: () => { db.session = null; save(); refreshChrome(); toast('로그아웃 했어요'); route(); },
+      reset: () => { db = seed(); save(); refreshChrome(); toast('샘플 데이터를 초기화했어요'); route(); },
+      verify: () => { me().verified = true; save(); toast('실거주 인증이 완료되었어요 (샘플)'); route(); },
+      like: () => { const u = me(); if (!u) return openAuth('login'); const p = db.posts.find((x) => x.id === v), i = p.likes.indexOf(u.id); if (i < 0) p.likes.push(u.id); else p.likes.splice(i, 1); save(); p.views--; viewPost(v); },
+      'del-post': () => { if (confirm('이 글을 삭제할까요?')) { db.posts = db.posts.filter((x) => x.id !== v); save(); toast('삭제했어요'); location.hash = '#/community'; } },
+      dm: () => { if (!me()) return openAuth('login'); ui.mTab = 'new'; location.hash = '#/messages?to=' + encodeURIComponent(v); e.stopPropagation(); },
+      'm-tab': () => { ui.mTab = v; viewMessages(new URLSearchParams()); },
+      'open-msg': () => { const m = db.msgs.find((x) => x.id === v); ui.mOpen = ui.mOpen === v ? null : v; if (m && m.to === me().nick && !m.read) { m.read = true; save(); refreshChrome(); } viewMessages(new URLSearchParams()); }
+    };
+    if (S[act]) S[act]();
+  });
+  document.addEventListener('change', (e) => {
+    const el = e.target.closest('[data-act="apt-cmp"]'); if (!el) return;
+    const i = ui.aptCmp.indexOf(el.dataset.v); if (i >= 0) ui.aptCmp.splice(i, 1); else if (ui.aptCmp.length < 3) ui.aptCmp.push(el.dataset.v); else toast('최대 3개까지 비교할 수 있어요');
+    const y = window.scrollY; route(); window.scrollTo(0, y);
   });
   $('#authbtn').addEventListener('click', () => { if (me()) location.hash = '#/me'; else openAuth('login'); });
+  $('#joinbtn').addEventListener('click', () => openAuth('signup'));
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
   window.addEventListener('hashchange', route);
 
   /* ---------- 부팅 (스플래시 → 홈) ---------- */
   load(); refreshChrome();
-  const steps = ['학교 데이터를 불러오는 중…', '배정 아파트 시세를 정리하는 중…', '지도 준비 중…'];
-  steps.forEach((t, i) => setTimeout(() => { $('#splash-msg').textContent = t; }, i * 500));
+  ['학교 데이터를 불러오는 중…', '배정 아파트 시세를 정리하는 중…', '지도 준비 중…'].forEach((t, i) => setTimeout(() => { $('#splash-msg').textContent = t; }, i * 500));
   setTimeout(() => { route(); $('#splash').classList.add('hide'); }, 1600);
 })();

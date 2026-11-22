@@ -4,42 +4,48 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>학군맵</title>
-<meta name="description" content="학군 좋은 고등학교와 배정 아파트 시세, 주변 인프라, 지역 커뮤니티를 한 곳에서 (샘플)">
-<meta name="theme-color" content="#3b5bdb">
+<meta name="description" content="학교로 찾는 집, 우리 아이의 학군 라이프 (샘플)">
+<meta name="theme-color" content="#1f6b4a">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<!-- 1) 스플래시 / 로딩 -->
 <div id="splash" role="status" aria-live="polite">
   <div class="splash-inner">
     <img src="icon.svg" alt="" width="84" height="84">
     <h1>학군맵</h1>
-    <p>학교 · 아파트 · 이야기를 한 번에</p>
+    <p>학교로 찾는 집, 우리 아이의 학군 라이프</p>
     <div class="bar"><i></i></div>
     <small id="splash-msg">학교 데이터를 불러오는 중…</small>
   </div>
 </div>
 
 <header class="top">
-  <a class="logo" href="#/"><img src="icon.svg" alt="" width="28" height="28"><span>학군맵</span></a>
+  <a class="logo" href="#/"><img src="icon.svg" alt="" width="30" height="30"><span>학군맵</span></a>
   <nav class="topnav" aria-label="주 메뉴">
-    <a href="#/" data-nav="home">학교·시세</a>
+    <a href="#/schools" data-nav="schools">학군탐색</a>
+    <a href="#/budget" data-nav="budget">예산탐색</a>
+    <a href="#/compare" data-nav="compare">학군비교</a>
     <a href="#/community" data-nav="community">커뮤니티</a>
-    <a href="#/messages" data-nav="messages">쪽지<span class="dot" hidden></span></a>
+    <a href="#/guide" data-nav="guide">정보·가이드</a>
   </nav>
-  <button class="authbtn" id="authbtn" type="button">로그인</button>
+  <div class="auths">
+    <a class="bell" href="#/messages" aria-label="쪽지함">🔔<b class="dot" hidden></b></a>
+    <button class="btn sm" id="authbtn" type="button">로그인</button>
+    <button class="btn sm primary" id="joinbtn" type="button">회원가입</button>
+  </div>
 </header>
 
 <main id="view" tabindex="-1"></main>
 
 <nav class="tabbar" aria-label="하단 메뉴">
-  <a href="#/" data-nav="home"><i>🏫</i><span>학교·시세</span></a>
+  <a href="#/" data-nav="home"><i>🏠</i><span>홈</span></a>
+  <a href="#/schools" data-nav="schools"><i>🏫</i><span>학군탐색</span></a>
+  <a href="#/budget" data-nav="budget"><i>💰</i><span>예산탐색</span></a>
   <a href="#/community" data-nav="community"><i>💬</i><span>커뮤니티</span></a>
-  <a href="#/messages" data-nav="messages"><i>✉️</i><span>쪽지</span><b class="dot" hidden></b></a>
-  <a href="#/me" data-nav="me"><i>👤</i><span>내 정보</span></a>
+  <a href="#/me" data-nav="me"><i>☰</i><span>더보기</span></a>
 </nav>
 
 <div id="modal-root"></div>
