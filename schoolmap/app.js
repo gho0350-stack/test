@@ -56,7 +56,7 @@
   const unreadCount = () => { const u = me(); return u ? db.msgs.filter((m) => m.to === u.nick && !m.read).length : 0; };
 
   /* ---------- UI 상태 ---------- */
-  const ui = { homeCat: 'all', homeRegion: 'all', sort: 'sale_desc', sel: null, infra: { subway: true, academy: true, park: true, library: true, hospital: true, mart: true }, vb: null, cRegion: 'all', cCat: 'all', cQuery: '', mTab: 'in', mOpen: null };
+  const ui = { homeCat: 'all', homeRegion: 'all', sort: 'cat', sel: null, infra: { subway: true, academy: true, park: true, library: true, hospital: true, mart: true }, vb: null, cRegion: 'all', cCat: 'all', cQuery: '', mTab: 'in', mOpen: null };
   const view = $('#view');
 
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200); }
@@ -68,34 +68,30 @@
   function viewHome() {
     const aptCount = SCHOOLS.reduce((n, s) => n + s.apts.length, 0);
     let list = SCHOOLS.filter((s) => (ui.homeCat === 'all' || s.cat === ui.homeCat) && (ui.homeRegion === 'all' || s.region === ui.homeRegion));
-    const sorters = { sale_desc: (a, b) => b.saleMax - a.saleMax, sale_asc: (a, b) => a.saleMin - b.saleMin, jeonse_desc: (a, b) => b.jMax - a.jMax, jeonse_asc: (a, b) => a.jMin - b.jMin };
+    const order = { med: 0, sky: 1, seoul: 2 };
+    const sorters = { cat: (a, b) => order[a.cat] - order[b.cat] || b.saleMax - a.saleMax, sale_desc: (a, b) => b.saleMax - a.saleMax, sale_asc: (a, b) => a.saleMin - b.saleMin, jeonse_desc: (a, b) => b.jMax - a.jMax, jeonse_asc: (a, b) => a.jMin - b.jMin };
     list = list.slice().sort(sorters[ui.sort]);
-    const card = (s) => `
-      <a class="card scard" href="#/school/${s.id}">
-        <div class="top-row">${badge(s.cat)}<h3>${esc(s.name)}</h3></div>
-        <div class="where">📍 ${REG[s.region].gu} ${REG[s.region].dong} · 배정 아파트 ${s.apts.length}곳</div>
-        <div class="pg">
-          <div><span>매매 (84㎡)</span><b>${range(s.saleMin, s.saleMax)}</b></div>
-          <div><span>전세</span><b>${range(s.jMin, s.jMax)}</b></div>
-        </div>
-        <div class="go">지도·아파트 보기 →</div>
+    const row = (s, i) => `
+      <a class="trow" href="#/school/${s.id}" aria-label="${esc(s.name)} 선택">
+        <span class="no">${i + 1}</span>
+        <span class="cat">${badge(s.cat)}</span>
+        <span class="name"><b>${esc(s.name)}</b></span>
+        <span class="reg">${REG[s.region].gu} <small>${REG[s.region].dong}</small></span>
+        <span class="sale"><small>매매</small><b>${range(s.saleMin, s.saleMax)}</b></span>
+        <span class="jeonse"><small>전세</small><b>${range(s.jMin, s.jMax)}</b></span>
+        <span class="go"><span class="btn primary sm">선택</span></span>
       </a>`;
-    const groups = (ui.homeCat === 'all' ? ['med', 'sky', 'seoul'] : [ui.homeCat]).map((c) => {
-      const items = list.filter((s) => s.cat === c);
-      if (!items.length) return '';
-      return `<div class="group-h">${badge(c)}<h2>${D.CAT_LABEL[c]} 학군 고등학교</h2><span class="muted">${items.length}곳 · ${D.CAT_DESC[c]}</span></div><div class="grid">${items.map(card).join('')}</div>`;
-    }).join('');
     view.innerHTML = `
       <section class="hero">
-        <h2>우리 아이 학교, 배정 아파트 시세까지 한눈에</h2>
-        <p>의대 · SKY · 인서울 학군 고등학교와 배정 지역 아파트의 매매·전세 가격대를 비교해 보세요.</p>
+        <h2>학군 한눈에</h2>
+        <p>의대 · SKY · 인서울 고등학교와 배정 지역 아파트의 매매·전세 가격대를 비교하고, 마음에 드는 학교를 선택하세요.</p>
         <div class="stats">
-          <div class="stat"><b>${D.REGIONS.length}</b><span>상위 학군 지역구</span></div>
+          <div class="stat"><b>${D.REGIONS.length}</b><span>지역구</span></div>
           <div class="stat"><b>${SCHOOLS.length}</b><span>고등학교</span></div>
-          <div class="stat"><b>${aptCount}</b><span>배정 아파트 단지</span></div>
+          <div class="stat"><b>${aptCount}</b><span>배정 아파트</span></div>
         </div>
       </section>
-      <div class="notice">⚠️ 샘플 화면입니다. 학교 분류·가격·세대수 등 모든 수치는 시연용 가상 데이터이며 실제와 다를 수 있어요.</div>
+      <div class="notice">⚠️ 샘플 화면입니다. 모든 수치는 시연용 가상 데이터이며 실제와 다를 수 있어요.</div>
       <div class="chips" role="tablist" aria-label="학군 구분">
         ${[['all', '전체'], ['med', '의대'], ['sky', 'SKY'], ['seoul', '인서울']].map(([v, l]) => `<button class="chip ${ui.homeCat === v ? 'on' : ''}" data-act="home-cat" data-v="${v}">${l}</button>`).join('')}
       </div>
@@ -105,10 +101,11 @@
       </div>
       <div class="toolbar"><span class="muted">${list.length}개 학교</span>
         <select class="inline" id="sort" aria-label="정렬">
-          ${[['sale_desc', '매매가 높은순'], ['sale_asc', '매매가 낮은순'], ['jeonse_desc', '전세가 높은순'], ['jeonse_asc', '전세가 낮은순']].map(([v, l]) => `<option value="${v}" ${ui.sort === v ? 'selected' : ''}>${l}</option>`).join('')}
+          ${[['cat', '구분순 (의대·SKY·인서울)'], ['sale_desc', '매매가 높은순'], ['sale_asc', '매매가 낮은순'], ['jeonse_desc', '전세가 높은순'], ['jeonse_asc', '전세가 낮은순']].map(([v, l]) => `<option value="${v}" ${ui.sort === v ? 'selected' : ''}>${l}</option>`).join('')}
         </select>
       </div>
-      ${groups || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}`;
+      <div class="thead trow" aria-hidden="true"><span class="no">#</span><span class="cat">구분</span><span class="name">학교</span><span class="reg">지역</span><span class="sale">매매 min~max</span><span class="jeonse">전세 min~max</span><span class="go"></span></div>
+      <div class="tlist">${list.map(row).join('') || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}</div>`;
     $('#sort').onchange = (e) => { ui.sort = e.target.value; viewHome(); };
   }
 
@@ -161,19 +158,17 @@
       <a class="back" href="#/">← 학교 목록</a>
       <div class="s-head">
         <div><h2>${esc(s.name)} ${badge(s.cat)}</h2><p class="sub">📍 ${reg.gu} ${reg.dong} · ${esc(reg.tag)} · 배정 아파트 ${s.apts.length}곳</p></div>
-        <a class="btn primary" href="#/community?region=${s.region}">💬 ${reg.gu} 커뮤니티</a>
       </div>
-      <div class="layout">
-        <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도">
-          <div class="mapbar"><div class="chips" id="infra-chips"></div></div>
-          <div class="mapbox">
-            <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 배정 아파트 영역 지도"><g id="map-g"></g></svg>
-            <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">+</button><button data-act="zoom" data-v="-1" aria-label="축소">−</button><button data-act="zoom" data-v="0" aria-label="원래대로">⤾</button></div>
-          </div>
-          <div class="legend"><span>🏫 학교</span><span>색상이 진할수록 매매가 높음</span><i class="grad"></i><span>점선 = 학교까지 도보 5·10·15분</span><span>영역을 눌러 상세 보기</span></div>
-        </section>
-        <aside class="card panel" id="panel" aria-live="polite"></aside>
-      </div>`;
+      <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도" style="margin-top:12px">
+        <div class="mapbar"><div class="chips" id="infra-chips"></div></div>
+        <div class="mapbox">
+          <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 배정 아파트 영역 지도"><g id="map-g"></g></svg>
+          <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">+</button><button data-act="zoom" data-v="-1" aria-label="축소">−</button><button data-act="zoom" data-v="0" aria-label="원래대로">⤾</button></div>
+        </div>
+        <div class="legend"><span>🏫 학교</span><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선 = 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세</span></div>
+      </section>
+      <section class="card" id="panel" aria-live="polite" style="margin-top:12px"></section>
+      <a class="btn primary bigbtn" href="#/community?region=${s.region}">💬 ${reg.gu} ${reg.dong} 지역 커뮤니티 가기</a>`;
     drawChips(s); drawMap(s); drawPanel(s); bindMap(s);
   }
 
@@ -206,42 +201,39 @@
   }
 
   function drawPanel(s) {
-    const sel = s.apts.find((a) => a.id === ui.sel);
-    const walk = (label, m) => `<tr><th>${label}</th><td>${m ? `<span class="ok">✓ 도보 ${m}분</span> <span class="muted">(약 ${(m * 80).toLocaleString()}m)</span>` : '<span class="no">✕ 15분 초과</span>'}</td></tr>`;
-    let detail = '';
-    if (sel) {
-      const t = tradesOf(sel), age = 2026 - sel.year, ratio = Math.round((sel.jeonse / sel.sale) * 100);
-      detail = `<div class="p-sec detail">
-        <h3><span class="l">${sel.letter}</span>${esc(sel.name)}</h3>
-        <p class="muted">${esc(s.name)} 배정 · 전용 84㎡ 기준</p>
-        <div class="kv">
-          <div><span>최근 실거래 (매매)</span><b>${eokL(t.sale[0].price)}</b></div>
-          <div><span>전세</span><b>${eokL(sel.jeonse)}</b></div>
-          <div><span>세대수</span><b>${sel.hh.toLocaleString()}세대</b></div>
-          <div><span>준공연도</span><b>${sel.year}년 (${age}년차)</b></div>
-          <div><span>전세가율</span><b>${ratio}%</b></div>
-          <div><span>호가 평균(샘플)</span><b>${eokL(sel.sale)}</b></div>
-        </div>
-        <h4 class="h4">초·중·고 도보 거리</h4>
-        <table>${walk('초등학교', sel.elem <= 15 ? sel.elem : 0)}${walk('중학교', sel.mid <= 15 ? sel.mid : 0)}${walk('고등학교 (' + esc(s.name) + ')', sel.hi <= 15 ? sel.hi : 0)}</table>
-        <h4 class="h4">최근 매매 실거래</h4>
-        <table><tr><th>계약일</th><th>층</th><th>금액</th></tr>${t.sale.map((x) => `<tr><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table>
-        <h4 class="h4">최근 전세 실거래</h4>
-        <table><tr><th>계약일</th><th>층</th><th>금액</th></tr>${t.jeonse.map((x) => `<tr><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table>
-        <div class="actions" style="margin-top:14px"><a class="btn primary sm" href="#/community?region=${s.region}&cat=life">🏢 아파트생활 이야기</a><a class="btn sm" href="#/community?region=${s.region}&cat=moving">🚚 입주정보</a></div>
-      </div>
-      <hr style="border:0;border-top:1px solid var(--line);margin:0">`;
-    }
-    $('#panel').innerHTML = `${detail}
-      <div class="p-sec"><h3>배정 아파트 ${s.apts.length}곳</h3>
-        <p class="muted" style="font-size:13px">매매 ${range(s.saleMin, s.saleMax)} · 전세 ${range(s.jMin, s.jMax)}</p>
-        <div class="alist">${s.apts.map((a) => `<button class="arow ${a.id === ui.sel ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${a.letter}</span><span><b>${esc(a.name)}</b><small>${a.hh.toLocaleString()}세대 · ${a.year}년 · 고 도보 ${a.hi}분</small></span><span class="pp">${eokS(a.sale)}<small>전세 ${eokS(a.jeonse)}</small></span></button>`).join('')}</div>
-      </div>`;
+    const mins = (m) => (m <= 15 ? `<b>${m}분</b>` : '<span class="no">15분↑</span>');
+    const rows = s.apts.map((a) => {
+      const t = tradesOf(a), on = a.id === ui.sel;
+      let detail = '';
+      if (on) {
+        const age = 2026 - a.year, ratio = Math.round((a.jeonse / a.sale) * 100);
+        const tb = (arr) => `<table><tr><th>계약일</th><th>층</th><th>금액</th></tr>${arr.map((x) => `<tr><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table>`;
+        detail = `<div class="detail">
+          <div class="kv"><div><span>최근 실거래 (매매)</span><b>${eokL(t.sale[0].price)}</b></div><div><span>전세</span><b>${eokL(a.jeonse)}</b></div><div><span>전세가율</span><b>${ratio}%</b></div><div><span>세대수 · 준공</span><b>${a.hh.toLocaleString()}세대 · ${a.year}년 (${age}년차)</b></div></div>
+          <h4 class="h4">초·중·고 도보 거리</h4>
+          <table><tr><td>초등학교</td><td class="ok">✓ 도보 ${a.elem}분 <span class="muted">(약 ${(a.elem * 80).toLocaleString()}m)</span></td></tr><tr><td>중학교</td><td class="ok">✓ 도보 ${a.mid}분 <span class="muted">(약 ${(a.mid * 80).toLocaleString()}m)</span></td></tr><tr><td>${esc(s.name)}</td><td class="ok">✓ 도보 ${a.hi}분 <span class="muted">(약 ${(a.hi * 80).toLocaleString()}m)</span></td></tr></table>
+          <div class="two"><div><h4 class="h4">최근 매매 실거래</h4>${tb(t.sale)}</div><div><h4 class="h4">최근 전세 실거래</h4>${tb(t.jeonse)}</div></div>
+          <div class="actions" style="margin-top:12px"><a class="btn sm" href="#/community?region=${s.region}&cat=life">🏢 아파트생활</a><a class="btn sm" href="#/community?region=${s.region}&cat=moving">🚚 입주정보</a></div>
+        </div>`;
+      }
+      return `<div class="arow2 ${on ? 'on' : ''}"><button class="ar" data-act="pick" data-v="${a.id}" aria-expanded="${on}">
+        <span class="l">${a.letter}</span><span class="nm"><b>${esc(a.name)}</b></span>
+        <span class="c sale"><small>실거래</small><b>${eokS(t.sale[0].price)}</b></span>
+        <span class="c jeo"><small>전세</small><b>${eokS(a.jeonse)}</b></span>
+        <span class="c hh"><small>세대수</small>${a.hh.toLocaleString()}</span>
+        <span class="c yr"><small>준공</small>${a.year}</span>
+        <span class="c sch"><small>도보</small>초 ${mins(a.elem)} · 중 ${mins(a.mid)} · 고 ${mins(a.hi)}</span>
+      </button>${detail}</div>`;
+    }).join('');
+    $('#panel').innerHTML = `<div class="p-sec"><h3>배정 아파트 ${s.apts.length}곳</h3>
+      <p class="muted" style="font-size:13px">매매 ${range(s.saleMin, s.saleMax)} · 전세 ${range(s.jMin, s.jMax)} · 전용 84㎡ 기준 · 눌러서 상세 보기</p></div>
+      <div class="ahead arow2"><span class="ar"><span class="l"></span><span class="nm">단지</span><span class="c">매매 실거래</span><span class="c">전세</span><span class="c">세대수</span><span class="c">준공</span><span class="c sch">초·중·고 도보</span></span></div>
+      ${rows}`;
   }
 
   function pick(s, id) {
     ui.sel = ui.sel === id ? null : id; drawMap(s); drawPanel(s);
-    if (ui.sel && window.innerWidth < 960) $('#panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = $('.arow2.on'); if (el && window.innerWidth < 960) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function setVB() { const v = ui.vb; $('#map').setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); }
@@ -252,14 +244,15 @@
   }
   function bindMap(s) {
     const svg = $('#map'); let drag = null, moved = false;
-    const toSvg = (e) => { const r = svg.getBoundingClientRect(); return [ui.vb.x + ((e.clientX - r.left) / r.width) * ui.vb.w, ui.vb.y + ((e.clientY - r.top) / r.height) * ui.vb.h]; };
+    const kOf = (r) => Math.min(r.width / ui.vb.w, r.height / ui.vb.h);
+    const toSvg = (e) => { const r = svg.getBoundingClientRect(), k = kOf(r); return [ui.vb.x + (e.clientX - r.left - (r.width - ui.vb.w * k) / 2) / k, ui.vb.y + (e.clientY - r.top - (r.height - ui.vb.h * k) / 2) / k]; };
     svg.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, vx: ui.vb.x, vy: ui.vb.y }; moved = false; });
     window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
     function onMove(e) {
       if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 5) { moved = true; svg.classList.add('drag'); }
-      if (!moved) return; const r = svg.getBoundingClientRect();
-      ui.vb.x = clamp(drag.vx - (dx / r.width) * ui.vb.w, 0, MW - ui.vb.w); ui.vb.y = clamp(drag.vy - (dy / r.height) * ui.vb.h, 0, MH - ui.vb.h); setVB();
+      if (!moved) return; const k = kOf(svg.getBoundingClientRect());
+      ui.vb.x = clamp(drag.vx - dx / k, 0, MW - ui.vb.w); ui.vb.y = clamp(drag.vy - dy / k, 0, MH - ui.vb.h); setVB();
     }
     function onUp() { drag = null; svg.classList.remove('drag'); }
     svg.addEventListener('click', (e) => { if (moved) { moved = false; return; } const g = e.target.closest('.zone'); if (g) pick(s, g.dataset.apt); });
