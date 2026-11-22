@@ -1,0 +1,11 @@
+{
+  "name": "학군맵",
+  "short_name": "학군맵",
+  "description": "학군 좋은 고등학교와 배정 아파트 시세, 인프라, 지역 커뮤니티",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#3b5bdb",
+  "theme_color": "#3b5bdb",
+  "lang": "ko",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
