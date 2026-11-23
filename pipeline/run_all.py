@@ -10,18 +10,34 @@ import colab_molit as m, colab_kakao as k
 load = lambda p: json.load(open(p, encoding="utf8"))
 def dump(p, d): json.dump(d, open(p, "w", encoding="utf8"), ensure_ascii=False)
 
-if os.environ.get("DATA_GO_KR_KEY"):
+ERRORS = []
+def step(name, fn):
+    """한 단계가 실패해도 다른 단계는 계속 진행한다. 실패 사유는 마지막에 모아서 출력하고 종료 코드로 알린다."""
+    try: fn()
+    except Exception as e:
+        ERRORS.append(f"{name}: {e}"); print(f"!! {name} 실패: {e}", flush=True)
+
+def do_molit():
     print("== 국토부 실거래 + K-apt")
     dump("out/molit_result.json", m.run(os.environ["DATA_GO_KR_KEY"], load("out/sample_apts.json"), months=int(os.environ.get("MONTHS", "60"))))
-else: print("DATA_GO_KR_KEY 없음: 실거래 수집 건너뜀")
 
-if os.environ.get("KAKAO_REST_KEY"):
+def do_kakao():
     print("== 카카오 좌표·인프라")
     res = k.run_kakao(os.environ["KAKAO_REST_KEY"], load("out/school_addrs.json"), load("out/apts_for_kakao.json"))
-    if os.environ.get("NEIS_KEY"):
-        T = {"강남구": ["대치동", "도곡동", "개포동", "역삼동"], "서초구": ["반포동", "잠원동"], "송파구": ["잠실동", "신천동", "방이동"], "양천구": ["목동"], "노원구": ["중계동", "상계동"], "강동구": ["고덕동", "상일동"]}
-        res["neis_academy"] = k.run_neis(os.environ["NEIS_KEY"], list(T), T)
     dump("out/kakao_neis_result.json", res)
-else: print("KAKAO_REST_KEY 없음: 카카오 수집 건너뜀")
+    return res
+
+def do_neis():
+    print("== NEIS 학원 동 단위")
+    T = {"강남구": ["대치동", "도곡동", "개포동", "역삼동"], "서초구": ["반포동", "잠원동"], "송파구": ["잠실동", "신천동", "방이동"], "양천구": ["목동"], "노원구": ["중계동", "상계동"], "강동구": ["고덕동", "상일동"]}
+    p = "out/kakao_neis_result.json"; res = load(p) if os.path.exists(p) else {}
+    res["neis_academy"] = k.run_neis(os.environ["NEIS_KEY"], list(T), T); dump(p, res)
+
+for key, name, fn in (("DATA_GO_KR_KEY", "국토부 실거래", do_molit), ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)):
+    if os.environ.get(key): step(name, fn)
+    else: print(f"{key} 없음: {name} 건너뜀")
 
 subprocess.run([sys.executable, "build_data.py"], check=True)
+
+if ERRORS:
+    print("\n실패한 단계:\n - " + "\n - ".join(ERRORS)); sys.exit(1)
