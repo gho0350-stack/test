@@ -89,7 +89,12 @@
   const aptById = (id) => APTS.find((a) => a.id === id);
   const schoolOf = (a) => schoolById(a.sid);
   const realTrade = (a) => (R.trades || {})[`${REG[schoolById(a.sid).region].gu}|${normName(a.name)}`] || null;
-  APTS.forEach((a) => { const t = realTrade(a); if (t && t.build) a.year = t.build; });
+  APTS.forEach((a) => {
+    const t = realTrade(a); if (t && t.build) a.year = t.build;
+    const ga = ((R.geo || {}).apts || {})[a.id]; if (ga && ga.walk_min_est) { a.hi = ga.walk_min_est; a.hiEst = true; a.straight = ga.straight_m; }
+    const kp = (R.kapt || {})[`${REG[schoolById(a.sid).region].gu}|${normName(a.name)}`]; if (kp && +kp.households) { a.hh = +kp.households; a.hhReal = true; }
+  });
+  const walkHi = (a) => `${a.hi}분${a.hiEst ? ' (추정)' : ''}`;
   const realStat = (a, k) => { const t = realTrade(a); return t && t[k] && t[k][ui.area] ? t[k][ui.area] : null; };
   const pr = (a, k) => { const rs = realStat(a, k === 'jeonse' ? 'jeonse' : 'sale'); if (rs) return rs.median; if (realTrade(a)) return null; return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]); };
   const linked = (a) => !!realTrade(a);
@@ -292,8 +297,28 @@
     p.slice().reverse().forEach((pt) => { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], pt) <= 0) up.pop(); up.push(pt); });
     return lo.slice(0, -1).concat(up.slice(0, -1));
   }
+  const POI_TYPE = { SW8: 'subway', HP8: 'hospital', PM9: 'hospital', MT1: 'mart', PS3: 'edu', CT1: 'library', PARK: 'park' };
+  function geoLayout(s, g) {
+    const ga = (R.geo || {}).apts || {}, proj = (x, y) => [(x - g.x) * Math.cos((g.y * Math.PI) / 180) * 111320, (g.y - y) * 110540];
+    const pos = {}; s.apts.forEach((a) => { if (ga[a.id]) pos[a.id] = proj(ga[a.id].x, ga[a.id].y); });
+    const pts = [[0, 0]].concat(Object.values(pos)), xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    const minx = Math.min(...xs), maxx = Math.max(...xs), miny = Math.min(...ys), maxy = Math.max(...ys), w = Math.max(700, maxx - minx), h = Math.max(500, maxy - miny);
+    const X0 = 200, X1 = MW - 50, Y0 = 70, Y1 = MH - 70, k = Math.min((X1 - X0) / w, (Y1 - Y0) / h, 0.45), mx = (minx + maxx) / 2, my = (miny + maxy) / 2;
+    const P = (p) => [(X0 + X1) / 2 + (p[0] - mx) * k, (Y0 + Y1) / 2 + (p[1] - my) * k];
+    const r = rng(s.id), hp = [], zones = [], [sx, sy] = P([0, 0]);
+    s.apts.forEach((a) => { const p = pos[a.id]; if (!p) return; const [cx, cy] = P(p), zr = clamp(20 + Math.sqrt(a.hh) * 0.4, 28, 46);
+      for (let q = 0; q < 10; q++) { const t = (q / 10) * Math.PI * 2; hp.push([cx + Math.cos(t) * (zr + 34) * 1.15, cy + Math.sin(t) * (zr + 34)]); }
+      zones.push({ id: a.id, cx, cy, path: blobPath(cx, cy, zr, r) }); });
+    const pois = [], shown = [[sx, sy]];
+    Object.entries(g.infra || {}).forEach(([code, v]) => { const type = POI_TYPE[code]; if (!type) return;
+      (v.items || []).slice(0, 2).forEach((it) => { const [px, py] = P(proj(it.x, it.y)); if (px < 30 || px > MW - 30 || py < 40 || py > MH - 40) return;
+        const label = shown.every((q) => Math.hypot(q[0] - px, q[1] - py) > 60); shown.push([px, py]); pois.push({ type, name: it.name, x: px, y: py, dist: it.dist, label }); }); });
+    const rings = [5, 10, 15].map((m) => { const rad = ((m * 80) / 1.3) * k; return { m, rx: rad, ry: rad }; });
+    return { zones, pois, roads: [], hull: hp.length > 2 ? hull(hp) : [], rings, geo: true, sx, sy, scaleBar: { m: 500, px: 500 * k }, academy: ((g.infra || {}).AC5 || {}).counts };
+  }
   function layoutOf(s) {
     if (layoutCache[s.id]) return layoutCache[s.id];
+    const geo = ((R.geo || {}).schools || {})[s.id]; if (geo) return (layoutCache[s.id] = geoLayout(s, geo));
     const r = rng(s.id), n = s.apts.length, off = r() * Math.PI * 2, hp = [];
     const zones = s.apts.map((a, i) => {
       const ang = off + (i * 2 * Math.PI) / n + (r() - 0.5) * 0.35, rad = 70 + (clamp(a.hi, 5, 15) - 5) * 11;
@@ -309,7 +334,7 @@
     });
     const roads = [0, 1, 2].map(() => { const y1 = 80 + r() * 420, y2 = 80 + r() * 420; return `M0,${y1.toFixed(0)} Q${(300 + r() * 200).toFixed(0)},${((y1 + y2) / 2 + (r() - 0.5) * 160).toFixed(0)} ${MW},${y2.toFixed(0)}`; });
     roads.push(`M${(150 + r() * 100).toFixed(0)},0 Q${(CX + (r() - 0.5) * 200).toFixed(0)},${CY} ${(550 + r() * 100).toFixed(0)},${MH}`);
-    return (layoutCache[s.id] = { zones, pois, roads, hull: hull(hp) });
+    return (layoutCache[s.id] = { zones, pois, roads, hull: hull(hp), rings: [[5, 70], [10, 125], [15, 180]].map(([m, rad]) => ({ m, rx: rad * SX, ry: rad })) });
   }
 
   function viewSchool(id) {
@@ -332,7 +357,7 @@
             <div class="layerbox" id="layer-box"></div>
             <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">${ic('plus')}</button><button data-act="zoom" data-v="-1" aria-label="축소">${ic('minus')}</button><button data-act="zoom" data-v="0" aria-label="원래대로">${ic('reset')}</button></div>
           </div>
-          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>위치·구역은 개념도 (지도·학구도 GIS 연동 전)</span></div>
+          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치는 실제 좌표 기준 (지도 타일·학구도 경계 연동 전)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
         </section>
         <aside class="card" id="panel" aria-live="polite"></aside>
       </div>`;
@@ -345,6 +370,15 @@
       <div class="dchips"><span class="dchip"><b>${esc(reg.gu)}</b> 등록 ${ac.registered.toLocaleString()}곳</span><span class="dchip">입시·검정·보습 ${ac.boseup.toLocaleString()}곳</span>${dongs.map(([d, v]) => `<span class="dchip"><b>${esc(d)}</b> ${v.total.toLocaleString()}곳</span>`).join('')}</div>
       <small class="muted">구 단위 등록 건수예요. 폐원·휴원 포함 여부와 동 단위 집계는 전체 목록 수집 후 제공할 예정이에요.</small></div></div>`;
   }
+  function infraLine(s) {
+    const g = ((R.geo || {}).schools || {})[s.id]; if (!g || !g.infra) return '';
+    const f = (code, label, unit) => { const v = g.infra[code]; if (!v || !v.items || !v.items.length) return ''; const n = v.items[0]; return `<span class="dchip"><b>${label}</b> ${esc(n.name)} ${n.dist}m${v.total > 1 ? ` · 반경 ${(v.radius / 1000).toFixed(1)}km ${v.total}곳` : ''}</span>`; };
+    const ac = (g.infra.AC5 || {}).counts;
+    return `<div class="srcrow"><span class="src real">공식 공시</span><div><b>주변 인프라</b> <small class="muted">카카오 로컬 API · 학교 좌표 기준</small>
+      <div class="dchips">${f('SW8', '지하철')}${f('HP8', '병원')}${f('PM9', '약국')}${f('MT1', '대형마트')}${f('PS3', '어린이집·유치원')}${f('PARK', '공원')}${f('CT1', '문화시설')}</div>
+      ${ac ? `<div class="dchips"><span class="dchip"><b>학원</b> 반경 500m ${Number(ac['500']).toLocaleString()}곳</span><span class="dchip">1km ${Number(ac['1000']).toLocaleString()}곳</span><span class="dchip">2km ${Number(ac['2000']).toLocaleString()}곳</span></div>` : ''}
+      <small class="muted">거리는 직선거리예요. 도보 시간은 직선거리 기반 추정값이에요.</small></div></div>`;
+  }
   function schoolInfoHtml(s) {
     const r = realOf(s), reg = regOf(s);
     const rule = !r ? '' : r.hsType === '자율고' ? '자율형 고등학교는 학교 모집요강에 따라 선발하므로 거주지 기준 배정이 아닐 수 있어요. 지원 자격과 일정은 학교와 교육청 공지로 확인하세요.' : r.hsType === '일반고' ? '일반고는 학교군(평준화 지역) 안에서 추첨 배정돼요. 아파트가 학교군에 속해도 특정 학교 배정이 확정된 것은 아니며, 최종 배정은 교육지원청 확인이 필요해요.' : '';
@@ -352,7 +386,7 @@
         <div class="kvl"><span>정식 명칭</span><b>${esc(r.officialName)}</b><span>주소</span><b>${esc(r.addr)}${r.dong ? ' (' + esc(r.dong) + ')' : ''}</b><span>구분</span><b>${esc(r.founding)} · ${esc(sexLabel(r.coedu))} · ${esc(r.hsType || '')}${r.course ? ' · ' + esc(r.course) : ''}</b><span>학교 코드</span><b>${esc(r.code)}</b>${r.homepage ? `<span>홈페이지</span><b><a href="${esc(r.homepage)}" target="_blank" rel="noopener">${esc(r.homepage.replace(/^https?:\/\//, ''))}</a></b>` : ''}</div></div></div>` : '';
     const apt = s.apts.filter((a) => realTrade(a)).length;
     return `<section class="card srcbox" aria-label="데이터 출처">
-      ${real}${academyLine(s)}
+      ${real}${academyLine(s)}${infraLine(s)}
       <div class="srcrow"><span class="src ${apt ? 'real' : 'sample'}">${apt ? '공식 공시' : '샘플'}</span><div><b>아파트 시세</b> <small class="muted">${apt ? `국토교통부 실거래가 · ${apt}개 단지 연결` : '국토교통부 실거래가 연동 전 (가상 수치)'}</small></div></div>
       <div class="srcrow"><span class="src sample">샘플</span><div><b>진학 실적</b> <small class="muted">의대·SKY·인서울 (실제 서비스에서는 공식 공시 / 학교 발표 / 별도 집계로 출처 등급을 구분하고 기준연도를 표시)</small></div></div>
       ${rule ? `<div class="srcrow"><span class="src info">안내</span><div>${esc(rule)}</div></div>` : ''}
@@ -367,11 +401,12 @@
     const L = layoutOf(s), r = rng(s.id + 'park'), ly = ui.layers;
     const parks = ly.culture ? L.pois.filter((p) => p.type === 'park').map((p) => `<ellipse cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" rx="${(48 + r() * 22).toFixed(0)}" ry="${(30 + r() * 14).toFixed(0)}" fill="var(--map-park)"/>`).join('') : '';
     const roads = L.roads.map((d) => `<path d="${d}" fill="none" stroke="var(--map-road)" stroke-width="9" stroke-linecap="round"/>`).join('');
-    const rings = [[5, 70], [10, 125], [15, 180]].map(([m, rad]) => `<ellipse cx="${CX}" cy="${CY}" rx="${rad * SX}" ry="${rad}" fill="none" stroke="var(--map-ring)" stroke-dasharray="4 5" opacity=".7"/><text x="${CX + rad * SX + 3}" y="${CY - 3}" font-size="9" fill="var(--map-ring)">도보 ${m}분</text>`).join('');
-    const hullEl = ly.zone ? `<polygon points="${L.hull.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".12" stroke="var(--map-zone)" stroke-width="3" stroke-linejoin="round"/>` : '';
+    const rings = L.rings.map((q) => `<ellipse cx="${L.sx || CX}" cy="${L.sy || CY}" rx="${q.rx.toFixed(1)}" ry="${q.ry.toFixed(1)}" fill="none" stroke="var(--map-ring)" stroke-dasharray="4 5" opacity=".7"/><text x="${((L.sx || CX) + q.rx + 3).toFixed(0)}" y="${(L.sy || CY) - 3}" font-size="9" fill="var(--map-ring)">도보 ${q.m}분</text>`).join('');
+    const hullEl = ly.zone && L.hull.length ? `<polygon points="${L.hull.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".12" stroke="var(--map-zone)" stroke-width="3" stroke-linejoin="round"/>` : '';
     const g = agg(s), span = (nv(g.sMax, 0) - nv(g.sMin, 0)) || 1;
-    const zones = ly.apt ? s.apts.map((a, i) => {
-      const z = L.zones[i], t = pr(a, 'sale') == null ? 0 : (pr(a, 'sale') - g.sMin) / span, on = ui.sel === a.id, w = a.name.length * 11 + 22;
+    const zones = ly.apt ? s.apts.map((a) => {
+      const z = L.zones.find((q) => q.id === a.id); if (!z) return '';
+      const t = pr(a, 'sale') == null ? 0 : (pr(a, 'sale') - g.sMin) / span, on = ui.sel === a.id, w = a.name.length * 11 + 22;
       return `<g class="zone ${on ? 'sel' : ''}" data-apt="${a.id}" tabindex="0" role="button" aria-label="${a.letter} ${esc(a.name)} 매매 ${eokS(pr(a, 'sale'))}">
         <path d="${z.path}" style="fill-opacity:${(0.2 + 0.55 * t).toFixed(2)}"/>
         <text class="ltr" x="${z.cx.toFixed(0)}" y="${(z.cy - 2).toFixed(0)}" text-anchor="middle">${a.letter}</text>
@@ -379,17 +414,18 @@
         <rect class="pill" x="${(z.cx - w / 2).toFixed(0)}" y="${(z.cy + 42).toFixed(0)}" width="${w}" height="20" rx="10"/>
         <text class="nm" x="${z.cx.toFixed(0)}" y="${(z.cy + 56).toFixed(0)}" text-anchor="middle">${esc(a.name)}</text></g>`;
     }).join('') : '';
-    const pois = L.pois.filter((p) => ly[LAYER_OF[p.type]]).map((p) => `<g class="poi"><title>${esc(p.name)}</title><circle cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" r="15"/>${icG(D.INFRA[p.type].icon, p.x, p.y, 17, 'var(--accent)')}<text class="lb" x="${p.x.toFixed(0)}" y="${(p.y + 28).toFixed(0)}">${esc(p.name)}</text></g>`).join('');
+    const pois = L.pois.filter((p) => ly[LAYER_OF[p.type]]).map((p) => `<g class="poi"><title>${esc(p.name)}</title><circle cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" r="15"/>${icG(D.INFRA[p.type].icon, p.x, p.y, 17, 'var(--accent)')}${p.label === false ? '' : `<text class="lb" x="${p.x.toFixed(0)}" y="${(p.y + 28).toFixed(0)}">${esc(p.name.length > 12 ? p.name.slice(0, 12) + '…' : p.name)}</text>`}</g>`).join('');
+    const extra = (L.geo ? `<g><line x1="24" y1="${MH - 18}" x2="${(24 + L.scaleBar.px).toFixed(0)}" y2="${MH - 18}" stroke="var(--ink)" stroke-width="3"/><text x="24" y="${MH - 26}" font-size="11" fill="var(--ink)">500m</text></g>` : '') + (L.geo && ly.academy && L.academy ? `<text x="${MW - 14}" y="26" text-anchor="end" font-size="12" font-weight="700" fill="var(--ink)">학원 반경 500m ${Number(L.academy['500']).toLocaleString()} · 1km ${Number(L.academy['1000']).toLocaleString()} · 2km ${Number(L.academy['2000']).toLocaleString()}곳</text>` : '');
     const sw = s.name.length * 12 + 40;
     $('#map-g').innerHTML = `${parks}${roads}${hullEl}${rings}${zones}
-      <g><circle cx="${CX}" cy="${CY}" r="22" fill="var(--accent)" stroke="#fff" stroke-width="3"/>${icG('cap', CX, CY, 24, '#fff')}<rect x="${CX - sw / 2}" y="${CY + 28}" width="${sw}" height="22" rx="11" fill="var(--ink)"/><text x="${CX}" y="${CY + 43}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--card)">${esc(s.name)}</text></g>${pois}`;
+      <g><circle cx="${L.sx || CX}" cy="${L.sy || CY}" r="22" fill="var(--accent)" stroke="#fff" stroke-width="3"/>${icG('cap', L.sx || CX, L.sy || CY, 24, '#fff')}<rect x="${(L.sx || CX) - sw / 2}" y="${(L.sy || CY) + 28}" width="${sw}" height="22" rx="11" fill="var(--ink)"/><text x="${L.sx || CX}" y="${(L.sy || CY) + 43}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--card)">${esc(s.name)}</text></g>${pois}${extra}`;
   }
   function drawPanel(s) {
     const k = ui.listKind, list = s.apts.slice().sort((a, b) => nv(pr(b, k), -1) - nv(pr(a, k), -1));
     const rows = list.map((a) => {
       const on = a.id === ui.sel;
       return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${a.letter}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}</span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
-        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${a.hh.toLocaleString()}</b></div><div><span>준공연도</span><b>${a.year}년</b></div><div><span>${esc(s.name)} 도보</span><b>${a.hi}분</b></div><div><span>초등 도보</span><b>${a.elem}분</b></div><div><span>중등 도보</span><b>${a.mid}분</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
+        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${a.hh.toLocaleString()}</b></div><div><span>준공연도</span><b>${a.year}년</b></div><div><span>${esc(s.name)} 도보</span><b>${walkHi(a)}</b></div><div><span>초등 도보</span><b>${a.elem}분</b></div><div><span>중등 도보</span><b>${a.mid}분</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
     }).join('');
     $('#panel').innerHTML = `<div class="plist-h"><h3>학교군 해당 아파트 (${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
       <div style="padding:0 var(--gx) 10px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted" style="font-size:13px">매매 ${range(agg(s).sMin, agg(s).sMax)} · 전세 ${range(agg(s).jMin, agg(s).jMax)}</span>${areaSeg()}</div>${rows}`;
@@ -475,8 +511,8 @@
         </div>
       </div>
       <div class="facts">
-        <div class="card fact">${ic('backpack')}${esc(edu[0])}<b>도보 ${a.elem}분</b></div><div class="card fact">${ic('school')}${esc(edu[1])}<b>도보 ${a.mid}분</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${a.hi}분</b></div>
-        <div class="card fact">${ic('building')}세대수<b>${a.hh.toLocaleString()}세대</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year}년 (${2026 - a.year}년차)</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
+        <div class="card fact">${ic('backpack')}${esc(edu[0])}<b>도보 ${a.elem}분 (샘플)</b></div><div class="card fact">${ic('school')}${esc(edu[1])}<b>도보 ${a.mid}분 (샘플)</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${walkHi(a)}</b></div>
+        <div class="card fact">${ic('building')}세대수<b>${a.hh.toLocaleString()}세대${a.hhReal ? '' : ' (샘플)'}</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year}년 (${2026 - a.year}년차)</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
       </div>
       <div class="a-low">
         <section class="card"><div class="subtabs">${tabs.map(([v, l]) => `<button class="${ui.aptTab === v ? 'on' : ''}" data-act="apt-tab" data-v="${v}">${l}</button>`).join('')}</div>${main}</section>

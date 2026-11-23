@@ -15,8 +15,8 @@ LAWD = {"강남구": "11680", "서초구": "11650", "송파구": "11710", "양�
 BASE = "https://apis.data.go.kr/1613000/"
 EP = {"trade": ["RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev", "RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"],
       "rent": ["RTMSDataSvcAptRent/getRTMSDataSvcAptRent"]}
-KAPT_LIST = BASE + "AptListService3/getSigunguAptList3"
-KAPT_INFO = BASE + "AptBasisInfoServiceV4/getAphusBassInfoV4"
+KAPT_LIST = BASE + "AptListService4/getSigunguAptList4"
+KAPT_INFO = BASE + "AptBasisInfoServiceV5/getAphusBassInfoV5"
 TAG = {"apt": ("aptNm", "아파트"), "dong": ("umdNm", "법정동"), "amount": ("dealAmount", "거래금액"), "year": ("dealYear", "년"), "month": ("dealMonth", "월"),
        "day": ("dealDay", "일"), "jibun": ("jibun", "지번"), "area": ("excluUseAr", "전용면적"), "floor": ("floor", "층"), "build": ("buildYear", "건축년도"),
        "deposit": ("deposit", "보증금액"), "monthly": ("monthlyRent", "월세금액")}
@@ -58,6 +58,29 @@ def call(url, params, tries=3):
     rc = (root.findtext(".//resultCode") or "").strip()
     if rc not in ("00", "000", ""): raise ApiError(f"[{rc}] {root.findtext('.//resultMsg')}")
     return root
+def kcall(url, params, tries=3):
+    """K-apt V4/V5 는 기본 응답이 JSON 이다. JSON/XML 모두 받아 (header, body) 딕셔너리로 반환."""
+    last = None
+    for t in range(tries):
+        try: raw = urllib.request.urlopen(url + "?" + urllib.parse.urlencode(params), timeout=60).read(); break
+        except urllib.error.HTTPError as e: raw = e.read(); break
+        except Exception as e: last = e; time.sleep(1 + t)
+    else: raise ApiError(f"요청 실패: {last}")
+    if raw.lstrip()[:1] in (b"{", b"["):
+        d = json.loads(raw)
+        if "OpenAPI_ServiceResponse" in d:
+            h = d["OpenAPI_ServiceResponse"]["cmmMsgHeader"]; code = str(h.get("returnReasonCode", "")); raise ApiError(f"[{code}] {h.get('returnAuthMsg') or h.get('errMsg')} - {HINT.get(code, '')}")
+        r = d.get("response", d); return r.get("header", {}), r.get("body", {})
+    root = ET.fromstring(raw); code = (root.findtext(".//returnReasonCode") or "").strip()
+    if code: raise ApiError(f"[{code}] {root.findtext('.//returnAuthMsg') or root.findtext('.//errMsg')} - {HINT.get(code, '')}")
+    def d2(e): return {c.tag: (d2(c) if len(c) else (c.text or "").strip()) for c in e}
+    return {"resultCode": (root.findtext(".//resultCode") or "")}, d2(root.find("body")) if root.find("body") is not None else {}
+def kitems(body):
+    it = body.get("items") if isinstance(body, dict) else None
+    if isinstance(it, dict): it = it.get("item", [])
+    if isinstance(it, dict): it = [it]
+    return it or []
+
 def pick(it, key):
     for t in TAG[key]:
         e = it.find(t)
@@ -145,16 +168,17 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
         for gu, lawd in LAWD.items():
             lst, page = [], 1
             while True:
-                items = call(KAPT_LIST, {"serviceKey": key, "sigunguCode": lawd, "pageNo": page, "numOfRows": 1000}).findall(".//item")
-                lst += [{"code": (i.findtext("kaptCode") or "").strip(), "name": (i.findtext("kaptName") or "").strip()} for i in items]
+                h, body = kcall(KAPT_LIST, {"serviceKey": key, "sigunguCode": lawd, "pageNo": page, "numOfRows": 1000})
+                items = kitems(body); lst += [{"code": str(i.get("kaptCode", "")).strip(), "name": str(i.get("kaptName", "")).strip()} for i in items]
                 if len(items) < 1000: break
                 page += 1
             for a in lst:
                 nk = norm_name(a["name"])
                 if nk in want.get(gu, {}):
-                    it = call(KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]}).find(".//item")
-                    if it is not None: kapt[f"{gu}|{nk}"] = {"code": a["code"], "name": a["name"], "households": (it.findtext("kaptdaCnt") or "").strip(), "approved": (it.findtext("kaptUsedate") or "").strip(), "addr": (it.findtext("kaptAddr") or "").strip()}
-            log(gu, "K-apt 완료")
+                    h, body = kcall(KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]}); it = body.get("item") if isinstance(body, dict) else None
+                    if isinstance(it, list): it = it[0] if it else None
+                    if it: kapt[f"{gu}|{nk}"] = {"code": a["code"], "name": a["name"], "households": str(it.get("kaptdaCnt", "")).strip(), "approved": str(it.get("kaptUsedate", "")).strip(), "addr": str(it.get("kaptAddr", "")).strip(), "dongs": str(it.get("kaptDongCnt", "")).strip()}
+            log(gu, "K-apt 완료", len([k for k in kapt if k.startswith(gu)]))
     except ApiError as e:
         kapt_error = str(e); log("K-apt 건너뜀:", e)
     return {"version": 2, "generatedAt": today.isoformat(), "months": months, "trades": trades, "kapt": kapt, "kaptError": kapt_error, "unmatched": unmatched, "namesSeen": seen}
