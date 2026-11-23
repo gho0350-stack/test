@@ -1,4 +1,4 @@
-/* 학군맵 - 샘플 앱 (바닐라 JS, 해시 라우팅). 앱화 시 data/store 부분만 API 로 교체하세요. */
+/* 어디살지 - 샘플 앱 (바닐라 JS, 해시 라우팅). 앱화 시 data/store 부분만 API 로 교체하세요. */
 (function () {
   'use strict';
   const D = window.SG;
@@ -679,8 +679,8 @@
         if (db.users.some((x) => x.nick === nick)) return (err.textContent = '이미 사용 중인 닉네임이에요.');
         if (db.users.some((x) => x.email === email)) return (err.textContent = '이미 가입된 이메일이에요.');
         const nu = { id: uid('u'), nick, email, pw: hash(pw), region: $('#ar').value, verified: false }; db.users.push(nu); db.session = nu.id;
-        if (!db.users.some((x) => x.nick === '학군맵')) db.users.push({ id: 'sys', nick: '학군맵', email: 'noreply@sample.kr', pw: hash(uid('x')), region: 'gangnam', verified: true });
-        db.msgs.push({ id: uid('m'), from: '학군맵', to: nick, date: new Date().toISOString().slice(0, 19), read: false, body: `${nick}님, 가입을 환영합니다. 지역 커뮤니티에서 이야기를 나눠보세요.` });
+        if (!db.users.some((x) => x.nick === '어디살지')) db.users.push({ id: 'sys', nick: '어디살지', email: 'noreply@sample.kr', pw: hash(uid('x')), region: 'gangnam', verified: true });
+        db.msgs.push({ id: uid('m'), from: '어디살지', to: nick, date: new Date().toISOString().slice(0, 19), read: false, body: `${nick}님, 가입을 환영합니다. 지역 커뮤니티에서 이야기를 나눠보세요.` });
       } else {
         const found = db.users.find((x) => x.email === email && x.pw === hash(pw));
         if (!found) return (err.textContent = '이메일 또는 비밀번호가 올바르지 않아요.'); db.session = found.id;

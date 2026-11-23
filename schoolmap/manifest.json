@@ -1,6 +1,6 @@
 {
-  "name": "학군맵",
-  "short_name": "학군맵",
+  "name": "어디살지",
+  "short_name": "어디살지",
   "description": "학교로 찾는 집, 우리 아이의 학군 라이프",
   "start_url": "./index.html",
   "display": "standalone",

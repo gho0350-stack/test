@@ -1,4 +1,4 @@
--- 학군맵 통합 DB 스키마 (SQLite/PostgreSQL 호환 문법 위주)
+-- 어디살지 통합 DB 스키마 (SQLite/PostgreSQL 호환 문법 위주)
 -- 원칙: 출처(source)와 기준일(as_of)을 모든 지표 테이블에 남긴다.
 
 CREATE TABLE school (
