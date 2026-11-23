@@ -1,0 +1,30 @@
+{
+ "fetched": "2026-11-23",
+ "keyless": true,
+ "gus": {
+  "강남구": {
+   "registered": 3439,
+   "boseup": 1931
+  },
+  "서초구": {
+   "registered": 1850,
+   "boseup": 935
+  },
+  "송파구": {
+   "registered": 1981,
+   "boseup": 1066
+  },
+  "양천구": {
+   "registered": 2112,
+   "boseup": 1417
+  },
+  "노원구": {
+   "registered": 1412,
+   "boseup": 878
+  },
+  "강동구": {
+   "registered": 1421,
+   "boseup": 856
+  }
+ }
+}

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>어디살지</title>
+<meta name="description" content="학교로 찾는 집, 우리 아이의 학군 라이프 (샘플)">
+<meta name="theme-color" content="#1c6b45">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="splash" role="status" aria-live="polite">
+  <div class="splash-inner">
+    <img src="icon.svg" alt="" width="72" height="72">
+    <h1>어디살지</h1>
+    <p>학교로 찾는 집, 우리 아이의 학군 라이프</p>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+
+<header class="top">
+  <div class="top-r1">
+    <button class="iconbtn" id="backbtn" type="button" aria-label="뒤로" hidden data-ic="chevL"></button>
+    <a class="logo" href="#/"><img src="icon.svg" alt="" width="30" height="30"><span>어디살지</span></a>
+    <span class="tagline">학교로 찾는 집, 우리 아이의 학군 라이프</span>
+    <div class="auths">
+      <a class="bell iconbtn" href="#/messages" aria-label="쪽지함" data-ic="bell"><b class="dot" hidden></b></a>
+      <button class="btn sm" id="authbtn" type="button">로그인</button>
+      <button class="btn sm primary" id="joinbtn" type="button">회원가입</button>
+    </div>
+  </div>
+  <nav class="topnav" aria-label="주 메뉴">
+    <a href="#/" data-nav="home" data-ic="home">홈</a>
+    <a href="#/schools" data-nav="schools" data-ic="school">학군탐색</a>
+    <a href="#/budget" data-nav="budget" data-ic="coin">예산탐색</a>
+    <a href="#/compare" data-nav="compare" data-ic="bars">학군비교</a>
+    <a href="#/community" data-nav="community" data-ic="chat">커뮤니티</a>
+    <a href="#/guide" data-nav="guide" data-ic="doc">정보·가이드</a>
+  </nav>
+</header>
+
+<main id="view" tabindex="-1"></main>
+
+<nav class="tabbar" aria-label="하단 메뉴">
+  <a href="#/" data-nav="home" data-ic="home"><span>홈</span></a>
+  <a href="#/schools" data-nav="schools" data-ic="school"><span>학교</span></a>
+  <a href="#/budget" data-nav="budget" data-ic="coin"><span>예산</span></a>
+  <a href="#/community" data-nav="community" data-ic="chat"><span>커뮤니티</span></a>
+  <a href="#/me" data-nav="me" data-ic="menu"><span>전체</span></a>
+</nav>
+
+<div id="modal-root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script src="real-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
