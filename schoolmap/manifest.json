@@ -4,8 +4,8 @@
   "description": "학교로 찾는 집, 우리 아이의 학군 라이프",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1f6b4a",
-  "theme_color": "#1f6b4a",
+  "background_color": "#1c6b45",
+  "theme_color": "#1c6b45",
   "lang": "ko",
   "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }

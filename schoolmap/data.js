@@ -96,22 +96,22 @@ window.SG = {
   ],
 
   CATS: [
-    { id: 'school',  label: '학교이야기',   icon: '🏫' },
-    { id: 'edu',     label: '육아교육정보', icon: '🍼' },
-    { id: 'academy', label: '학원정보',     icon: '📚' },
-    { id: 'life',    label: '아파트생활',   icon: '🏢' },
-    { id: 'moving',  label: '입주정보',     icon: '🚚' },
-    { id: 'infra',   label: '지역인프라정보', icon: '🚇' }
+    { id: 'school',  label: '학교이야기',   icon: 'school' },
+    { id: 'edu',     label: '육아교육정보', icon: 'heart' },
+    { id: 'academy', label: '학원정보',     icon: 'book' },
+    { id: 'life',    label: '아파트생활',   icon: 'building' },
+    { id: 'moving',  label: '입주정보',     icon: 'truck' },
+    { id: 'infra',   label: '지역인프라정보', icon: 'train' }
   ],
 
   INFRA: {
-    subway:   { icon: '🚇', label: '지하철' },
-    edu:      { icon: '🎒', label: '초·중학교' },
-    academy:  { icon: '📚', label: '학원가' },
-    park:     { icon: '🌳', label: '공원' },
-    library:  { icon: '📖', label: '도서관' },
-    hospital: { icon: '🏥', label: '병원' },
-    mart:     { icon: '🛒', label: '마트' }
+    subway:   { icon: 'train', label: '지하철' },
+    edu:      { icon: 'backpack', label: '초·중학교' },
+    academy:  { icon: 'book', label: '학원가' },
+    park:     { icon: 'tree', label: '공원' },
+    library:  { icon: 'bookopen', label: '도서관' },
+    hospital: { icon: 'medical', label: '병원' },
+    mart:     { icon: 'cart', label: '마트' }
   },
 
   USERS_SEED: [
@@ -127,7 +127,7 @@ window.SG = {
   POSTS_SEED: [
     { id: 'p1', region: 'gangnam', cat: 'academy', author: '대치맘', date: '2026-11-20', views: 412,
       title: '대치동 겨울방학 특강 접수 일정 정리 (샘플)',
-      body: '겨울방학 특강은 보통 11월 말부터 접수가 시작됩니다. 레벨테스트 일정이 겹치지 않게 미리 캘린더에 정리해 두면 편해요. 자주 묻는 질문: 레테 준비는 어느 정도? → 학년 선행보다 기본 개념 점검이 중요하다는 의견이 많았습니다.',
+      body: '겨울방학 특강은 보통 11월 말부터 접수가 시작됩니다. 레벨테스트 일정이 겹치지 않게 미리 캘린더에 정리해 두면 편해요. 자주 묻는 질문: 레테 준비는 어느 정도? - 학년 선행보다 기본 개념 점검이 중요하다는 의견이 많았습니다.',
       likes: ['u2', 'u3'], comments: [
         { id: 'c1', author: '반포아빠', date: '2026-11-20', body: '정리 감사합니다! 접수 사이트 링크도 있으면 좋겠어요.' },
         { id: 'c2', author: '대치맘', date: '2026-11-21', body: '학원별 공지가 달라서 각자 확인하셔야 해요 :)' } ] },
@@ -142,7 +142,7 @@ window.SG = {
       likes: [], comments: [] },
     { id: 'p4', region: 'seocho', cat: 'moving', author: '반포아빠', date: '2026-11-19', views: 305,
       title: '신축 입주 전 체크리스트 (학교 배정·전입신고 순서)',
-      body: '1) 잔금일 확정 → 2) 전입신고 및 확정일자 → 3) 학교 배정 통지 확인 → 4) 전학 서류 준비. 학기 중 이사는 전학 시기와 학원 이동 시간을 함께 고려하세요.',
+      body: '1) 잔금일 확정 - 2) 전입신고 및 확정일자 - 3) 학교 배정 통지 확인 - 4) 전학 서류 준비. 학기 중 이사는 전학 시기와 학원 이동 시간을 함께 고려하세요.',
       likes: ['u1', 'u4', 'demo'], comments: [
         { id: 'c4', author: '체험계정', date: '2026-11-19', body: '순서 정리 정말 도움됩니다. 저장해둘게요!' } ] },
     { id: 'p5', region: 'seocho', cat: 'infra', author: '반포아빠', date: '2026-11-12', views: 143,
@@ -186,7 +186,7 @@ window.SG = {
       body: '비 오는 날 갈 만한 실내 놀이 공간을 모았어요. 단지 근처 문화센터는 접수 오픈일에 경쟁이 치열하니 알림을 설정해 두세요.',
       likes: [], comments: [] },
     { id: 'p14', region: 'seocho', cat: 'academy', author: '반포아빠', date: '2026-11-09', views: 175,
-      title: '반포→대치 학원 이동 시 교통 팁',
+      title: '반포-대치 학원 이동 시 교통 팁',
       body: '지하철 환승보다 버스 직행이 편한 구간이 있어요. 하교 시간대 혼잡 구간은 피해서 이동 경로를 짜 보세요.',
       likes: ['u1'], comments: [] }
   ],
