@@ -74,10 +74,19 @@ def molit_result():
     p = f"{OUT}/molit_result.json"
     return json.load(open(p, encoding="utf8")) if os.path.exists(p) else None
 
+def kakao_result():
+    p = f"{OUT}/kakao_neis_result.json"
+    return json.load(open(p, encoding="utf8")) if os.path.exists(p) else None
+
 if __name__ == "__main__":
-    mr = molit_result()
+    mr = molit_result(); kr = kakao_result()
     data = {"generatedAt": TODAY.isoformat(), "sources": {"schools": "NEIS 교육정보 개방포털 schoolInfo", "academy": "NEIS 교육정보 개방포털 acaInsTiInfo", "trades": "국토교통부 실거래가 (수집 시)"},
-            "schools": schools(), "academy": academies(), "trades": (mr or {}).get("trades") or trades(), "kapt": (mr or {}).get("kapt", {}), "molitAsOf": (mr or {}).get("generatedAt")}
+            "schools": schools(), "academy": academies(), "trades": (mr or {}).get("trades") or trades(), "kapt": (mr or {}).get("kapt", {}), "molitAsOf": (mr or {}).get("generatedAt"),
+            "geo": {"schools": (kr or {}).get("schools", {}), "apts": (kr or {}).get("apts", {})}}
+    if kr and kr.get("neis_academy"):  # 동 단위 집계를 구 단위 결과에 병합
+        for gu, v in kr["neis_academy"].items():
+            g = data["academy"].setdefault(gu, {"registered": v["registered"], "boseup": 0, "fetched": str(TODAY), "dongs": {}})
+            g.update({"open": v["open"], "dongs": v["dongs"]})
     p = os.path.join(os.path.dirname(__file__), "..", "schoolmap", "real-data.js")
     open(p, "w", encoding="utf8").write("window.SG_REAL = " + json.dumps(data, ensure_ascii=False, indent=1) + ";\n")
     print("schools", len(data["schools"]), "academy gus", list(data["academy"]), "trade keys", len(data["trades"]), "->", os.path.abspath(p))

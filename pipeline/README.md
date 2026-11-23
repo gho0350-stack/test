@@ -54,3 +54,15 @@ python3 build_data.py                      # -> ../schoolmap/real-data.js
 - 진학 실적은 기준(재학생/졸업생, 중복합격, 등록 인원)을 통일하지 않으면 왜곡됩니다. `school_stats.source_tier`, `basis` 를 반드시 채우세요.
 - 이용 조건: 일부 API는 상업적 이용 제한이 있을 수 있으므로 서비스 오픈 전 항목별 약관을 확인하세요.
 - `schema.sql` 은 서버 DB 설계안입니다. 지금은 JSON 파일로 앱에 전달하며, 서비스 단계에서는 서버 API로 대체합니다.
+
+## 자동 수집 (GitHub Actions)
+
+`.github/workflows/collect-data.yml` 이 매주 월요일 03:00(KST)과 수동 실행(Run workflow)으로 `pipeline/run_all.py` 를 돌려
+`schoolmap/real-data.js` 를 갱신하고 변경이 있으면 저장소에 커밋합니다. 키는 코드에 넣지 않고 저장소 설정에만 저장합니다.
+
+1. GitHub 저장소 > Settings > Secrets and variables > Actions > New repository secret 에서 아래 이름으로 등록
+   - `DATA_GO_KR_KEY` (공공데이터포털 일반 인증키 Decoding), `KAKAO_REST_KEY` (카카오 REST API 키), `NEIS_KEY` (선택)
+2. 워크플로 파일이 기본 브랜치에 있어야 Actions 탭에 나타납니다 (이 브랜치를 기본 브랜치에 병합).
+3. Actions > collect-data > Run workflow 로 즉시 실행하거나 일정에 맡깁니다. 없는 키의 단계는 건너뜁니다.
+
+서비스 단계에서는 같은 수집 코드를 서버(스케줄러)로 옮기고, 앱은 서버 API 로 읽는 구조로 바꿉니다.

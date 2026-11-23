@@ -1308,5 +1308,9 @@ window.SG_REAL = {
   }
  },
  "kapt": {},
- "molitAsOf": "2026-11-23"
+ "molitAsOf": "2026-11-23",
+ "geo": {
+  "schools": {},
+  "apts": {}
+ }
 };
