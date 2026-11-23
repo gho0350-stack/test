@@ -11,7 +11,10 @@
   const r1 = (x) => Math.round(x * 10) / 10;
   const avg = (a) => a.reduce((s, v) => s + v, 0) / (a.length || 1);
   const TODAY = '2026-11-22';
-  const AREA_F = { 59: 0.74, 84: 1 };
+  const AREA_F = { 59: 0.74, 84: 1, 101: 1.3 };
+  const AREA_RANGE = { 59: [55, 60], 84: [80, 85], 101: [95, 105] };
+  const R = window.SG_REAL || {};
+  const normName = (n) => String(n || '').replace(/\(.*?\)/g, '').replace(/[\s·\-]/g, '').replace(/(아파트|단지)$/, '');
   const METRIC = { med: ['의대', 0], sky: ['SKY', 1], seoul: ['인서울', 2] };
   const METRIC_ICON = { med: 'medical', sky: 'star', seoul: 'cap' };
 
@@ -80,9 +83,13 @@
   }));
   const APTS = SCHOOLS.flatMap((s) => s.apts);
   const schoolById = (id) => SCHOOLS.find((s) => s.id === id);
+  const realOf = (s) => (R.schools || {})[s.id] || null;
+  const sexLabel = (c) => ({ '남': '남학교', '여': '여학교', '남여공학': '남녀공학' }[c] || c);
   const aptById = (id) => APTS.find((a) => a.id === id);
   const schoolOf = (a) => schoolById(a.sid);
-  const pr = (a, k) => r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]);
+  const realTrade = (a) => (R.trades || {})[`${REG[schoolById(a.sid).region].gu}|${normName(a.name)}`] || null;
+  const realStat = (a, k) => { const t = realTrade(a); return t && t[k] && t[k][ui.area] ? t[k][ui.area] : null; };
+  const pr = (a, k) => { const rs = realStat(a, k === 'jeonse' ? 'jeonse' : 'sale'); return rs ? rs.median : r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]); };
   const agg = (s) => { const sv = s.apts.map((a) => pr(a, 'sale')), jv = s.apts.map((a) => pr(a, 'jeonse')); return { sMin: Math.min(...sv), sMax: Math.max(...sv), jMin: Math.min(...jv), jMax: Math.max(...jv), sAvg: avg(sv), jAvg: avg(jv) }; };
   const regOf = (s) => REG[s.region];
 
@@ -123,7 +130,7 @@
 
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200); }
   const badge = (cat) => `<span class="badge b-${cat}">${D.CAT_LABEL[cat]}</span>`;
-  const areaSeg = () => `<span class="seg" role="group" aria-label="평형">${[59, 84].map((v) => `<button class="${ui.area === v ? 'on' : ''}" data-act="area" data-v="${v}">${v}㎡</button>`).join('')}</span>`;
+  const areaSeg = () => `<span class="seg" role="group" aria-label="평형">${[59, 84, 101].map((v) => `<button class="${ui.area === v ? 'on' : ''}" data-act="area" data-v="${v}" title="전용 ${AREA_RANGE[v][0]}~${AREA_RANGE[v][1]}㎡ (서비스 기준)">${v}㎡</button>`).join('')}</span>`;
   const backLink = (href, label) => `<a class="back" href="${href}">${ic('chevL')}${label}</a>`;
 
   /* ---------- 일러스트 / 차트 ---------- */
@@ -167,9 +174,9 @@
       <section class="hero2">
         <div class="hero-txt">
           <h1>좋은 학교, 합리적인 주거비로 찾으세요</h1>
-          <p class="lead">학교 배정권역 아파트, 시세, 교육·생활정보까지 한 번에</p>
+          <p class="lead">학교군 해당 아파트, 시세, 교육·생활정보까지 한 번에</p>
           <div class="cta2">
-            <a class="cta green" href="#/schools"><span class="ci">${ic('cap')}</span><span><b>학교부터 찾기</b><small>원하는 학교의 배정 아파트 보기</small></span></a>
+            <a class="cta green" href="#/schools"><span class="ci">${ic('cap')}</span><span><b>학교부터 찾기</b><small>원하는 학교의 학교군 아파트 보기</small></span></a>
             <a class="cta gold" href="#/budget"><span class="ci">${ic('coin')}</span><span><b>예산부터 찾기</b><small>예산 내에서 가장 좋은 학군 찾기</small></span></a>
           </div>
           <form id="sform" class="searchbar" role="search">${ic('search')}<input id="q" type="text" placeholder="학교명·지역·아파트명을 입력하세요" aria-label="검색"><button type="submit" aria-label="검색">${ic('search')}</button></form>
@@ -212,7 +219,7 @@
     const row = (s, i) => { const g = agg(s); return `
       <a class="srow ${pre && pre.id === s.id ? 'on' : ''}" href="#/school/${s.id}" data-act="pre" data-v="${s.id}">
         <span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span>
-        <span class="name"><b>${esc(s.name)}</b> ${badge(s.cat)}<span class="mreg muted">${regOf(s).gu}</span></span>
+        <span class="name"><b>${esc(s.name)}</b> ${badge(s.cat)}<span class="mreg muted">${regOf(s).gu}${realOf(s) ? ' · ' + esc(realOf(s).hsType) : ''}</span></span>
         <span class="reg">${regOf(s).gu}</span>
         <span class="stat">의대 <b>${s.stats[0]}</b> · SKY <b>${s.stats[1]}</b> · 인서울 <b>${s.stats[2]}</b></span>
         <span class="m num ${hl(0)}">${s.stats[0]}</span><span class="k num ${hl(1)}">${s.stats[1]}</span><span class="si num ${hl(2)}">${s.stats[2]}</span>
@@ -229,17 +236,18 @@
           <label class="sel"><span>정렬</span><select id="fs" aria-label="정렬">${[['metric', METRIC[ui.metric][0] + ' 진학자 수순'], ['sale_desc', '매매가 높은순'], ['sale_asc', '매매가 낮은순'], ['jeonse_desc', '전세가 높은순'], ['jeonse_asc', '전세가 낮은순']].map(([v, l]) => `<option value="${v}" ${ui.sortKey === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         </div>${areaSeg()}
       </div>
+      <p class="muted" style="font-size:12px;margin-bottom:8px">${ui.area}㎡형 = 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ (서비스 기준) · 가격은 최근 12개월 거래 기준 · 진학 실적은 샘플</p>
       <div class="s-layout">
         <div class="card tcard">
-          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대 진학자</span><span class="k ${hl(1)}">SKY 진학자</span><span class="si ${hl(2)}">인서울 진학자</span><span class="ap">배정 단지</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
+          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대 진학자</span><span class="k ${hl(1)}">SKY 진학자</span><span class="si ${hl(2)}">인서울 진학자</span><span class="ap">학교군 단지</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
           ${list.map(row).join('') || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}
         </div>
         ${pre ? `<aside class="card pad preview pv" aria-label="선택한 학교">
           <div class="pv-img">${bldg()}</div>
-          <div class="pvh"><div><h3>${esc(pre.name)}</h3><p class="muted">서울 ${regOf(pre).gu} · ${regOf(pre).dong}</p></div>${favBtn('s', pre.id)}</div>
+          <div class="pvh"><div><h3>${esc(pre.name)}</h3><p class="muted">서울 ${regOf(pre).gu} · ${regOf(pre).dong}${realOf(pre) ? ' · ' + esc(realOf(pre).hsType) + ' · ' + esc(sexLabel(realOf(pre).coedu)) : ''}</p></div>${favBtn('s', pre.id)}</div>
           <p style="margin-top:12px;font-size:13px" class="muted">진학 실적 (샘플)</p>
           <div class="stats"><span>의대<b>${pre.stats[0]}</b></span><span>SKY<b>${pre.stats[1]}</b></span><span>인서울<b>${pre.stats[2]}</b></span></div>
-          <p style="font-size:14px">배정 아파트 <b>${pre.apts.length}단지</b></p>
+          <p style="font-size:14px">학교군 해당 아파트 <b>${pre.apts.length}단지</b></p>
           <p style="font-size:14px;margin:2px 0 14px">${ui.area}㎡ 매매 <b>${range(pg.sMin, pg.sMax)}</b><br>${ui.area}㎡ 전세 <b>${range(pg.jMin, pg.jMax)}</b></p>
           <a class="btn primary block lg" href="#/school/${pre.id}">학교 상세·지도 보기${ic('chevR')}</a></aside>` : ''}
       </div>`;
@@ -248,10 +256,10 @@
   }
 
   /* =====================================================================
-   * 03 지도 · 배정 아파트
+   * 03 지도 · 학교군 해당 아파트
    * ===================================================================== */
   const MW = 800, MH = 580, CX = 400, CY = 290, SX = 1.3;
-  const LAYERS = [['zone', '배정 통학구역'], ['apt', '주변 아파트'], ['edu', '학교/교육시설'], ['academy', '학원가'], ['life', '생활편의(마트·병원 등)'], ['culture', '공원·문화시설'], ['transit', '지하철역']];
+  const LAYERS = [['zone', '학교군 해당 구역'], ['apt', '주변 아파트'], ['edu', '학교/교육시설'], ['academy', '학원가'], ['life', '생활편의(마트·병원 등)'], ['culture', '공원·문화시설'], ['transit', '지하철역']];
   const LAYER_OF = { subway: 'transit', edu: 'edu', academy: 'academy', hospital: 'life', mart: 'life', park: 'culture', library: 'culture' };
   const layoutCache = {};
   function blobPath(cx, cy, r, rand) {
@@ -302,19 +310,40 @@
         <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${esc(reg.tag)} · 의대 ${s.stats[0]} · SKY ${s.stats[1]} · 인서울 ${s.stats[2]} (샘플)</p></div>
         <a class="btn primary" href="#/community?region=${s.region}">${ic('chat')}${reg.gu} 커뮤니티</a>
       </div>
+      ${schoolInfoHtml(s)}
       <div class="m-layout">
         <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도">
           <div class="mapbar"><div class="chips" id="layer-chips"></div></div>
           <div class="mapbox">
-            <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 배정 아파트 영역 지도"><g id="map-g"></g></svg>
+            <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 학교군 해당 아파트 영역 지도"><g id="map-g"></g></svg>
             <div class="layerbox" id="layer-box"></div>
             <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">${ic('plus')}</button><button data-act="zoom" data-v="-1" aria-label="축소">${ic('minus')}</button><button data-act="zoom" data-v="0" aria-label="원래대로">${ic('reset')}</button></div>
           </div>
-          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span></div>
+          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>위치·구역은 개념도 (지도·학구도 GIS 연동 전)</span></div>
         </section>
         <aside class="card" id="panel" aria-live="polite"></aside>
       </div>`;
     drawLayers(s); drawMap(s); drawPanel(s); bindMap(s);
+  }
+  function academyLine(s) {
+    const reg = regOf(s), ac = (R.academy || {})[reg.gu]; if (!ac) return '';
+    const dongs = Object.entries(ac.dongs || {}).sort((x, y) => y[1].total - x[1].total);
+    return `<div class="srcrow"><span class="src real">공식 공시</span><div><b>학원·교습소</b> <small class="muted">NEIS 교육정보 개방포털 · 조회 ${esc(ac.fetched)}</small>
+      <div class="dchips"><span class="dchip"><b>${esc(reg.gu)}</b> 등록 ${ac.registered.toLocaleString()}곳</span><span class="dchip">입시·검정·보습 ${ac.boseup.toLocaleString()}곳</span>${dongs.map(([d, v]) => `<span class="dchip"><b>${esc(d)}</b> ${v.total.toLocaleString()}곳</span>`).join('')}</div>
+      <small class="muted">구 단위 등록 건수예요. 폐원·휴원 포함 여부와 동 단위 집계는 전체 목록 수집 후 제공할 예정이에요.</small></div></div>`;
+  }
+  function schoolInfoHtml(s) {
+    const r = realOf(s), reg = regOf(s);
+    const rule = !r ? '' : r.hsType === '자율고' ? '자율형 고등학교는 학교 모집요강에 따라 선발하므로 거주지 기준 배정이 아닐 수 있어요. 지원 자격과 일정은 학교와 교육청 공지로 확인하세요.' : r.hsType === '일반고' ? '일반고는 학교군(평준화 지역) 안에서 추첨 배정돼요. 아파트가 학교군에 속해도 특정 학교 배정이 확정된 것은 아니며, 최종 배정은 교육지원청 확인이 필요해요.' : '';
+    const real = r ? `<div class="srcrow"><span class="src real">공식 공시</span><div><b>학교 기본정보</b> <small class="muted">NEIS 교육정보 개방포털 · 적재 ${esc(String(r.loaded || '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))}</small>
+        <div class="kvl"><span>정식 명칭</span><b>${esc(r.officialName)}</b><span>주소</span><b>${esc(r.addr)}${r.dong ? ' (' + esc(r.dong) + ')' : ''}</b><span>구분</span><b>${esc(r.founding)} · ${esc(sexLabel(r.coedu))} · ${esc(r.hsType || '')}${r.course ? ' · ' + esc(r.course) : ''}</b><span>학교 코드</span><b>${esc(r.code)}</b>${r.homepage ? `<span>홈페이지</span><b><a href="${esc(r.homepage)}" target="_blank" rel="noopener">${esc(r.homepage.replace(/^https?:\/\//, ''))}</a></b>` : ''}</div></div></div>` : '';
+    const apt = s.apts.filter((a) => realTrade(a)).length;
+    return `<section class="card srcbox" aria-label="데이터 출처">
+      ${real}${academyLine(s)}
+      <div class="srcrow"><span class="src ${apt ? 'real' : 'sample'}">${apt ? '공식 공시' : '샘플'}</span><div><b>아파트 시세</b> <small class="muted">${apt ? `국토교통부 실거래가 · ${apt}개 단지 연결` : '국토교통부 실거래가 연동 전 (가상 수치)'}</small></div></div>
+      <div class="srcrow"><span class="src sample">샘플</span><div><b>진학 실적</b> <small class="muted">의대·SKY·인서울 (실제 서비스에서는 공식 공시 / 학교 발표 / 별도 집계로 출처 등급을 구분하고 기준연도를 표시)</small></div></div>
+      ${rule ? `<div class="srcrow"><span class="src info">안내</span><div>${esc(rule)}</div></div>` : ''}
+    </section>`;
   }
   function drawLayers(s) {
     const L = layoutOf(s), cnt = {}; L.pois.forEach((p) => { const k = LAYER_OF[p.type]; cnt[k] = (cnt[k] || 0) + 1; });
@@ -349,7 +378,7 @@
       return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${a.letter}</span><span><b>${esc(a.name)}</b></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
         ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${a.hh.toLocaleString()}</b></div><div><span>준공연도</span><b>${a.year}년</b></div><div><span>${esc(s.name)} 도보</span><b>${a.hi}분</b></div><div><span>초등 도보</span><b>${a.elem}분</b></div><div><span>중등 도보</span><b>${a.mid}분</b></div><div><span>전세가율</span><b>${Math.round((a.jeonse / a.sale) * 100)}%</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
     }).join('');
-    $('#panel').innerHTML = `<div class="plist-h"><h3>배정 아파트 목록 (${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
+    $('#panel').innerHTML = `<div class="plist-h"><h3>학교군 해당 아파트 (${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
       <div style="padding:0 var(--gx) 10px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted" style="font-size:13px">매매 ${range(agg(s).sMin, agg(s).sMax)} · 전세 ${range(agg(s).jMin, agg(s).jMax)}</span>${areaSeg()}</div>${rows}`;
   }
   function pick(s, id) { ui.sel = ui.sel === id ? null : id; drawMap(s); drawPanel(s); }
@@ -376,6 +405,12 @@
   /* =====================================================================
    * 04 아파트 상세 · 비교
    * ===================================================================== */
+  function basisLine(a) {
+    const rs = realStat(a, 'sale');
+    if (rs) return `최근 12개월 매매 ${rs.count}건 (${eokS(rs.min)}~${eokS(rs.max)}) · 최근 거래일 ${rs.last} · 국토교통부 실거래가 · 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ 기준${rs.count < 3 ? ' · 거래 건수가 적어요' : ''}`;
+    const r = rng(a.id + 'cnt'), n = 3 + Math.floor(r() * 14);
+    return `최근 12개월 매매 ${n}건 · 최근 거래일 ${tradesOf(a).sale[0].date} · 샘플 수치 · 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ 기준`;
+  }
   function viewApt(id) {
     const a = aptById(id);
     if (!a) { view.innerHTML = '<div class="empty">단지를 찾을 수 없어요. <a href="#/schools" class="chip">학교 목록</a></div>'; return; }
@@ -412,7 +447,8 @@
       <div class="a-top">
         <section class="card a-hero"><div class="pv-img">${bldg()}</div>
           <div><div style="display:flex;justify-content:space-between;gap:8px"><h2>${esc(a.name)}</h2>${favBtn('a', a.id)}</div><p class="muted">서울 ${reg.gu} ${reg.dong}</p>
-            <p style="margin:10px 0"><a href="#/school/${s.id}" class="tag">배정: ${esc(s.name)}</a> <span class="tag">${ui.area}㎡</span></p>${areaSeg()}</div></section>
+            <p style="margin:10px 0"><a href="#/school/${s.id}" class="tag">학교군: ${esc(s.name)}</a> <span class="tag">${ui.area}㎡형</span></p>${areaSeg()}
+            <p class="muted" style="font-size:12px;margin-top:8px">${basisLine(a)}</p></div></section>
         <div class="a-metrics">
           <div class="card mc"><small>최근 매매 실거래가</small><div class="big">${eokL(t.sale[0].price)}</div>${chgHtml(cSale)}${spark(sv, 'var(--c1)')}</div>
           <div class="card mc"><small>최근 전세 실거래가</small><div class="big">${eokL(t.jeonse[0].price)}</div>${chgHtml(cJ)}${spark(jv, 'var(--c2)')}</div>
@@ -439,7 +475,7 @@
   function viewBudget() {
     const b = ui.budget, cfg = budCfg();
     view.innerHTML = `
-      <h2 class="page-title">예산이 얼마인가요?</h2><p class="sub">예산 안에서 들어갈 수 있는 배정 아파트와 학교를 찾아드려요</p>
+      <h2 class="page-title">예산이 얼마인가요?</h2><p class="sub">예산 안에서 들어갈 수 있는 학교군 해당 아파트와 학교를 찾아드려요</p>
       <section class="card bud">
         <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center"><span class="seg">${[['sale', '매매'], ['jeonse', '전세']].map(([v, l]) => `<button class="${b.kind === v ? 'on' : ''}" data-act="bud-kind" data-v="${v}">${l}</button>`).join('')}</span>${areaSeg()}</div>
         <div><small class="muted">최대 예산 · ${ui.area}㎡ ${b.kind === 'sale' ? '매매' : '전세'} 기준</small>
@@ -466,7 +502,7 @@
     const idx = (s) => (s.stats[0] + s.stats[1]) / (agg(s).sAvg || 1);
     const rows = [
       ['지역', (s) => `${regOf(s).gu} ${regOf(s).dong}`, null], ['의대 진학자', (s) => s.stats[0], 'max'], ['SKY 진학자', (s) => s.stats[1], 'max'], ['인서울 진학자', (s) => s.stats[2], 'max'],
-      ['배정 아파트', (s) => s.apts.length + '개', null], [`${ui.area}㎡ 평균 매매가`, (s) => agg(s).sAvg, 'min', eokS], [`${ui.area}㎡ 평균 전세가`, (s) => agg(s).jAvg, 'min', eokS],
+      ['학교군 해당 아파트', (s) => s.apts.length + '개', null], [`${ui.area}㎡ 평균 매매가`, (s) => agg(s).sAvg, 'min', eokS], [`${ui.area}㎡ 평균 전세가`, (s) => agg(s).jAvg, 'min', eokS],
       ['평균 고교 도보', (s) => avg(s.apts.map((a) => a.hi)), 'min', (v) => v.toFixed(1) + '분'], ['평균 준공연도', (s) => avg(s.apts.map((a) => a.year)), 'max', (v) => Math.round(v) + '년'],
       ['총 세대수', (s) => s.apts.reduce((n, a) => n + a.hh, 0), 'max', (v) => v.toLocaleString()], ['억당 의대·SKY 진학자', idx, 'max', (v) => v.toFixed(1) + '명']
     ];
@@ -483,9 +519,11 @@
 
   function viewGuide() {
     const G = [
-      ['학군지로 이사할 때 체크리스트', '<ol><li>희망 학교의 통학구역(배정 아파트 목록)을 교육청·학교에서 확인</li><li>잔금일과 전입신고 날짜, 학기 일정을 함께 맞추기</li><li>전입 후 배정 통지와 전학 서류 확인</li><li>학원 이동 동선과 하교 시간대 교통 확인</li></ol>'],
+      ['학군지로 이사할 때 체크리스트', '<ol><li>희망 학교의 학교군·평준화 여부·지원 방식을 교육지원청과 학교 모집요강에서 확인 (고등학교는 학교군에 속해도 특정 학교 배정이 확정된 것은 아닙니다)</li><li>잔금일과 전입신고 날짜, 학기 일정을 함께 맞추기</li><li>전입 후 배정 통지와 전학 서류 확인</li><li>학원 이동 동선과 하교 시간대 교통 확인</li></ol>'],
       ['실거래가 읽는 법', '<ul><li>같은 단지라도 평형·층·동에 따라 가격이 다릅니다</li><li>계약일과 신고일이 다를 수 있어 최근 거래가 늦게 보일 수 있어요</li><li>직거래·특수관계 거래는 시세와 차이가 날 수 있습니다</li></ul>'],
       ['전세가율이란?', '<p style="color:var(--muted);margin:0 0 14px">전세가율은 매매가 대비 전세가의 비율입니다. 높을수록 매매·전세 차이가 작아 갭 투자 위험과 보증금 안전성을 함께 살펴봐야 합니다.</p>'],
+      ['진학 실적 출처 등급', '<ul><li><b>공식 공시</b>: 학교알리미 등 법정 공시 자료</li><li><b>학교 발표</b>: 학교가 자체 공개한 합격 실적</li><li><b>별도 집계</b>: 언론·공개자료를 모아 정리한 자료</li><li>재학생만 포함인지, 졸업생 포함인지, 중복합격 포함인지, 실제 등록 인원인지 기준이 다르면 순위가 왜곡될 수 있어 기준연도와 함께 표시합니다</li></ul>'],
+      ['고등학교 배정, 이렇게 달라요', '<ul><li>일반고(평준화 지역): 학교군 안에서 추첨 배정</li><li>자율형 고등학교: 학교 모집요강에 따른 선발</li><li>그래서 이 앱은 고등학교에 대해 ‘배정 확정’이 아니라 ‘학교군 해당 지역’으로 표시합니다</li></ul>'],
       ['진학 실적 데이터 볼 때 주의할 점', '<ul><li>졸업생 수가 다른 학교끼리는 비율로 비교하세요</li><li>해마다 편차가 있어 여러 해를 함께 보세요</li><li>이 앱의 수치는 샘플이며, 서비스에서는 공시 자료 출처를 함께 표시할 예정입니다</li></ul>']
     ];
     view.innerHTML = `<h2 class="page-title">정보·가이드</h2><p class="sub">학군지 이사와 입시 정보를 읽는 기본기</p><div class="guide">${G.map(([t, b], i) => `<details class="card" ${i === 0 ? 'open' : ''}><summary>${t}</summary>${b}</details>`).join('')}</div>`;
@@ -499,7 +537,7 @@
     view.innerHTML = `<h2 class="page-title">${isNew ? '신축 아파트 (2015년 이후)' : `‘${esc(kw)}’ 검색 결과`}</h2>
       <form id="sf2" class="searchbar" style="margin-top:14px">${ic('search')}<input id="q2" type="text" value="${esc(kw)}" placeholder="학교명·지역·아파트명" aria-label="검색"><button type="submit" aria-label="검색">${ic('search')}</button></form>
       ${ss.length ? `<div class="sec-h" style="margin:18px 0 8px"><h2>학교 ${ss.length}곳</h2></div><div class="tlist">${ss.map((s) => `<a class="card pad" href="#/school/${s.id}"><b>${esc(s.name)}</b> ${badge(s.cat)} <span class="muted">${regOf(s).gu} ${regOf(s).dong}</span></a>`).join('')}</div>` : ''}
-      ${as.length ? `<div class="sec-h" style="margin:18px 0 8px"><h2>아파트 ${as.length}곳</h2></div><div class="tlist">${as.map((a) => `<a class="card pad" href="#/apt/${a.id}"><b>${esc(a.name)}</b> <span class="muted">${a.year}년 · ${a.hh.toLocaleString()}세대 · ${esc(schoolOf(a).name)} 배정 · ${ui.area}㎡ ${eokS(pr(a, 'sale'))}</span></a>`).join('')}</div>` : ''}
+      ${as.length ? `<div class="sec-h" style="margin:18px 0 8px"><h2>아파트 ${as.length}곳</h2></div><div class="tlist">${as.map((a) => `<a class="card pad" href="#/apt/${a.id}"><b>${esc(a.name)}</b> <span class="muted">${a.year}년 · ${a.hh.toLocaleString()}세대 · ${esc(schoolOf(a).name)} 학교군 · ${ui.area}㎡ ${eokS(pr(a, 'sale'))}</span></a>`).join('')}</div>` : ''}
       ${!ss.length && !as.length ? '<div class="empty">검색 결과가 없어요. 학교명(예: 휘문고), 지역(예: 목동), 아파트명(예: 은마)으로 찾아보세요.</div>' : ''}`;
     $('#sf2').onsubmit = (e) => { e.preventDefault(); location.hash = '#/search?q=' + encodeURIComponent($('#q2').value.trim()); };
   }
@@ -610,7 +648,7 @@
     const u = me(), n = unreadCount();
     const favS = db.favs.s.map(schoolById).filter(Boolean), favA = db.favs.a.map(aptById).filter(Boolean);
     const menu = `<div class="menu"><a class="card" href="#/compare"><span>${ic('bars')}학군비교</span>${ic('chevR')}</a><a class="card" href="#/guide"><span>${ic('doc')}정보·가이드</span>${ic('chevR')}</a><a class="card" href="#/messages"><span>${ic('mail')}쪽지함</span><span>${n ? `<span class="dot"></span>${n}` : ''}${ic('chevR')}</span></a></div>`;
-    const favs = (favS.length || favA.length) ? `<div class="sec-h" style="margin:22px 0 6px"><h2>관심 목록</h2></div><div class="tlist">${favS.map((s) => `<a class="card pad" href="#/school/${s.id}"><b>${esc(s.name)}</b> ${badge(s.cat)} <span class="muted">${regOf(s).gu}</span></a>`).join('')}${favA.map((a) => `<a class="card pad" href="#/apt/${a.id}"><b>${esc(a.name)}</b> <span class="muted">${esc(schoolOf(a).name)} 배정</span></a>`).join('')}</div>` : '';
+    const favs = (favS.length || favA.length) ? `<div class="sec-h" style="margin:22px 0 6px"><h2>관심 목록</h2></div><div class="tlist">${favS.map((s) => `<a class="card pad" href="#/school/${s.id}"><b>${esc(s.name)}</b> ${badge(s.cat)} <span class="muted">${regOf(s).gu}</span></a>`).join('')}${favA.map((a) => `<a class="card pad" href="#/apt/${a.id}"><b>${esc(a.name)}</b> <span class="muted">${esc(schoolOf(a).name)} 학교군</span></a>`).join('')}</div>` : '';
     if (!u) { view.innerHTML = `<h2 class="page-title">전체</h2><div class="card pad" style="margin-top:12px"><p>로그인하면 글쓰기와 쪽지를 사용할 수 있어요.</p><div class="actions" style="margin-top:14px"><button class="btn primary lg" data-act="login">로그인</button><button class="btn lg" data-act="signup">회원가입</button></div></div>${menu}${favs}`; return; }
     view.innerHTML = `<h2 class="page-title">내 정보</h2>
       <div class="card pad" style="margin-top:12px"><h3 style="font-size:21px;letter-spacing:-.03em">${nickHtml(u.nick)}</h3><p class="muted">${esc(u.email)} · 관심지역 ${REG[u.region] ? REG[u.region].gu : '-'}</p>

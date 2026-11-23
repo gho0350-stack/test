@@ -1,0 +1,6 @@
+out/academy_*.jsonl
+out/trades_*.jsonl
+out/rents_*.jsonl
+out/kapt_*.json
+out/academy.log
+__pycache__/

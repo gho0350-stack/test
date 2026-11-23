@@ -405,3 +405,13 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   @keyframes sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation-duration: .01s !important; } }
+
+/* ---------- 데이터 출처 박스 ---------- */
+.srcbox { margin-top: 12px; padding: 6px var(--gx); }
+.srcrow { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.srcrow:first-child { border-top: 0; }
+.src { flex: none; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; margin-top: 2px; white-space: nowrap; }
+.src.real { background: var(--accent-soft); color: var(--accent); } .src.sample { background: var(--warn-soft); color: var(--warn); } .src.info { background: var(--seoul-soft); color: var(--seoul); }
+.kvl { display: grid; grid-template-columns: 76px 1fr; gap: 4px 10px; margin-top: 8px; font-size: 13px; } .kvl span { color: var(--muted); } .kvl b { font-weight: 600; word-break: break-all; } .kvl a { color: var(--accent); text-decoration: underline; }
+.dchips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 6px; } .dchip { background: var(--bg); border-radius: 8px; padding: 4px 10px; font-size: 13px; }
+@media (max-width: 899px) { .srcbox { margin-top: 0; } }
