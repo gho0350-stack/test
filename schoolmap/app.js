@@ -61,9 +61,10 @@
   const tri = (up) => `<span class="${up ? 'up' : 'down'}"><i class="tri"></i>`;
 
   /* ---------- 금액 포맷 ---------- */
-  const eokS = (x) => (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '') + '억';
-  const eokL = (x) => { const e = Math.floor(x + 1e-9); const m = Math.round((x - e) * 10) * 1000; return m ? `${e}억 ${m.toLocaleString()}만` : `${e}억`; };
-  const range = (a, b) => (a === b ? eokS(a) : `${eokS(a)} ~ ${eokS(b)}`);
+  const eokS = (x) => (x == null || isNaN(x) ? '-' : (Math.round(x * 10) / 10).toFixed(1).replace(/\.0$/, '') + '억');
+  const eokL = (x) => { if (x == null || isNaN(x)) return '-'; const e = Math.floor(x + 1e-9); const m = Math.round((x - e) * 10) * 1000; return m ? `${e}억 ${m.toLocaleString()}만` : `${e}억`; };
+  const range = (a, b) => (a == null || b == null ? '-' : a === b ? eokS(a) : `${eokS(a)} ~ ${eokS(b)}`);
+  const nv = (v, d) => (v == null ? d : v);
 
   /* ---------- UI 상태 ---------- */
   const ui = {
@@ -88,12 +89,18 @@
   const aptById = (id) => APTS.find((a) => a.id === id);
   const schoolOf = (a) => schoolById(a.sid);
   const realTrade = (a) => (R.trades || {})[`${REG[schoolById(a.sid).region].gu}|${normName(a.name)}`] || null;
+  APTS.forEach((a) => { const t = realTrade(a); if (t && t.build) a.year = t.build; });
   const realStat = (a, k) => { const t = realTrade(a); return t && t[k] && t[k][ui.area] ? t[k][ui.area] : null; };
-  const pr = (a, k) => { const rs = realStat(a, k === 'jeonse' ? 'jeonse' : 'sale'); return rs ? rs.median : r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]); };
-  const agg = (s) => { const sv = s.apts.map((a) => pr(a, 'sale')), jv = s.apts.map((a) => pr(a, 'jeonse')); return { sMin: Math.min(...sv), sMax: Math.max(...sv), jMin: Math.min(...jv), jMax: Math.max(...jv), sAvg: avg(sv), jAvg: avg(jv) }; };
+  const pr = (a, k) => { const rs = realStat(a, k === 'jeonse' ? 'jeonse' : 'sale'); if (rs) return rs.median; if (realTrade(a)) return null; return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]); };
+  const linked = (a) => !!realTrade(a);
+  const ps = (a, k, p) => { if (linked(a)) { const st = (realTrade(a)[k] || {})[p]; return st ? st.median : null; } return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[p]); };
+  const ratio = (a, p) => { const sv = ps(a, 'sale', p), jv = ps(a, 'jeonse', p); return sv && jv ? Math.round((jv / sv) * 100) + '%' : '-'; };
+  const srcTag = (a) => (linked(a) ? '<span class="rt real">실거래</span>' : '<span class="rt">샘플</span>');
+  const agg = (s) => { const sv = s.apts.map((a) => pr(a, 'sale')).filter((v) => v != null), jv = s.apts.map((a) => pr(a, 'jeonse')).filter((v) => v != null), mm = (v, f) => (v.length ? f(...v) : null); return { sMin: mm(sv, Math.min), sMax: mm(sv, Math.max), jMin: mm(jv, Math.min), jMax: mm(jv, Math.max), sAvg: sv.length ? avg(sv) : null, jAvg: jv.length ? avg(jv) : null }; };
   const regOf = (s) => REG[s.region];
 
   function tradesOf(a) {
+    if (linked(a)) { const rc = (realTrade(a) || {}).recent || {}; return { sale: ((rc.sale || {})[ui.area] || []), jeonse: ((rc.jeonse || {})[ui.area] || []), real: true }; }
     const r = rng(a.id);
     const mk = (base, n, spread) => { let t = new Date(TODAY).getTime(); const out = []; for (let i = 0; i < n; i++) { t -= (r() * 22 + 6) * 864e5; out.push({ date: new Date(t).toISOString().slice(0, 10), floor: Math.floor(r() * 24) + 2, price: r1((base + (r() - 0.5) * spread) * AREA_F[ui.area]) }); } return out; };
     return { sale: mk(a.sale, 4, 1.6), jeonse: mk(a.jeonse, 3, 0.8) };
@@ -108,9 +115,15 @@
     }
     return (facCache[key] = f.map((x) => x / f[59]));
   }
-  const seriesOf = (a, kind) => factors(a, kind).map((x) => x * pr(a, kind));
-  const change1y = (a, kind) => { const f = factors(a, kind); return f[59] / f[47] - 1; };
-  const chgHtml = (c) => `${tri(c >= 0)}${c >= 0 ? '+' : ''}${(c * 100).toFixed(1)}%</span> <small class="muted">(1년)</small>`;
+  const realSeries = (a, kind) => {
+    const t = realTrade(a), ser = t && t.series && t.series[kind] && t.series[kind][ui.area]; if (!ser || ser.length < 6) return null;
+    const m = {}; ser.forEach(([ym, med]) => { m[ym] = med; }); const out = []; let last = null;
+    for (let i = 0; i < 60; i++) { const tt = 2026 * 12 + 10 - (59 - i), ym = `${Math.floor(tt / 12)}${String((tt % 12) + 1).padStart(2, '0')}`; if (m[ym] != null) last = m[ym]; out.push(m[ym] != null ? m[ym] : last); }
+    const first = out.find((v) => v != null); return out.map((v) => (v == null ? first : v));
+  };
+  const seriesOf = (a, kind) => { if (linked(a)) return realSeries(a, kind); return factors(a, kind).map((x) => x * pr(a, kind)); };
+  const change1y = (a, kind) => { if (linked(a)) { const v = realSeries(a, kind); return v ? v[59] / v[47] - 1 : null; } const f = factors(a, kind); return f[59] / f[47] - 1; };
+  const chgHtml = (c) => c == null ? '<small class="muted">추이 데이터 없음</small>' : `${tri(c >= 0)}${c >= 0 ? '+' : ''}${(c * 100).toFixed(1)}%</span> <small class="muted">(1년)</small>`;
 
   /* ---------- 저장소 ---------- */
   const KEY = 'schoolmap.v3';
@@ -167,7 +180,7 @@
    * 01 메인
    * ===================================================================== */
   function viewHome() {
-    const regs = D.REGIONS.map((r) => { const ss = SCHOOLS.filter((s) => s.region === r.id); return { r, st: [0, 1, 2].map((k) => ss.reduce((n, s) => n + s.stats[k], 0)), avg: avg(ss.map((s) => agg(s).sAvg)) }; }).sort((a, b) => b.st[1] - a.st[1]);
+    const regs = D.REGIONS.map((r) => { const ss = SCHOOLS.filter((s) => s.region === r.id); return { r, st: [0, 1, 2].map((k) => ss.reduce((n, s) => n + s.stats[k], 0)), avg: avg(ss.map((s) => agg(s).sAvg).filter((v) => v != null)) }; }).sort((a, b) => b.st[1] - a.st[1]);
     const mx = Math.max(...regs.map((x) => x.avg));
     const recent = db.recent.map(schoolById).filter(Boolean);
     view.innerHTML = `
@@ -212,7 +225,7 @@
     if (q.has('region')) ui.region = q.get('region');
     const mk = METRIC[ui.metric][1];
     let list = SCHOOLS.filter((s) => ui.region === 'all' || s.region === ui.region);
-    const sorters = { metric: (a, b) => b.stats[mk] - a.stats[mk], sale_desc: (a, b) => agg(b).sMax - agg(a).sMax, sale_asc: (a, b) => agg(a).sMin - agg(b).sMin, jeonse_desc: (a, b) => agg(b).jMax - agg(a).jMax, jeonse_asc: (a, b) => agg(a).jMin - agg(b).jMin };
+    const sorters = { metric: (a, b) => b.stats[mk] - a.stats[mk], sale_desc: (a, b) => nv(agg(b).sMax, -1) - nv(agg(a).sMax, -1), sale_asc: (a, b) => nv(agg(a).sMin, 1e9) - nv(agg(b).sMin, 1e9), jeonse_desc: (a, b) => nv(agg(b).jMax, -1) - nv(agg(a).jMax, -1), jeonse_asc: (a, b) => nv(agg(a).jMin, 1e9) - nv(agg(b).jMin, 1e9) };
     list = list.slice().sort(sorters[ui.sortKey]);
     const pre = list.find((s) => s.id === ui.preSel) || list[0];
     const hl = (k) => (mk === k ? 'hl' : '');
@@ -239,7 +252,7 @@
       <p class="muted" style="font-size:12px;margin-bottom:8px">${ui.area}㎡형 = 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ (서비스 기준) · 가격은 최근 12개월 거래 기준 · 진학 실적은 샘플</p>
       <div class="s-layout">
         <div class="card tcard">
-          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대 진학자</span><span class="k ${hl(1)}">SKY 진학자</span><span class="si ${hl(2)}">인서울 진학자</span><span class="ap">학교군 단지</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
+          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대</span><span class="k ${hl(1)}">SKY</span><span class="si ${hl(2)}">인서울</span><span class="ap">학교군 단지</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
           ${list.map(row).join('') || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}
         </div>
         ${pre ? `<aside class="card pad preview pv" aria-label="선택한 학교">
@@ -356,9 +369,9 @@
     const roads = L.roads.map((d) => `<path d="${d}" fill="none" stroke="var(--map-road)" stroke-width="9" stroke-linecap="round"/>`).join('');
     const rings = [[5, 70], [10, 125], [15, 180]].map(([m, rad]) => `<ellipse cx="${CX}" cy="${CY}" rx="${rad * SX}" ry="${rad}" fill="none" stroke="var(--map-ring)" stroke-dasharray="4 5" opacity=".7"/><text x="${CX + rad * SX + 3}" y="${CY - 3}" font-size="9" fill="var(--map-ring)">도보 ${m}분</text>`).join('');
     const hullEl = ly.zone ? `<polygon points="${L.hull.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".12" stroke="var(--map-zone)" stroke-width="3" stroke-linejoin="round"/>` : '';
-    const g = agg(s), span = g.sMax - g.sMin || 1;
+    const g = agg(s), span = (nv(g.sMax, 0) - nv(g.sMin, 0)) || 1;
     const zones = ly.apt ? s.apts.map((a, i) => {
-      const z = L.zones[i], t = (pr(a, 'sale') - g.sMin) / span, on = ui.sel === a.id, w = a.name.length * 11 + 22;
+      const z = L.zones[i], t = pr(a, 'sale') == null ? 0 : (pr(a, 'sale') - g.sMin) / span, on = ui.sel === a.id, w = a.name.length * 11 + 22;
       return `<g class="zone ${on ? 'sel' : ''}" data-apt="${a.id}" tabindex="0" role="button" aria-label="${a.letter} ${esc(a.name)} 매매 ${eokS(pr(a, 'sale'))}">
         <path d="${z.path}" style="fill-opacity:${(0.2 + 0.55 * t).toFixed(2)}"/>
         <text class="ltr" x="${z.cx.toFixed(0)}" y="${(z.cy - 2).toFixed(0)}" text-anchor="middle">${a.letter}</text>
@@ -372,11 +385,11 @@
       <g><circle cx="${CX}" cy="${CY}" r="22" fill="var(--accent)" stroke="#fff" stroke-width="3"/>${icG('cap', CX, CY, 24, '#fff')}<rect x="${CX - sw / 2}" y="${CY + 28}" width="${sw}" height="22" rx="11" fill="var(--ink)"/><text x="${CX}" y="${CY + 43}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--card)">${esc(s.name)}</text></g>${pois}`;
   }
   function drawPanel(s) {
-    const k = ui.listKind, list = s.apts.slice().sort((a, b) => pr(b, k) - pr(a, k));
+    const k = ui.listKind, list = s.apts.slice().sort((a, b) => nv(pr(b, k), -1) - nv(pr(a, k), -1));
     const rows = list.map((a) => {
       const on = a.id === ui.sel;
-      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${a.letter}</span><span><b>${esc(a.name)}</b></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
-        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${a.hh.toLocaleString()}</b></div><div><span>준공연도</span><b>${a.year}년</b></div><div><span>${esc(s.name)} 도보</span><b>${a.hi}분</b></div><div><span>초등 도보</span><b>${a.elem}분</b></div><div><span>중등 도보</span><b>${a.mid}분</b></div><div><span>전세가율</span><b>${Math.round((a.jeonse / a.sale) * 100)}%</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
+      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${a.letter}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}</span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
+        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${a.hh.toLocaleString()}</b></div><div><span>준공연도</span><b>${a.year}년</b></div><div><span>${esc(s.name)} 도보</span><b>${a.hi}분</b></div><div><span>초등 도보</span><b>${a.elem}분</b></div><div><span>중등 도보</span><b>${a.mid}분</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
     }).join('');
     $('#panel').innerHTML = `<div class="plist-h"><h3>학교군 해당 아파트 (${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
       <div style="padding:0 var(--gx) 10px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted" style="font-size:13px">매매 ${range(agg(s).sMin, agg(s).sMax)} · 전세 ${range(agg(s).jMin, agg(s).jMax)}</span>${areaSeg()}</div>${rows}`;
@@ -408,9 +421,15 @@
   function basisLine(a) {
     const rs = realStat(a, 'sale');
     if (rs) return `최근 12개월 매매 ${rs.count}건 (${eokS(rs.min)}~${eokS(rs.max)}) · 최근 거래일 ${rs.last} · 국토교통부 실거래가 · 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ 기준${rs.count < 3 ? ' · 거래 건수가 적어요' : ''}`;
+    if (linked(a)) {
+      const other = [59, 84, 101].filter((p) => p !== ui.area && ps(a, 'sale', p) != null);
+      return `이 면적대(전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡)는 최근 12개월 매매 거래가 없어요.${other.length ? ' ' + other.map((p) => `<button class="chip sm" data-act="area" data-v="${p}">${p}㎡ 보기</button>`).join(' ') : ''}`;
+    }
     const r = rng(a.id + 'cnt'), n = 3 + Math.floor(r() * 14);
     return `최근 12개월 매매 ${n}건 · 최근 거래일 ${tradesOf(a).sale[0].date} · 샘플 수치 · 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ 기준`;
   }
+  function bigP(a, k, t) { if (linked(a)) { const st = realStat(a, k); return st ? eokL(st.median) : '-'; } return t[k][0] ? eokL(t[k][0].price) : '-'; }
+  function subP(a, k, chg) { if (linked(a)) { const st = realStat(a, k); return st ? `<small class="muted">${eokS(st.min)} ~ ${eokS(st.max)} · ${st.count}건${chg != null ? ' · ' : ''}</small>${chg != null ? chgHtml(chg) : ''}` : '<small class="muted">이 면적대 최근 12개월 거래 없음</small>'; } return chgHtml(chg); }
   function viewApt(id) {
     const a = aptById(id);
     if (!a) { view.innerHTML = '<div class="empty">단지를 찾을 수 없어요. <a href="#/schools" class="chip">학교 목록</a></div>'; return; }
@@ -422,19 +441,20 @@
     let main = '';
     if (ui.aptTab === 'chart') {
       const kind = ui.aptCmp.length && ui.aptKind === 'both' ? 'sale' : ui.aptKind, N = ui.aptRange * 12, lines = [];
-      if (kind === 'both') { lines.push({ name: '매매', color: 'var(--c1)', vals: sv }, { name: '전세', color: 'var(--c2)', vals: jv }); }
+      const add = (name, color, vals) => { if (vals) lines.push({ name, color, vals }); };
+      if (kind === 'both') { add('매매', 'var(--c1)', sv); add('전세', 'var(--c2)', jv); }
       else {
-        lines.push({ name: a.name, color: 'var(--c1)', vals: kind === 'sale' ? sv : jv });
-        ui.aptCmp.forEach((cid, i) => { const o = aptById(cid); lines.push({ name: o.name, color: `var(--c${i + 2})`, vals: seriesOf(o, kind) }); });
+        add(a.name, 'var(--c1)', kind === 'sale' ? sv : jv);
+        ui.aptCmp.forEach((cid, i) => { const o = aptById(cid); add(o.name, `var(--c${i + 2})`, seriesOf(o, kind)); });
       }
       main = `<div class="ctl"><span class="seg">${[['both', '매매+전세'], ['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${kind === v ? 'on' : ''}" data-act="apt-kind" data-v="${v}">${l}</button>`).join('')}</span>
         <span class="seg">${[1, 3, 5].map((y) => `<button class="${ui.aptRange === y ? 'on' : ''}" data-act="apt-range" data-v="${y}">${y}년</button>`).join('')}</span></div>
-        <div class="chart">${lineChart(lines, N)}</div><div class="lg">${lines.map((l) => `<span><i style="background:${l.color}"></i>${esc(l.name)}</span>`).join('')}<span>${ui.area}㎡ 기준 · 샘플</span></div>
-        <div class="tbox"><table><tr><th>구분</th><th>계약일</th><th>층</th><th>금액</th></tr>${t.sale.slice(0, 3).map((x) => `<tr><td>매매</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}${t.jeonse.slice(0, 2).map((x) => `<tr><td>전세</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table></div>`;
+        <div class="chart">${lines.length ? lineChart(lines, N) : '<div class="empty">이 면적대의 월별 추이 데이터가 아직 없어요.<br>(실거래 월별 집계 연동 후 제공)</div>'}</div><div class="lg">${lines.map((l) => `<span><i style="background:${l.color}"></i>${esc(l.name)}</span>`).join('')}<span>${ui.area}㎡ 기준 · ${linked(a) ? '국토교통부 실거래' : '샘플'}</span></div>
+        <div class="tbox">${!t.sale.length && !t.jeonse.length ? '<p class="muted" style="font-size:13px;padding:8px 0">개별 거래 내역은 실거래 상세 연동 후 표시돼요.</p>' : ''}<table style="${!t.sale.length && !t.jeonse.length ? 'display:none' : ''}"><tr><th>구분</th><th>계약일</th><th>층</th><th>금액</th></tr>${t.sale.slice(0, 3).map((x) => `<tr><td>매매</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}${t.jeonse.slice(0, 2).map((x) => `<tr><td>전세</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table></div>`;
     } else if (ui.aptTab === 'price') {
-      const rg = avg(APTS.filter((x) => schoolOf(x).region === s.region).map((x) => x.sale)), diff = a.sale / rg - 1;
-      main = `<div class="tbox"><table style="margin-top:8px"><tr><th>평형</th><th>매매</th><th>전세</th><th>전세가율</th></tr>${[59, 84].map((p) => `<tr><td>${p}㎡</td><td><b>${eokL(r1(a.sale * AREA_F[p]))}</b></td><td>${eokL(r1(a.jeonse * AREA_F[p]))}</td><td>${Math.round((a.jeonse / a.sale) * 100)}%</td></tr>`).join('')}</table>
-        <p style="margin-top:14px;font-size:14px">${reg.dong} 지역 평균 대비 매매가 <span class="${diff >= 0 ? 'up' : 'down'}"><i class="tri"></i>${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(1)}%</span></p></div>`;
+      const reg_ = APTS.filter((x) => schoolOf(x).region === s.region).map((x) => ps(x, 'sale', ui.area)).filter((v) => v != null), me_ = ps(a, 'sale', ui.area), diff = me_ != null && reg_.length ? me_ / avg(reg_) - 1 : null;
+      main = `<div class="tbox"><table style="margin-top:8px"><tr><th>평형</th><th>매매</th><th>전세</th><th>전세가율</th></tr>${[59, 84, 101].map((p) => `<tr><td>${p}㎡</td><td><b>${eokL(ps(a, 'sale', p))}</b></td><td>${eokL(ps(a, 'jeonse', p))}</td><td>${ratio(a, p)}</td></tr>`).join('')}</table>
+        <p style="margin-top:14px;font-size:14px">${reg.dong} 지역 평균 대비 ${ui.area}㎡ 매매가 ${diff == null ? '-' : `<span class="${diff >= 0 ? 'up' : 'down'}"><i class="tri"></i>${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(1)}%</span>`}</p></div>`;
     } else if (ui.aptTab === 'feat') {
       const f = []; if (a.elem <= 5) f.push('초품아'); if (a.hh >= 2000) f.push('대단지'); else if (a.hh >= 1000) f.push('1천세대 이상'); if (2026 - a.year <= 10) f.push('준신축'); if (2026 - a.year >= 30) f.push('재건축 기대'); if (a.hi <= 8) f.push('고교 도보 8분 이내'); f.push('학원가 접근 양호'); f.push(`${reg.infra.subway[0]} 이용`);
       main = `<div class="feat">${f.map((x) => `<span>${x}</span>`).join('')}</div><p class="muted" style="padding:0 var(--gx) 16px;font-size:13px">단지 특징은 입력된 정보로 자동 생성한 샘플입니다.</p>`;
@@ -447,16 +467,16 @@
       <div class="a-top">
         <section class="card a-hero"><div class="pv-img">${bldg()}</div>
           <div><div style="display:flex;justify-content:space-between;gap:8px"><h2>${esc(a.name)}</h2>${favBtn('a', a.id)}</div><p class="muted">서울 ${reg.gu} ${reg.dong}</p>
-            <p style="margin:10px 0"><a href="#/school/${s.id}" class="tag">학교군: ${esc(s.name)}</a> <span class="tag">${ui.area}㎡형</span></p>${areaSeg()}
+            <p style="margin:10px 0"><a href="#/school/${s.id}" class="tag">학교군: ${esc(s.name)}</a> <span class="tag">${ui.area}㎡형</span> ${srcTag(a)}</p>${areaSeg()}
             <p class="muted" style="font-size:12px;margin-top:8px">${basisLine(a)}</p></div></section>
         <div class="a-metrics">
-          <div class="card mc"><small>최근 매매 실거래가</small><div class="big">${eokL(t.sale[0].price)}</div>${chgHtml(cSale)}${spark(sv, 'var(--c1)')}</div>
-          <div class="card mc"><small>최근 전세 실거래가</small><div class="big">${eokL(t.jeonse[0].price)}</div>${chgHtml(cJ)}${spark(jv, 'var(--c2)')}</div>
+          <div class="card mc"><small>${linked(a) ? '최근 12개월 매매 (중앙값)' : '최근 매매 실거래가'}</small><div class="big">${bigP(a, 'sale', t)}</div>${subP(a, 'sale', cSale)}${sv ? spark(sv, 'var(--c1)') : ''}</div>
+          <div class="card mc"><small>${linked(a) ? '최근 12개월 전세 (중앙값)' : '최근 전세 실거래가'}</small><div class="big">${bigP(a, 'jeonse', t)}</div>${subP(a, 'jeonse', cJ)}${jv ? spark(jv, 'var(--c2)') : ''}</div>
         </div>
       </div>
       <div class="facts">
         <div class="card fact">${ic('backpack')}${esc(edu[0])}<b>도보 ${a.elem}분</b></div><div class="card fact">${ic('school')}${esc(edu[1])}<b>도보 ${a.mid}분</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${a.hi}분</b></div>
-        <div class="card fact">${ic('building')}세대수<b>${a.hh.toLocaleString()}세대</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year}년 (${2026 - a.year}년차)</b></div><div class="card fact">${ic('pie')}전세가율<b>${Math.round((a.jeonse / a.sale) * 100)}%</b></div>
+        <div class="card fact">${ic('building')}세대수<b>${a.hh.toLocaleString()}세대</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year}년 (${2026 - a.year}년차)</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
       </div>
       <div class="a-low">
         <section class="card"><div class="subtabs">${tabs.map(([v, l]) => `<button class="${ui.aptTab === v ? 'on' : ''}" data-act="apt-tab" data-v="${v}">${l}</button>`).join('')}</div>${main}</section>
@@ -489,7 +509,7 @@
   function setBudget(v) { const b = ui.budget, cfg = budCfg(); b[b.kind] = clamp(v, cfg.min, cfg.max); $('#bud').value = b[b.kind]; $('#bval').textContent = eokS(b[b.kind]); drawBudget(); }
   function drawBudget() {
     const b = ui.budget, mk = METRIC[ui.metric][1], lim = b[b.kind];
-    const rows = SCHOOLS.map((s) => ({ s, ok: s.apts.filter((a) => pr(a, b.kind) <= lim).sort((x, y) => pr(x, b.kind) - pr(y, b.kind)) })).filter((x) => x.ok.length).sort((x, y) => y.s.stats[mk] - x.s.stats[mk]);
+    const rows = SCHOOLS.map((s) => ({ s, ok: s.apts.filter((a) => pr(a, b.kind) != null && pr(a, b.kind) <= lim).sort((x, y) => pr(x, b.kind) - pr(y, b.kind)) })).filter((x) => x.ok.length).sort((x, y) => y.s.stats[mk] - x.s.stats[mk]);
     $('#bres').innerHTML = (rows.length ? `<p class="muted" style="margin-top:6px">${eokS(lim)} 이하 단지가 있는 학교 <b>${rows.length}곳</b> · 단지 ${rows.reduce((n, x) => n + x.ok.length, 0)}곳</p>` : '') +
       (rows.map(({ s, ok }) => `<div class="card bcard"><div class="r1"><h3><a href="#/school/${s.id}">${esc(s.name)}</a> ${badge(s.cat)}</h3><a class="btn sm" href="#/school/${s.id}">지도${ic('chevR')}</a></div>
         <div class="stat">${regOf(s).gu} ${regOf(s).dong} · 의대 <b>${s.stats[0]}</b> · SKY <b>${s.stats[1]}</b> · 인서울 <b>${s.stats[2]}</b> · 예산 내 ${ok.length}/${s.apts.length}단지</div>
@@ -499,7 +519,7 @@
   function viewCompare(q) {
     if (q.get('ids')) ui.cmp = q.get('ids').split(',').filter((id) => schoolById(id)).slice(0, 3);
     const ss = ui.cmp.map(schoolById).filter(Boolean);
-    const idx = (s) => (s.stats[0] + s.stats[1]) / (agg(s).sAvg || 1);
+    const idx = (s) => (agg(s).sAvg ? (s.stats[0] + s.stats[1]) / agg(s).sAvg : 0);
     const rows = [
       ['지역', (s) => `${regOf(s).gu} ${regOf(s).dong}`, null], ['의대 진학자', (s) => s.stats[0], 'max'], ['SKY 진학자', (s) => s.stats[1], 'max'], ['인서울 진학자', (s) => s.stats[2], 'max'],
       ['학교군 해당 아파트', (s) => s.apts.length + '개', null], [`${ui.area}㎡ 평균 매매가`, (s) => agg(s).sAvg, 'min', eokS], [`${ui.area}㎡ 평균 전세가`, (s) => agg(s).jAvg, 'min', eokS],
