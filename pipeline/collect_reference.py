@@ -23,10 +23,22 @@ def pages(url, key, extra=None, rows=1000, limit_pages=400, log=print):
         page += 1
     return out
 
+def _first_nonempty(url, key, log, label):
+    """조사연도(svyYr) 파라미터가 필요할 수 있어 연도 없이 -> 최근 연도 순으로 시도한다. 빈 응답이면 원본 앞부분을 로그에 남긴다."""
+    for extra in ({}, *({"svyYr": y} for y in (2025, 2024, 2023))):
+        try: rows = pages(url, key, extra)
+        except m.ApiError as e: log(label, "호출 실패", extra, str(e)[:100]); continue
+        if rows: log(label, len(rows), "건", extra or "(기본)"); return rows
+        log(label, "0건", extra or "(기본)")
+    try:
+        q = {"serviceKey": key, "pageNo": 1, "numOfRows": 3, "type": "json"}
+        raw = urllib.request.urlopen(url + "?" + urllib.parse.urlencode(q), timeout=60).read()[:300]
+        log(label, "원본 응답 앞부분:", raw.decode("utf8", "replace").replace(key, "***"))
+    except Exception as e: log(label, "원본 확인 실패", type(e).__name__)
+    return []
+
 def collect_university(key, log=print):
-    univ = pages(UNIV, key); log("대학", len(univ))
-    major = pages(MAJOR, key); log("학과", len(major))
-    return {"univ": univ, "major": major}
+    return {"univ": _first_nonempty(UNIV, key, log, "대학"), "major": _first_nonempty(MAJOR, key, log, "학과")}
 
 def collect_zone_links(key, log=print):
     """odcloud 형식: ?page=&perPage=&serviceKey= -> {data:[...], totalCount}. 서울 행만 남긴다(컬럼명은 첫 실행 후 확인)."""

@@ -25,28 +25,45 @@ def uid_of(lawd, dong, lot, taken):
     while u in taken: u = f"{base}#{i}"; i += 1           # 같은 필지에 단지가 둘 이상이면 접미사
     return u
 
-def kapt_collect(key, targets, cache=None, log=print):
-    """대상 구의 K-apt 단지 전체 + 기본정보. cache(이전 결과)에 있는 단지코드는 재조회하지 않는다."""
-    cache = cache or {}; out = {}
+def _retry(fn, tries=5, base=2.0):
+    """공공데이터포털 [04] HTTP 에러(일시 과부하/호출 제한)는 대기 후 재시도한다."""
+    for t in range(tries):
+        try: return fn()
+        except m.ApiError as e:
+            if "[04]" not in str(e) and "요청 실패" not in str(e): raise
+            if t == tries - 1: raise
+            time.sleep(base * (t + 1))
+
+def kapt_collect(key, targets, cache=None, log=print, max_calls=None, pause=0.15):
+    """대상 구의 K-apt 단지 전체 + 기본정보. cache(이전 결과)에 있는 단지코드는 재조회하지 않는다.
+    일 호출 한도(개발계정 10,000건)를 넘기지 않도록 max_calls 까지만 신규 조회하고, 못 한 단지는 다음 실행에서 이어서 받는다(부분 결과 반환)."""
+    cache = cache or {}; out = {}; calls = 0; skipped = 0
     for gu, lawd in m.LAWD.items():
         if gu not in targets: continue
         lst, page = [], 1
-        while True:
-            h, body = m.kcall(m.KAPT_LIST, {"serviceKey": key, "sigunguCode": lawd, "pageNo": page, "numOfRows": 1000}); items = m.kitems(body)
-            lst += [{"code": str(i.get("kaptCode", "")).strip(), "name": str(i.get("kaptName", "")).strip(), "dong": str(i.get("as3", "")).strip(), "bjd": str(i.get("bjdCode", "")).strip()} for i in items]
-            if len(items) < 1000: break
-            page += 1
-        new = 0
+        try:
+            while True:
+                h, body = _retry(lambda: m.kcall(m.KAPT_LIST, {"serviceKey": key, "sigunguCode": lawd, "pageNo": page, "numOfRows": 1000})); items = m.kitems(body); calls += 1
+                lst += [{"code": str(i.get("kaptCode", "")).strip(), "name": str(i.get("kaptName", "")).strip(), "dong": str(i.get("as3", "")).strip(), "bjd": str(i.get("bjdCode", "")).strip()} for i in items]
+                if len(items) < 1000: break
+                page += 1
+        except m.ApiError as e: log(gu, "K-apt 목록 실패(건너뜀)", str(e)[:60]); continue
+        new = fail = 0
         for a in lst:
             if a["code"] in cache: out[a["code"]] = dict(cache[a["code"]], gu=gu); continue
+            if max_calls is not None and calls >= max_calls: skipped += 1; continue
             try:
-                h, body = m.kcall(m.KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]}); it = body.get("item") if isinstance(body, dict) else None
+                time.sleep(pause); calls += 1
+                h, body = _retry(lambda: m.kcall(m.KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]})); it = body.get("item") if isinstance(body, dict) else None
                 if isinstance(it, list): it = it[0] if it else None
                 if not it: continue
                 rec = dict(a, gu=gu, addr=str(it.get("kaptAddr", "")).strip(), road=str(it.get("doroJuso", "")).strip(), households=str(it.get("kaptdaCnt", "")).strip(), approved=str(it.get("kaptUsedate", "")).strip(), dongs=str(it.get("kaptDongCnt", "")).strip())
                 out[a["code"]] = rec; new += 1
-            except m.ApiError as e: log("K-apt 기본정보 실패", a["code"], str(e)[:60])
-        log(gu, "K-apt", len(lst), "단지 (신규 조회", new, ")")
+            except m.ApiError as e:
+                fail += 1
+                if fail <= 3: log("K-apt 기본정보 실패", a["code"], str(e)[:60])
+        log(gu, "K-apt", len(lst), "단지 (신규 조회", new, "실패", fail, ")")
+    if skipped: log(f"K-apt 호출 한도 보호: {skipped}개 단지는 다음 실행에서 이어서 조회")
     return out
 
 def molit_collect(key, targets, months, today, ep, log=print):
@@ -143,7 +160,7 @@ def bldrgst_fill(key, master, kapt, log=print):
 def run_master(key, targets=None, months=60, today=None, cache=None, log=print):
     key = urllib.parse.unquote(key.strip()); today = today or date.today(); targets = targets or list(m.LAWD)
     ep = {k: m.find_endpoint(k, key, today) for k in m.EP}
-    kapt = kapt_collect(key, targets, (cache or {}).get("kapt_cache"), log)
+    kapt = kapt_collect(key, targets, (cache or {}).get("kapt_cache"), log, max_calls=int(os.environ.get("KAPT_MAX_CALLS", "6000")))
     ents, excluded = molit_collect(key, targets, months, today, ep, log)
     master, rep = join(kapt, ents, today)
     rep["bldrgst"] = bldrgst_fill(key, master, kapt, log); rep["cancelled_excluded"] = excluded
