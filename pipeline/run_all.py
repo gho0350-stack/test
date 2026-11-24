@@ -25,6 +25,8 @@ def prev_gz(p):
     if not os.path.exists(p): return None
     with gzip.open(p, "rt", encoding="utf8") as f: return json.load(f)
 
+import time as _t
+START = _t.time()
 ERRORS = []
 def step(name, fn):
     """한 단계가 실패해도 다른 단계는 계속 진행한다. 실패 사유는 마지막에 모아서 출력하고 종료 코드로 알린다."""
@@ -78,7 +80,12 @@ def do_master():
     import master as mm
     print("== 전체 아파트 마스터 (K-apt + 실거래 + 건축물대장)")
     p = "out/master.json.gz"; old = prev_gz(p)
-    res = mm.run_master(os.environ["DATA_GO_KR_KEY"], months=int(os.environ.get("MONTHS", "60")), cache=old)
+    kc = prev_gz("out/kapt_cache.json.gz") or {}
+    cache = dict(old or {}); cache["kapt_cache"] = {**kc, **(old or {}).get("kapt_cache", {})}
+    res = mm.run_master(os.environ["DATA_GO_KR_KEY"], months=int(os.environ.get("MONTHS", "60")), cache=cache,
+                        on_kapt=lambda kp: dump_gz("out/kapt_cache.json.gz", kp), deadline=START + float(os.environ.get("MASTER_BUDGET_MIN", "130")) * 60)
+    if res.get("partial"):
+        WARN.append(f"마스터: 시간 제한으로 실거래 수집이 미완료({', '.join(res['partial'])}). K-apt 조회분만 저장하고 마스터는 덮어쓰지 않음. 다시 실행하면 이어서 진행"); return
     if old and res["report"]["complexes"] < 0.8 * old["report"]["complexes"]:
         WARN.append(f"마스터 단지 수 {old['report']['complexes']} -> {res['report']['complexes']} 급감: 이전 결과 유지"); return
     if os.environ.get("KAKAO_REST_KEY"):
