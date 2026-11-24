@@ -52,7 +52,7 @@ def do_kakao():
         WARN.append("카카오 좌표 결과가 급감해 이전 결과 유지"); return res
     if old:  # 이번에 실패한 항목은 이전 좌표를 유지
         for sec in ("schools", "apts"):
-            for k, v in old.get(sec, {}).items(): res[sec].setdefault(k, v)
+            for kk, vv in old.get(sec, {}).items(): res[sec].setdefault(kk, vv)
         if old.get("neis_academy"): res.setdefault("neis_academy", old["neis_academy"])
     dump(p, res)
     return res
