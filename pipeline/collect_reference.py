@@ -10,7 +10,7 @@ import colab_molit as m
 BASE_B34 = "https://apis.data.go.kr/B340014/"
 UNIV = BASE_B34 + "SchoolInfoService/getSchoolInfo"
 MAJOR = BASE_B34 + "SchoolMajorInfoService/getSchoolMajorInfo"
-ZONELINK = "https://api.data.go.kr/openapi/tn_pubr_public_schul_atndskl_zn_drw_lnkinfo_api"
+ZONELINK = "https://api.odcloud.kr/api/15159266/v1/uddi:0765351b-d4d6-4ca3-85fa-e4e01dbb7963"   # 학교학구도연계정보 20260920 (odcloud)
 
 def pages(url, key, extra=None, rows=1000, limit_pages=400, log=print):
     out, page = [], 1
@@ -29,5 +29,14 @@ def collect_university(key, log=print):
     return {"univ": univ, "major": major}
 
 def collect_zone_links(key, log=print):
-    rows = pages(ZONELINK, key); log("학구도 연계정보", len(rows))
-    return [r for r in rows if "서울" in json.dumps(r, ensure_ascii=False)]
+    """odcloud 형식: ?page=&perPage=&serviceKey= -> {data:[...], totalCount}. 서울 행만 남긴다(컬럼명은 첫 실행 후 확인)."""
+    out, page = [], 1
+    while page <= 100:
+        h, body = m.kcall(ZONELINK, {"serviceKey": key, "page": page, "perPage": 1000, "returnType": "JSON"})
+        rows = (body or {}).get("data") or []
+        out += rows
+        total = int(str((body or {}).get("totalCount") or 0) or 0)
+        if not rows or (total and len(out) >= total): break
+        page += 1
+    log("학구도 연계정보 전국", len(out))
+    return [r for r in out if "서울" in json.dumps(r, ensure_ascii=False)]

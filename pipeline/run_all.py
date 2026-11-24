@@ -95,6 +95,8 @@ def do_reference():
         WARN.append("대학/학과 API 응답 비어 있음(활용신청·승인 확인): 이전 결과 유지"); return
     if old and len(ref["major"]) < 0.8 * len(old["major"]):
         WARN.append("학과 수 급감: 이전 결과 유지"); return
+    try: dump_gz("out/zone_links_seoul.json.gz", cr.collect_zone_links(os.environ["DATA_GO_KR_KEY"]))
+    except Exception as e: WARN.append(f"학구도 연계정보 실패: {type(e).__name__}")
     dump_gz(p, ref)
     um, mm = bu.build(ref); bu.write(um, mm); dump("out/university_report.json", bu.report(um, mm))
 

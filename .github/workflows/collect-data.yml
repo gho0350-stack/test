@@ -43,7 +43,7 @@ jobs:
         run: |
           git config user.name "eodisalji-bot"
           git config user.email "eodisalji-bot@users.noreply.github.com"
-          git add schoolmap/real-data.js pipeline/out/molit_result.json pipeline/out/kakao_neis_result.json pipeline/out/api_samples.json pipeline/out/schools_all.json pipeline/out/quality_report.json pipeline/out/quality_report.md pipeline/out/master.json.gz pipeline/out/geo_cache.json pipeline/out/reference.json.gz pipeline/out/university_report.json data/university_master.csv data/major_master.csv 2>/dev/null || true
+          git add schoolmap/real-data.js pipeline/out/molit_result.json pipeline/out/kakao_neis_result.json pipeline/out/api_samples.json pipeline/out/schools_all.json pipeline/out/quality_report.json pipeline/out/quality_report.md pipeline/out/master.json.gz pipeline/out/geo_cache.json pipeline/out/reference.json.gz pipeline/out/university_report.json pipeline/out/zone_links_seoul.json.gz data/university_master.csv data/major_master.csv 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "chore: update public data" && git pull --rebase origin "$GITHUB_REF_NAME" && git push)
       - name: 수집 단계 실패 여부 표시
         if: steps.collect.outcome == 'failure'
