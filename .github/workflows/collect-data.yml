@@ -7,6 +7,10 @@ on:
       months:
         description: '실거래 수집 개월 수 (기본 60)'
         default: '60'
+      master:
+        description: '전체 아파트 마스터 구축 포함 (무거움, 처음 한 번 true)'
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -15,7 +19,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,11 +33,12 @@ jobs:
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           NEIS_KEY: ${{ secrets.NEIS_KEY }}
           MONTHS: ${{ inputs.months || '60' }}
+          RUN_MASTER: ${{ inputs.master && '1' || '0' }}
       - name: 변경된 데이터 커밋
         run: |
           git config user.name "eodisalji-bot"
           git config user.email "eodisalji-bot@users.noreply.github.com"
-          git add schoolmap/real-data.js pipeline/out/molit_result.json pipeline/out/kakao_neis_result.json 2>/dev/null || true
+          git add schoolmap/real-data.js pipeline/out/molit_result.json pipeline/out/kakao_neis_result.json pipeline/out/api_samples.json pipeline/out/schools_all.json pipeline/out/quality_report.json pipeline/out/quality_report.md pipeline/out/master.json.gz pipeline/out/geo_cache.json 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "chore: update public data" && git pull --rebase origin "$GITHUB_REF_NAME" && git push)
       - name: 수집 단계 실패 여부 표시
         if: steps.collect.outcome == 'failure'

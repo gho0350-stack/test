@@ -54,3 +54,55 @@ CREATE TABLE member (member_id INTEGER PRIMARY KEY, email TEXT UNIQUE, nickname 
 CREATE TABLE community_post (post_id INTEGER PRIMARY KEY, board TEXT, region TEXT, school_id TEXT, apt_id TEXT, member_id INTEGER REFERENCES member, title TEXT, body TEXT, created_at TEXT);
 CREATE TABLE community_comment (comment_id INTEGER PRIMARY KEY, post_id INTEGER REFERENCES community_post, member_id INTEGER REFERENCES member, body TEXT, created_at TEXT);
 CREATE TABLE message (msg_id INTEGER PRIMARY KEY, from_member INTEGER, to_member INTEGER, body TEXT, read_at TEXT, created_at TEXT);
+
+-- =====================================================================
+-- 정식 서비스용 확장 (PostgreSQL + PostGIS). 위의 apt/apt_school 은 아래 구조로 대체한다.
+-- =====================================================================
+-- CREATE EXTENSION postgis;
+
+CREATE TABLE apt_master (                      -- 전체 아파트 마스터 (K-apt U 국토부 실거래 U 건축물대장)
+  apt_uid        TEXT PRIMARY KEY,             -- 법정동코드(시군구5)-동명-대표지번 (필지 중복 시 #2, #3)
+  name           TEXT NOT NULL,                -- 대표 단지명 (K-apt 우선)
+  gu TEXT, dong TEXT, bjd_code TEXT,           -- 법정동코드 10자리
+  road_addr      TEXT,
+  households INTEGER, dong_count INTEGER, approved_date DATE, build_year INTEGER,
+  kapt_code      TEXT,                         -- 없으면 NULL (K-apt 미등록 소규모 단지)
+  sources        TEXT[],                       -- {kapt, molit, bldrgst}
+  match_method   TEXT CHECK (match_method IN ('lot','name','none')),
+  location       GEOMETRY(Point, 4326),        -- 대표 좌표
+  boundary       GEOMETRY(MultiPolygon, 4326), -- 단지 경계
+  boundary_type  TEXT NOT NULL DEFAULT 'none' CHECK (boundary_type IN ('none','estimated','actual')),
+  boundary_note  TEXT                          -- 병합한 필지 목록, 검증 상태
+);
+CREATE TABLE apt_lot (                         -- 복수 지번 / 필지 (PNU)
+  apt_uid TEXT REFERENCES apt_master, lot TEXT, pnu TEXT, is_primary BOOLEAN DEFAULT FALSE, PRIMARY KEY (apt_uid, lot)
+);
+CREATE TABLE apt_alias (apt_uid TEXT REFERENCES apt_master, alias TEXT, source TEXT, PRIMARY KEY (apt_uid, alias));
+CREATE TABLE apt_match_issue (                 -- 매칭 실패·충돌 관리
+  issue_id SERIAL PRIMARY KEY, kind TEXT, source TEXT, ref TEXT, detail TEXT, resolved BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE apt_trade_raw (                   -- 거래 원본 (취소·정정 반영 위해 계약월 단위로 갱신)
+  apt_uid TEXT, deal_ym TEXT, deal_date DATE, area NUMERIC, floor INT, amount_manwon INT, cancel_flag TEXT, deal_type TEXT,
+  collected_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE apt_rent_raw (apt_uid TEXT, deal_ym TEXT, deal_date DATE, area NUMERIC, floor INT, deposit_manwon INT, monthly_manwon INT, contract_type TEXT, collected_at TIMESTAMPTZ DEFAULT now());
+
+CREATE TABLE school_zone (                     -- 학구도: 학교급별 경계 + 배정 규칙 (경계 포함 != 배정 확정)
+  zone_id TEXT PRIMARY KEY, school_level TEXT CHECK (school_level IN ('초','중','고')),
+  zone_kind TEXT CHECK (zone_kind IN ('통학구역','중학구','학교군','비평준화지역')),
+  zone_name TEXT, geom GEOMETRY(MultiPolygon, 4326),
+  rule_type TEXT CHECK (rule_type IN ('지정배정','추첨','선지원후추첨','별도전형')),
+  rule_note TEXT, valid_year INT, source_name TEXT, source_url TEXT, collected_at DATE
+);
+CREATE TABLE school_zone_school (zone_id TEXT REFERENCES school_zone, school_id TEXT REFERENCES school, relation TEXT, PRIMARY KEY (zone_id, school_id));
+-- 같은 학교군 아파트 조회:  SELECT a.* FROM apt_master a JOIN school_zone z ON ST_Covers(z.geom, a.location) WHERE z.zone_id = :zone;
+
+CREATE TABLE school_admission (                -- 진학 실적: 빈 값(NULL)은 미공개이며 0이 아니다
+  school_id TEXT, admission_year INT, graduate_count INT, medical_count INT, sky_count INT, inseoul_count INT,
+  count_type TEXT CHECK (count_type IN ('합격건수','등록인원')), student_scope TEXT CHECK (student_scope IN ('재학생만','재학생+졸업생')),
+  duplicate_included TEXT CHECK (duplicate_included IN ('포함','제외','알수없음')),
+  source_type TEXT CHECK (source_type IN ('학교발표','공식공시','언론','기타')), source_url TEXT,
+  verified_status TEXT CHECK (verified_status IN ('확인완료','미확인')), verified_at DATE, note TEXT,
+  PRIMARY KEY (school_id, admission_year)
+);
+CREATE TABLE collection_run (run_id SERIAL PRIMARY KEY, started_at TIMESTAMPTZ, source TEXT, ok BOOLEAN, rows_in INT, rows_changed INT, detail JSONB);  -- 수집 이력·품질 리포트

@@ -1,0 +1,36 @@
+name: deploy-pages
+on:
+  push:
+    branches: [claude/claude-settings-config-od8zs3]
+    paths: ['schoolmap/**']
+  workflow_run:
+    workflows: [collect-data]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dep.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 사이트 구성 (카카오 JavaScript 키 주입)
+        env:
+          KAKAO_JS_KEY: ${{ vars.KAKAO_JS_KEY }}
+        run: |
+          mkdir _site && cp -r schoolmap/. _site/
+          printf 'window.SG_CONFIG = { kakaoJsKey: "%s" };\n' "$KAKAO_JS_KEY" > _site/config.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: dep
+        uses: actions/deploy-pages@v4

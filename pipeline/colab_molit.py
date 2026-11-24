@@ -11,6 +11,9 @@ ALIAS = {"강남구|한보미도맨션": "한보미도맨션1", "강남구|대�
          "양천구|목동센트럴아이파크위브": "목동센트럴아이파크위브2단지", "양천구|목동현대하이페리온": "현대하이페리온", "양천구|목동래미안": "목동2삼성래미안",
          "노원구|중계그린": "중계그린1단지", "노원구|중계건영2차": "건영2", "노원구|중계롯데우성": "롯데우성",
          "강동구|고덕래미안힐스테이트": "래미안힐스테이트고덕", "강동구|고덕센트럴아이파크": "고덕센트럴IPARK", "강동구|상일동 고덕리엔파크": "고덕리엔파크3단지"}
+# MOLIT 단지명 -> K-apt 등록 단지명 (K-apt 에 다른 이름으로 등록된 경우, 이름 목록으로 확인한 것만)
+KAPT_ALIAS = {"양천구|목동신시가지5": "목동5단지", "양천구|목동신시가지7": "목동7단지", "양천구|목동신시가지11": "목동11단지", "양천구|목동신시가지12": "목동12단지",
+              "강남구|쌍용대치2": "대치쌍용2차", "양천구|목동2삼성래미안": "목동2차삼성래미안", "강동구|고덕센트럴IPARK": "고덕센트럴아이파크"}
 LAWD = {"강남구": "11680", "서초구": "11650", "송파구": "11710", "양천구": "11470", "노원구": "11350", "강동구": "11740"}
 BASE = "https://apis.data.go.kr/1613000/"
 EP = {"trade": ["RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev", "RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"],
@@ -19,7 +22,8 @@ KAPT_LIST = BASE + "AptListService4/getSigunguAptList4"
 KAPT_INFO = BASE + "AptBasisInfoServiceV5/getAphusBassInfoV5"
 TAG = {"apt": ("aptNm", "아파트"), "dong": ("umdNm", "법정동"), "amount": ("dealAmount", "거래금액"), "year": ("dealYear", "년"), "month": ("dealMonth", "월"),
        "day": ("dealDay", "일"), "jibun": ("jibun", "지번"), "area": ("excluUseAr", "전용면적"), "floor": ("floor", "층"), "build": ("buildYear", "건축년도"),
-       "deposit": ("deposit", "보증금액"), "monthly": ("monthlyRent", "월세금액")}
+       "deposit": ("deposit", "보증금액"), "monthly": ("monthlyRent", "월세금액"),
+       "cancel": ("cdealType", "해제여부"), "cancel_day": ("cdealDay", "해제사유발생일"), "gbn": ("dealingGbn", "거래유형"), "ctype": ("contractType", "계약구분")}
 HINT = {"20": "이 키로 해당 API 활용신청이 안 되었거나 아직 승인 전이에요. data.go.kr 에서 그 API 페이지의 '활용신청'을 했는지, 승인(마이페이지 > 활용신청 현황)을 확인하세요.",
         "30": "등록되지 않은 서비스키예요. 일반 인증키(Decoding)를 복사했는지 확인하고, 방금 신청했다면 1~2시간 뒤 다시 시도하세요.",
         "22": "일일 호출 한도를 넘었어요. 내일 다시 실행하세요.", "31": "키 사용 기간이 만료되었어요.", "12": "해당 API 주소가 없어요 (엔드포인트 확인 필요)."}
@@ -71,7 +75,9 @@ def kcall(url, params, tries=3):
         if "OpenAPI_ServiceResponse" in d:
             h = d["OpenAPI_ServiceResponse"]["cmmMsgHeader"]; code = str(h.get("returnReasonCode", "")); raise ApiError(f"[{code}] {h.get('returnAuthMsg') or h.get('errMsg')} - {HINT.get(code, '')}")
         r = d.get("response", d); return r.get("header", {}), r.get("body", {})
-    root = ET.fromstring(raw); code = (root.findtext(".//returnReasonCode") or "").strip()
+    try: root = ET.fromstring(raw)
+    except ET.ParseError: raise ApiError(f"응답 형식 오류: {raw[:120]!r}")
+    code = (root.findtext(".//returnReasonCode") or "").strip()
     if code: raise ApiError(f"[{code}] {root.findtext('.//returnAuthMsg') or root.findtext('.//errMsg')} - {HINT.get(code, '')}")
     def d2(e): return {c.tag: (d2(c) if len(c) else (c.text or "").strip()) for c in e}
     return {"resultCode": (root.findtext(".//resultCode") or "")}, d2(root.find("body")) if root.find("body") is not None else {}
@@ -90,7 +96,7 @@ def parse_rows(root, kind):
     out = []
     for it in root.findall(".//item"):
         r = {"apt": pick(it, "apt"), "dong": pick(it, "dong"), "date": f"{pick(it,'year')}-{int(pick(it,'month') or 0):02d}-{int(pick(it,'day') or 0):02d}",
-             "jibun": pick(it, "jibun"), "area": float(pick(it, "area") or 0), "floor": int(pick(it, "floor") or 0), "build": int(pick(it, "build") or 0)}
+             "jibun": pick(it, "jibun"), "cancel": pick(it, "cancel"), "gbn": pick(it, "gbn"), "ctype": pick(it, "ctype"), "area": float(pick(it, "area") or 0), "floor": int(pick(it, "floor") or 0), "build": int(pick(it, "build") or 0)}
         if kind == "trade": r["amount"] = to_man(pick(it, "amount"))
         else: r["deposit"] = to_man(pick(it, "deposit")); r["monthly"] = to_man(pick(it, "monthly"))
         out.append(r)
@@ -143,6 +149,7 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
         nm = ALIAS.get(f"{s['gu']}|{s['name']}", s["name"]); want.setdefault(s["gu"], {})[norm_name(nm)] = s
     yms = months_back(months, today); recent_from = today - timedelta(days=round(12 * 30.4))
     trades, seen, matched = {}, {}, set()
+    quality = {"cancelled": {}}
     for gu, lawd in LAWD.items():
         by = defaultdict(lambda: {"sale": [], "jeonse": [], "dong": "", "build": 0, "name": "", "jibun": "", "n12": 0})
         jobs = [(kind, ym) for kind in ("trade", "rent") for ym in yms]
@@ -150,6 +157,7 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
         with ThreadPoolExecutor(workers) as ex:
             for n, ((kind, ym), rows) in enumerate(ex.map(work, jobs), 1):
                 for r in rows:
+                    if kind == "trade" and r.get("cancel"): quality["cancelled"][gu] = quality["cancelled"].get(gu, 0) + 1; continue  # 해제(취소) 거래 제외
                     nk = norm_name(r["apt"]); b = by[nk]
                     if date.fromisoformat(r["date"]) >= recent_from and kind == "trade": b["n12"] += 1
                     if nk not in want.get(gu, {}) : 
@@ -185,7 +193,7 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
             tdongs = {v["dong"] for k2, v in trades.items() if k2.startswith(gu + "|")}
             klist[gu] = [{"name": a["name"], "code": a["code"], "dong": a["dong"]} for a in lst if a["dong"] in tdongs]
             for wk, sm in want.get(gu, {}).items():
-                cand = [a for a in lst if norm_name(a["name"]) == wk]
+                kw = norm_name(KAPT_ALIAS.get(f"{gu}|{wk}", wk)); cand = [a for a in lst if norm_name(a["name"]) == kw]
                 if not cand:
                     dong = (trades.get(f"{gu}|{wk}") or {}).get("dong", "")
                     cand = sorted((a for a in lst if a["dong"] == dong and (inside(norm_name(a["name"]), wk) or inside(wk, norm_name(a["name"])))), key=lambda a: abs(len(norm_name(a["name"])) - len(wk)))
@@ -196,4 +204,4 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
             log(gu, "K-apt 완료", len([k for k in kapt if k.startswith(gu)]))
     except ApiError as e:
         kapt_error = str(e); log("K-apt 건너뜀:", e)
-    return {"version": 2, "generatedAt": today.isoformat(), "months": months, "trades": trades, "kapt": kapt, "kaptError": kapt_error, "kaptList": klist, "unmatched": unmatched, "namesSeen": seen}
+    return {"version": 2, "generatedAt": today.isoformat(), "months": months, "trades": trades, "kapt": kapt, "kaptError": kapt_error, "kaptList": klist, "unmatched": unmatched, "namesSeen": seen, "quality": quality}
