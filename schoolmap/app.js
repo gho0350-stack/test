@@ -380,8 +380,10 @@
       km.map = new kakao.maps.Map(box, { center: new kakao.maps.LatLng(L.ll.school.lat, L.ll.school.lng), level: 5 });
       km.map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
       km.active = true; km.fit = true; drawKakao(s);
+      let zt = null; kakao.maps.event.addListener(km.map, 'zoom_changed', () => { clearTimeout(zt); zt = setTimeout(() => { if (curSchool() === s && km.active) drawKakao(s); }, 120); });
     }).catch(() => { /* 약도 유지 */ });
   }
+  function ptIn(p, ring) { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const A = ring[i], B = ring[j]; if ((A.lat > p.lat) !== (B.lat > p.lat) && p.lng < ((B.lng - A.lng) * (p.lat - A.lat)) / (B.lat - A.lat) + A.lng) c = !c; } return c; }
   function drawKakao(s) {
     const L = layoutOf(s), ly = ui.layers, M = km.map, cs = getComputedStyle(document.documentElement), acc = cs.getPropertyValue('--accent').trim() || '#1c6b45';
     km.items.forEach((o) => o.setMap(null)); km.items = [];
@@ -395,9 +397,25 @@
     [5, 10, 15].forEach((m) => keep(new kakao.maps.Circle({ center: ll(L.ll.school), radius: (m * 80) / 1.3, strokeWeight: 1.5, strokeColor: '#7a8a80', strokeOpacity: 0.7, strokeStyle: 'dash', fillOpacity: 0 })));
     // 주변 인프라
     L.ll.pois.filter((p) => ly[LAYER_OF[p.type]]).forEach((p) => ov(p, node('kp', ic(D.INFRA[p.type].icon) + `<span class="kpl">${esc(p.name.length > 9 ? p.name.slice(0, 9) + '…' : p.name)}</span>`), 0.5, 2));
-    // 아파트 가격 말풍선
-    if (ly.apt) s.apts.forEach((a) => { const p = L.ll.apts[a.id]; if (!p) return; const on = ui.sel === a.id;
-      ov(p, node('kb' + (on ? ' on' : ''), `<b>${pr(a, ui.listKind) == null ? '거래없음' : eokS(pr(a, ui.listKind))}</b><span>${esc(a.name)}${ui.listKind === 'jeonse' ? ' · 전세' : ''}</span>`, () => pick(s, a.id)), 1.15, on ? 9 : 5); });
+    // 아파트 가격 말풍선: 확대 수준별 표시(이름+가격 / 가격만 / 점), 겹침 제거, 학교군 안·밖 구분, 선택 평형에 거래가 없으면 다른 평형 가격
+    if (ly.apt) {
+      const lv = M.getLevel(), tier = lv <= 4 ? 2 : lv <= 6 ? 1 : 0, kind = ui.listKind, proj = M.getProjection(), rings = L.ll.zone ? L.ll.zone.rings : null;
+      const rows = s.apts.map((a) => { const p = L.ll.apts[a.id]; if (!p) return null;
+        let v = pr(a, kind), alt = null; if (v == null) { const o = [59, 84, 101].filter((q) => q !== ui.area).find((q) => ps(a, kind === 'jeonse' ? 'jeonse' : 'sale', q) != null); if (o) { v = ps(a, kind === 'jeonse' ? 'jeonse' : 'sale', o); alt = o; } }
+        return { a, p, v, alt, out: rings ? !rings.some((r) => ptIn(p, r)) : false, on: ui.sel === a.id, pt: proj.containerPointFromCoords(ll(p)) }; }).filter(Boolean);
+      rows.sort((x, y) => (y.on - x.on) || (x.out - y.out) || ((y.v || 0) - (x.v || 0)));
+      const placed = [], hit = (r) => placed.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y);
+      rows.forEach((o) => {
+        const w = tier === 2 ? 132 : tier === 1 ? 64 : 14, h = tier === 2 ? 44 : tier === 1 ? 30 : 14, box = { x: o.pt.x - w / 2, y: o.pt.y - h, w, h };
+        const show = o.on || !hit(box); if (show) placed.push(box);
+        const cls = 'kb' + (o.on ? ' on' : '') + (o.out ? ' out' : '') + (o.alt ? ' alt' : '') + (o.v == null ? ' na' : '');
+        const price = o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? `<small>${o.alt}㎡</small>` : '');
+        const tip = `${o.a.name} · ${o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? ' (' + o.alt + '㎡형)' : '')}${o.out ? ' · 학교군 밖' : ''}`;
+        const n = show && tier > 0 ? node(cls + (tier === 1 ? ' sm' : ''), `<b>${price}</b>${tier === 2 ? `<span>${esc(o.a.name)}${kind === 'jeonse' ? ' · 전세' : ''}</span>` : ''}`, () => pick(s, o.a.id))
+          : node('kd' + (o.out ? ' out' : '') + (o.on ? ' on' : ''), '', () => pick(s, o.a.id));
+        n.title = tip; ov(o.p, n, show && tier > 0 ? 1.15 : 0.5, o.on ? 9 : 5);
+      });
+    }
     // 학교
     ov(L.ll.school, node('ks', `${ic('cap')}<b>${esc(s.name)}</b>`), 1.1, 10);
     // 학원 반경 집계
@@ -426,7 +444,7 @@
             <div class="layerbox" id="layer-box"></div>
             <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">${ic('plus')}</button><button data-act="zoom" data-v="-1" aria-label="축소">${ic('minus')}</button><button data-act="zoom" data-v="0" aria-label="원래대로">${ic('reset')}</button></div>
           </div>
-          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치와 학교군 경계는 실제 데이터 (지도 타일은 카카오맵 연결 후)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
+          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선 원: 학교까지 도보 5·10·15분</span><span>점선 말풍선: 선택 평형 거래 없음(다른 평형 가격)</span><span>회색: 학교군 밖 단지</span><span>확대하면 단지명이 보여요</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치와 학교군 경계는 실제 데이터 (지도 타일은 카카오맵 연결 후)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
         </section>
         <aside class="card" id="panel" aria-live="polite"></aside>
       </div>
