@@ -33,7 +33,15 @@ def do_neis():
     p = "out/kakao_neis_result.json"; res = load(p) if os.path.exists(p) else {}
     res["neis_academy"] = k.run_neis(os.environ["NEIS_KEY"], list(T), T); dump(p, res)
 
-for key, name, fn in (("DATA_GO_KR_KEY", "국토부 실거래", do_molit), ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)):
+def do_probe():
+    import probe_apis, urllib.parse
+    print("== API 응답 필드 점검"); dump("out/api_samples.json", probe_apis.probe(urllib.parse.unquote(os.environ["DATA_GO_KR_KEY"])))
+
+def do_schools_all():
+    import collect_schools_all as c
+    print("== NEIS 서울 전체 학교"); rows = c.collect(os.environ["NEIS_KEY"]); dump("out/schools_all.json", rows); print(len(rows), "개교")
+
+for key, name, fn in (("DATA_GO_KR_KEY", "API 점검", do_probe), ("NEIS_KEY", "서울 전체 학교", do_schools_all), ("DATA_GO_KR_KEY", "국토부 실거래", do_molit), ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)):
     if os.environ.get(key): step(name, fn)
     else: print(f"{key} 없음: {name} 건너뜀")
 

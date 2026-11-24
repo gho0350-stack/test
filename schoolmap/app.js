@@ -439,7 +439,7 @@
   }
   function schoolInfoHtml(s) {
     const r = realOf(s), reg = regOf(s);
-    const rule = !r ? '' : r.hsType === '자율고' ? '자율형 고등학교는 학교 모집요강에 따라 선발하므로 거주지 기준 배정이 아닐 수 있어요. 지원 자격과 일정은 학교와 교육청 공지로 확인하세요.' : r.hsType === '일반고' ? '일반고는 학교군(평준화 지역) 안에서 추첨 배정돼요. 아파트가 학교군에 속해도 특정 학교 배정이 확정된 것은 아니며, 최종 배정은 교육지원청 확인이 필요해요.' : '';
+    const rule = !r ? '' : r.hsType === '자율고' ? '자율형 고등학교는 학교 모집요강에 따라 선발하므로 거주지 기준 배정이 아닐 수 있어요. 지원 자격과 일정은 학교와 교육청 공지로 확인하세요.' : r.hsType === '일반고' ? '일반고는 거주지 기준 학교군을 바탕으로 한 지원·추첨 방식으로 배정돼요. 아파트가 학교군에 속해도 특정 학교 배정이 확정된 것은 아니에요. 최신 배정 방식과 기준 학년도는 서울시교육청 고입 안내에서 확인하세요.' : '';
     const real = r ? `<div class="srcrow"><span class="src real">공식 공시</span><div><b>학교 기본정보</b> <small class="muted">NEIS 교육정보 개방포털 · 적재 ${esc(String(r.loaded || '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'))}</small>
         <div class="kvl"><span>정식 명칭</span><b>${esc(r.officialName)}</b><span>주소</span><b>${esc(r.addr)}${r.dong ? ' (' + esc(r.dong) + ')' : ''}</b><span>구분</span><b>${esc(r.founding)} · ${esc(sexLabel(r.coedu))} · ${esc(r.hsType || '')}${r.course ? ' · ' + esc(r.course) : ''}</b><span>학교 코드</span><b>${esc(r.code)}</b>${r.homepage ? `<span>홈페이지</span><b><a href="${esc(r.homepage)}" target="_blank" rel="noopener">${esc(r.homepage.replace(/^https?:\/\//, ''))}</a></b>` : ''}</div></div></div>` : '';
     const apt = s.apts.filter((a) => realTrade(a)).length;
@@ -638,7 +638,7 @@
       ['실거래가 읽는 법', '<ul><li>같은 단지라도 평형·층·동에 따라 가격이 다릅니다</li><li>계약일과 신고일이 다를 수 있어 최근 거래가 늦게 보일 수 있어요</li><li>직거래·특수관계 거래는 시세와 차이가 날 수 있습니다</li></ul>'],
       ['전세가율이란?', '<p style="color:var(--muted);margin:0 0 14px">전세가율은 매매가 대비 전세가의 비율입니다. 높을수록 매매·전세 차이가 작아 갭 투자 위험과 보증금 안전성을 함께 살펴봐야 합니다.</p>'],
       ['진학 실적 출처 등급', '<ul><li><b>공식 공시</b>: 학교알리미 등 법정 공시 자료</li><li><b>학교 발표</b>: 학교가 자체 공개한 합격 실적</li><li><b>별도 집계</b>: 언론·공개자료를 모아 정리한 자료</li><li>재학생만 포함인지, 졸업생 포함인지, 중복합격 포함인지, 실제 등록 인원인지 기준이 다르면 순위가 왜곡될 수 있어 기준연도와 함께 표시합니다</li></ul>'],
-      ['고등학교 배정, 이렇게 달라요', '<ul><li>일반고(평준화 지역): 학교군 안에서 추첨 배정</li><li>자율형 고등학교: 학교 모집요강에 따른 선발</li><li>그래서 이 앱은 고등학교에 대해 ‘배정 확정’이 아니라 ‘학교군 해당 지역’으로 표시합니다</li></ul>'],
+      ['고등학교 배정, 이렇게 달라요', '<ul><li>초등학교: 지정된 통학구역에 따라 배정</li><li>중학교: 학구·학교군 안에서 추첨 등 시·도별 방식</li><li>일반고: 거주지 기준 학교군을 바탕으로 한 지원·추첨 (단계별 방식과 비율은 시·도교육청 안내로 확인)</li><li>자율고·특목고: 학교별 입학전형과 통학권</li><li>그래서 이 앱은 고등학교에 대해 ‘배정 확정’이 아니라 ‘학교군 해당 지역’으로 표시합니다</li></ul>'],
       ['진학 실적 데이터 볼 때 주의할 점', '<ul><li>졸업생 수가 다른 학교끼리는 비율로 비교하세요</li><li>해마다 편차가 있어 여러 해를 함께 보세요</li><li>이 앱의 수치는 샘플이며, 서비스에서는 공시 자료 출처를 함께 표시할 예정입니다</li></ul>']
     ];
     view.innerHTML = `<h2 class="page-title">정보·가이드</h2><p class="sub">학군지 이사와 입시 정보를 읽는 기본기</p><div class="guide">${G.map(([t, b], i) => `<details class="card" ${i === 0 ? 'open' : ''}><summary>${t}</summary>${b}</details>`).join('')}</div>`;
