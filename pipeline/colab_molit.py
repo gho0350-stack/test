@@ -11,6 +11,9 @@ ALIAS = {"강남구|한보미도맨션": "한보미도맨션1", "강남구|대�
          "양천구|목동센트럴아이파크위브": "목동센트럴아이파크위브2단지", "양천구|목동현대하이페리온": "현대하이페리온", "양천구|목동래미안": "목동2삼성래미안",
          "노원구|중계그린": "중계그린1단지", "노원구|중계건영2차": "건영2", "노원구|중계롯데우성": "롯데우성",
          "강동구|고덕래미안힐스테이트": "래미안힐스테이트고덕", "강동구|고덕센트럴아이파크": "고덕센트럴IPARK", "강동구|상일동 고덕리엔파크": "고덕리엔파크3단지"}
+# MOLIT 단지명 -> K-apt 등록 단지명 (K-apt 에 다른 이름으로 등록된 경우, 이름 목록으로 확인한 것만)
+KAPT_ALIAS = {"양천구|목동신시가지5": "목동5단지", "양천구|목동신시가지7": "목동7단지", "양천구|목동신시가지11": "목동11단지", "양천구|목동신시가지12": "목동12단지",
+              "강남구|쌍용대치2": "대치쌍용2차", "양천구|목동2삼성래미안": "목동2차삼성래미안", "강동구|고덕센트럴IPARK": "고덕센트럴아이파크"}
 LAWD = {"강남구": "11680", "서초구": "11650", "송파구": "11710", "양천구": "11470", "노원구": "11350", "강동구": "11740"}
 BASE = "https://apis.data.go.kr/1613000/"
 EP = {"trade": ["RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev", "RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"],
@@ -185,7 +188,7 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
             tdongs = {v["dong"] for k2, v in trades.items() if k2.startswith(gu + "|")}
             klist[gu] = [{"name": a["name"], "code": a["code"], "dong": a["dong"]} for a in lst if a["dong"] in tdongs]
             for wk, sm in want.get(gu, {}).items():
-                cand = [a for a in lst if norm_name(a["name"]) == wk]
+                kw = norm_name(KAPT_ALIAS.get(f"{gu}|{wk}", wk)); cand = [a for a in lst if norm_name(a["name"]) == kw]
                 if not cand:
                     dong = (trades.get(f"{gu}|{wk}") or {}).get("dong", "")
                     cand = sorted((a for a in lst if a["dong"] == dong and (inside(norm_name(a["name"]), wk) or inside(wk, norm_name(a["name"])))), key=lambda a: abs(len(norm_name(a["name"])) - len(wk)))
