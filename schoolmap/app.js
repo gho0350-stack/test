@@ -392,7 +392,7 @@
     L.ll.pois.filter((p) => ly[LAYER_OF[p.type]]).forEach((p) => ov(p, node('kp', ic(D.INFRA[p.type].icon) + `<span class="kpl">${esc(p.name.length > 9 ? p.name.slice(0, 9) + '…' : p.name)}</span>`), 0.5, 2));
     // 아파트 가격 말풍선
     if (ly.apt) s.apts.forEach((a) => { const p = L.ll.apts[a.id]; if (!p) return; const on = ui.sel === a.id;
-      ov(p, node('kb' + (on ? ' on' : ''), `<b>${pr(a, 'sale') == null ? '거래없음' : eokS(pr(a, 'sale'))}</b><span>${esc(a.name)}</span>`, () => pick(s, a.id)), 1.15, on ? 9 : 5); });
+      ov(p, node('kb' + (on ? ' on' : ''), `<b>${pr(a, ui.listKind) == null ? '거래없음' : eokS(pr(a, ui.listKind))}</b><span>${esc(a.name)}${ui.listKind === 'jeonse' ? ' · 전세' : ''}</span>`, () => pick(s, a.id)), 1.15, on ? 9 : 5); });
     // 학교
     ov(L.ll.school, node('ks', `${ic('cap')}<b>${esc(s.name)}</b>`), 1.1, 10);
     // 학원 반경 집계
@@ -854,7 +854,7 @@
       'bud-step': () => setBudget(ui.budget[ui.budget.kind] + 0.5 * +v), 'bud-set': () => setBudget(+v),
       'cmp-toggle': () => { const i = ui.cmp.indexOf(v); if (i >= 0) ui.cmp.splice(i, 1); else if (ui.cmp.length < 3) ui.cmp.push(v); else toast('최대 3개까지 비교할 수 있어요'); rerender(); },
       layer: () => { ui.layers[v] = !ui.layers[v]; const s = curSchool(); drawLayers(s); drawMap(s); },
-      pick: () => pick(curSchool(), v), 'list-kind': () => { ui.listKind = v; drawPanel(curSchool()); },
+      pick: () => pick(curSchool(), v), 'list-kind': () => { ui.listKind = v; drawPanel(curSchool()); drawMap(curSchool()); },
       zoom: () => { if (km.active) { if (v === '0') { km.fit = true; drawKakao(curSchool()); } else km.map.setLevel(km.map.getLevel() + (v === '1' ? -1 : 1), { animate: true }); return; } if (v === '0') { ui.vb = { x: 0, y: 0, w: MW, h: MH }; setVB(); } else zoomBy(v === '1' ? 0.75 : 1.33); },
       'apt-tab': () => { ui.aptTab = v; rerender(); }, 'apt-kind': () => { ui.aptKind = v; rerender(); }, 'apt-range': () => { ui.aptRange = +v; rerender(); },
       fav: () => {
