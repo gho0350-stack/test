@@ -87,6 +87,8 @@
     apts: s.apts.map((a, i) => ({ id: s.id + '-' + i, sid: s.id, letter: String.fromCharCode(65 + i), name: a[0], hh: a[1], year: a[2], sale: a[3], jeonse: a[4], elem: a[5], mid: a[6], hi: a[7] }))
   }));
   const APTS = SCHOOLS.flatMap((s) => s.apts);
+  const Z = window.SG_ZONES || {};
+  const zoneOf = (s) => (Z.zones || []).find((z) => z.id === (Z.schoolZone || {})[s.id]) || null;
   const sd = (s, k) => (s.statsRaw[k] == null ? '미공개' : s.statsRaw[k]);
   const anyAdm = () => SCHOOLS.some((x) => x.adm);
   const schoolById = (id) => SCHOOLS.find((s) => s.id === id);
@@ -285,7 +287,7 @@
    * 03 지도 · 학교군 해당 아파트
    * ===================================================================== */
   const MW = 800, MH = 580, CX = 400, CY = 290, SX = 1.3;
-  const LAYERS = [['zone', '학교군 해당 구역'], ['apt', '주변 아파트'], ['edu', '학교/교육시설'], ['academy', '학원가'], ['life', '생활편의(마트·병원 등)'], ['culture', '공원·문화시설'], ['transit', '지하철역']];
+  const LAYERS = [['zone', '학교군 경계'], ['apt', '주변 아파트'], ['edu', '학교/교육시설'], ['academy', '학원가'], ['life', '생활편의(마트·병원 등)'], ['culture', '공원·문화시설'], ['transit', '지하철역']];
   const LAYER_OF = { subway: 'transit', edu: 'edu', academy: 'academy', hospital: 'life', mart: 'life', park: 'culture', library: 'culture' };
   const layoutCache = {};
   function blobPath(cx, cy, r, rand) {
@@ -326,7 +328,9 @@
     const inv = (p) => ({ lat: g.y - p[1] / 110540, lng: g.x + p[0] / (Math.cos((g.y * Math.PI) / 180) * 111320) }), hm = [];
     Object.values(pos).forEach((p) => { for (let q = 0; q < 8; q++) { const t = (q / 8) * Math.PI * 2; hm.push([p[0] + Math.cos(t) * 130, p[1] + Math.sin(t) * 130]); } });
     const ll = { school: { lat: g.y, lng: g.x }, apts: Object.fromEntries(Object.entries(pos).map(([id, p]) => [id, inv(p)])), hull: hm.length > 2 ? hull(hm).map(inv) : [], pois: poisLL };
-    return { ll, zones, pois, roads: [], hull: hp.length > 2 ? hull(hp) : [], rings, geo: true, sx, sy, scaleBar: { m: 500, px: 500 * k }, academy: ((g.infra || {}).AC5 || {}).counts };
+    const zn = zoneOf(s), zonePx = zn ? zn.rings.map((ring) => ring.map(([lng, lat]) => P(proj(lng, lat)))) : null;
+    if (zn) ll.zone = { id: zn.id, name: zn.name, rings: zn.rings.map((ring) => ring.map(([lng, lat]) => ({ lat, lng }))) };
+    return { ll, zones, pois, roads: [], hull: hp.length > 2 ? hull(hp) : [], zonePx, rings, geo: true, sx, sy, scaleBar: { m: 500, px: 500 * k }, academy: ((g.infra || {}).AC5 || {}).counts };
   }
   function layoutOf(s) {
     if (layoutCache[s.id]) return layoutCache[s.id];
@@ -385,7 +389,8 @@
     const node = (cls, html, fn) => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; if (fn) d.addEventListener('click', (e) => { e.stopPropagation(); fn(); }); return d; };
     const ov = (p, n, y, z) => keep(new kakao.maps.CustomOverlay({ position: ll(p), content: n, xAnchor: 0.5, yAnchor: y, zIndex: z || 1 }));
     // 학교군 해당 영역
-    if (ly.zone && L.ll.hull.length > 2) keep(new kakao.maps.Polygon({ path: L.ll.hull.map(ll), strokeWeight: 3, strokeColor: acc, strokeOpacity: 0.95, fillColor: acc, fillOpacity: 0.16 }));
+    if (ly.zone && L.ll.zone) L.ll.zone.rings.forEach((ring) => keep(new kakao.maps.Polygon({ path: ring.map(ll), strokeWeight: 3, strokeColor: acc, strokeOpacity: 0.95, fillColor: acc, fillOpacity: 0.08 })));
+    else if (ly.zone && L.ll.hull.length > 2) keep(new kakao.maps.Polygon({ path: L.ll.hull.map(ll), strokeWeight: 3, strokeColor: acc, strokeOpacity: 0.95, fillColor: acc, fillOpacity: 0.16 }));
     // 도보 5·10·15분(직선거리 기준 추정) 원
     [5, 10, 15].forEach((m) => keep(new kakao.maps.Circle({ center: ll(L.ll.school), radius: (m * 80) / 1.3, strokeWeight: 1.5, strokeColor: '#7a8a80', strokeOpacity: 0.7, strokeStyle: 'dash', fillOpacity: 0 })));
     // 주변 인프라
@@ -397,7 +402,8 @@
     ov(L.ll.school, node('ks', `${ic('cap')}<b>${esc(s.name)}</b>`), 1.1, 10);
     // 학원 반경 집계
     let info = $('#kinfo'); if (!info) { info = document.createElement('div'); info.id = 'kinfo'; info.className = 'kinfo'; $('#kmap').parentElement.appendChild(info); }
-    info.innerHTML = ly.academy && L.academy ? `학원 반경 500m <b>${Number(L.academy['500']).toLocaleString()}</b> · 1km <b>${Number(L.academy['1000']).toLocaleString()}</b> · 2km <b>${Number(L.academy['2000']).toLocaleString()}</b>곳` : '';
+    const zname = L.ll.zone ? `<div class="kz">${esc(L.ll.zone.name)} 경계 (기준 ${esc((zoneOf(s) || {}).baseDt || '')})</div>` : '';
+    info.innerHTML = zname + (ly.academy && L.academy ? `학원 반경 500m <b>${Number(L.academy['500']).toLocaleString()}</b> · 1km <b>${Number(L.academy['1000']).toLocaleString()}</b> · 2km <b>${Number(L.academy['2000']).toLocaleString()}</b>곳` : '');
     if (km.fit) { km.fit = false; const b = new kakao.maps.LatLngBounds(); b.extend(ll(L.ll.school)); Object.values(L.ll.apts).forEach((p) => b.extend(ll(p))); M.setBounds(b, 90, 60, 90, window.innerWidth >= 900 ? 210 : 60); }
   }
   function viewSchool(id) {
@@ -408,7 +414,7 @@
     view.innerHTML = `
       ${backLink('#/schools', '학교 목록')}
       <div class="s-head">
-        <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${esc(reg.tag)} · 의대 ${sd(s, 0)} · SKY ${sd(s, 1)} · 인서울 ${sd(s, 2)}${s.adm ? ` (${s.adm.year}학년도 ${s.adm.count_type || ''})` : ' (샘플)'}</p></div>
+        <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${zoneOf(s) ? esc(zoneOf(s).name) + ' · ' : ''}${esc(reg.tag)} · 의대 ${sd(s, 0)} · SKY ${sd(s, 1)} · 인서울 ${sd(s, 2)}${s.adm ? ` (${s.adm.year}학년도 ${s.adm.count_type || ''})` : ' (샘플)'}</p></div>
         <a class="btn primary" href="#/community?region=${s.region}">${ic('chat')}${reg.gu} 커뮤니티</a>
       </div>
       <div class="m-layout">
@@ -420,7 +426,7 @@
             <div class="layerbox" id="layer-box"></div>
             <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">${ic('plus')}</button><button data-act="zoom" data-v="-1" aria-label="축소">${ic('minus')}</button><button data-act="zoom" data-v="0" aria-label="원래대로">${ic('reset')}</button></div>
           </div>
-          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치는 실제 좌표 기준 · 영역은 단지 범위 (학구도 경계 연동 전)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
+          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치와 학교군 경계는 실제 데이터 (지도 타일은 카카오맵 연결 후)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
         </section>
         <aside class="card" id="panel" aria-live="polite"></aside>
       </div>
@@ -433,6 +439,13 @@
     return `<div class="srcrow"><span class="src real">공식 공시</span><div><b>학원·교습소</b> <small class="muted">NEIS 교육정보 개방포털 · 조회 ${esc(ac.fetched)}</small>
       <div class="dchips"><span class="dchip"><b>${esc(reg.gu)}</b> 등록 ${ac.registered.toLocaleString()}곳</span><span class="dchip">입시·검정·보습 ${ac.boseup.toLocaleString()}곳</span>${dongs.map(([d, v]) => `<span class="dchip"><b>${esc(d)}</b> ${v.total.toLocaleString()}곳</span>`).join('')}</div>
       <small class="muted">구 단위 등록 건수예요. 폐원·휴원 포함 여부와 동 단위 집계는 전체 목록 수집 후 제공할 예정이에요.</small></div></div>`;
+  }
+  function zoneRow(s) {
+    const z = zoneOf(s); if (!z) return '';
+    const r = realOf(s), auto = r && r.hsType === '자율고';
+    return `<div class="srcrow"><span class="src real">공식 공시</span><div><b>고등학교 학교군</b> <small class="muted">한국교육시설안전원 · 기준 ${esc(z.baseDt)}</small>
+      <div class="dchips"><span class="dchip"><b>${esc(z.name)}</b></span><span class="dchip">${esc(z.edu)}</span></div>
+      <small class="muted">${auto ? '자율형 고등학교는 학교 모집요강에 따라 선발하므로 학교군 경계가 입학 자격을 뜻하지 않아요.' : '이 경계 안에 거주하면 이 학교군에서 지원·추첨 대상이 돼요. 특정 학교 배정이 확정된 것은 아니에요.'}</small></div></div>`;
   }
   function admRow(s) {
     const a = s.adm; if (!a) return '<div class="srcrow"><span class="src sample">샘플</span><div><b>진학 실적</b> <small class="muted">아직 입력된 실제 실적이 없어요 (화면의 수치는 샘플). 공식 공시·학교 발표·별도 집계로 출처를 구분해 입력할 예정이에요.</small></div></div>';
@@ -457,7 +470,7 @@
         <div class="kvl"><span>정식 명칭</span><b>${esc(r.officialName)}</b><span>주소</span><b>${esc(r.addr)}${r.dong ? ' (' + esc(r.dong) + ')' : ''}</b><span>구분</span><b>${esc(r.founding)} · ${esc(sexLabel(r.coedu))} · ${esc(r.hsType || '')}${r.course ? ' · ' + esc(r.course) : ''}</b><span>학교 코드</span><b>${esc(r.code)}</b>${r.homepage ? `<span>홈페이지</span><b><a href="${esc(r.homepage)}" target="_blank" rel="noopener">${esc(r.homepage.replace(/^https?:\/\//, ''))}</a></b>` : ''}</div></div></div>` : '';
     const apt = s.apts.filter((a) => realTrade(a)).length;
     return `<section class="card srcbox" aria-label="데이터 출처">
-      ${real}${academyLine(s)}${infraLine(s)}
+      ${real}${zoneRow(s)}${academyLine(s)}${infraLine(s)}
       <div class="srcrow"><span class="src ${apt ? 'real' : 'sample'}">${apt ? '공식 공시' : '샘플'}</span><div><b>아파트 시세</b> <small class="muted">${apt ? `국토교통부 실거래가 · ${apt}개 단지 연결` : '국토교통부 실거래가 연동 전 (가상 수치)'}</small></div></div>
       ${admRow(s)}
       ${rule ? `<div class="srcrow"><span class="src info">안내</span><div>${esc(rule)}</div></div>` : ''}
@@ -474,7 +487,8 @@
     const parks = ly.culture ? L.pois.filter((p) => p.type === 'park').map((p) => `<ellipse cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" rx="${(48 + r() * 22).toFixed(0)}" ry="${(30 + r() * 14).toFixed(0)}" fill="var(--map-park)"/>`).join('') : '';
     const roads = L.roads.map((d) => `<path d="${d}" fill="none" stroke="var(--map-road)" stroke-width="9" stroke-linecap="round"/>`).join('');
     const rings = L.rings.map((q) => `<ellipse cx="${L.sx || CX}" cy="${L.sy || CY}" rx="${q.rx.toFixed(1)}" ry="${q.ry.toFixed(1)}" fill="none" stroke="var(--map-ring)" stroke-dasharray="4 5" opacity=".7"/><text x="${((L.sx || CX) + q.rx + 3).toFixed(0)}" y="${(L.sy || CY) - 3}" font-size="9" fill="var(--map-ring)">도보 ${q.m}분</text>`).join('');
-    const hullEl = ly.zone && L.hull.length ? `<polygon points="${L.hull.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".12" stroke="var(--map-zone)" stroke-width="3" stroke-linejoin="round"/>` : '';
+    const zoneEl = ly.zone && L.zonePx ? L.zonePx.map((ring) => `<polygon points="${ring.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".08" stroke="var(--map-zone)" stroke-width="3" stroke-linejoin="round"/>`).join('') : '';
+    const hullEl = zoneEl || (ly.zone && L.hull.length ? `<polygon points="${L.hull.map((p) => p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ')}" fill="var(--map-zone)" fill-opacity=".12" stroke="var(--map-zone)" stroke-width="3" stroke-linejoin="round"/>` : '');
     const g = agg(s), span = (nv(g.sMax, 0) - nv(g.sMin, 0)) || 1;
     const zones = ly.apt ? s.apts.map((a) => {
       const z = L.zones.find((q) => q.id === a.id); if (!z) return '';

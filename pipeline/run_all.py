@@ -52,7 +52,7 @@ def do_kakao():
         WARN.append("카카오 좌표 결과가 급감해 이전 결과 유지"); return res
     if old:  # 이번에 실패한 항목은 이전 좌표를 유지
         for sec in ("schools", "apts"):
-            for k, v in old.get(sec, {}).items(): res[sec].setdefault(k, v)
+            for kk, vv in old.get(sec, {}).items(): res[sec].setdefault(kk, vv)
         if old.get("neis_academy"): res.setdefault("neis_academy", old["neis_academy"])
     dump(p, res)
     return res
@@ -87,8 +87,22 @@ def do_master():
         res["report"]["geocoded"] = sum(1 for a in res["apts"] if a.get("coord")); 
     dump_gz(p, res)
 
+def do_reference():
+    import collect_reference as cr, build_university as bu
+    p = "out/reference.json.gz"; old = prev_gz(p)
+    ref = cr.collect_university(os.environ["DATA_GO_KR_KEY"])
+    if not ref["univ"] or not ref["major"]:
+        WARN.append("대학/학과 API 응답 비어 있음(활용신청·승인 확인): 이전 결과 유지"); return
+    if old and len(ref["major"]) < 0.8 * len(old["major"]):
+        WARN.append("학과 수 급감: 이전 결과 유지"); return
+    try: dump_gz("out/zone_links_seoul.json.gz", cr.collect_zone_links(os.environ["DATA_GO_KR_KEY"]))
+    except Exception as e: WARN.append(f"학구도 연계정보 실패: {type(e).__name__}")
+    dump_gz(p, ref)
+    um, mm = bu.build(ref); bu.write(um, mm); dump("out/university_report.json", bu.report(um, mm))
+
 JOBS = [("DATA_GO_KR_KEY", "API 점검", do_probe), ("NEIS_KEY", "서울 전체 학교", do_schools_all), ("DATA_GO_KR_KEY", "국토부 실거래", do_molit),
         ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)]
+if os.environ.get("RUN_REFERENCE") == "1": JOBS.append(("DATA_GO_KR_KEY", "대학·학과 마스터", do_reference))   # 월 1회 수동
 if os.environ.get("RUN_MASTER") == "1": JOBS.append(("DATA_GO_KR_KEY", "전체 아파트 마스터", do_master))   # 무거운 작업: 수동 실행 때만
 for key, name, fn in JOBS:
     if os.environ.get(key): step(name, fn)

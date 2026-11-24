@@ -436,3 +436,5 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .kinfo { position: absolute; left: 12px; top: 12px; z-index: 5; background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 12px; box-shadow: var(--shadow); } .kinfo:empty { display: none; } .kinfo b { color: var(--accent); }
 
 @media (max-width: 899px) { #kmap { height: clamp(380px, 62vh, 560px); } #map { height: clamp(340px, 56vh, 520px); } }
+
+.kz { font-weight: 800; color: var(--accent); margin-bottom: 2px; }
