@@ -116,6 +116,16 @@ def find_endpoint(kind, key, today):
         except ApiError as e: errs.append(f"{EP[kind][i]}: {e}")
     raise ApiError(" / ".join(errs))
 
+def inside(big, small):
+    """small 이 big 안에 있으면 True. 숫자로 끝나면 바로 뒤에 숫자가 이어지는 경우(5 vs 15)는 제외."""
+    if len(small) < 3: return False
+    i = big.find(small)
+    while i >= 0:
+        j = i + len(small)
+        if not small[-1].isdigit() or j == len(big) or not big[j].isdigit(): return True
+        i = big.find(small, i + 1)
+    return False
+
 def month_stats(rows, k, key):
     by = defaultdict(list)
     for r in rows:
@@ -163,22 +173,27 @@ def run(key, sample, months=60, test=False, today=None, log=print, workers=4):
                     if rc: rec["recent"][kind][k] = [{"date": r["date"], "floor": r["floor"], "price": eok(r["amount"])} for r in rc]
             trades[f"{gu}|{nk}"] = rec; matched.add(f"{gu}|{nk}")
     unmatched = [f"{s['gu']}|{s['name']}" for s in sample if f"{s['gu']}|{norm_name(ALIAS.get(s['gu']+'|'+s['name'], s['name']))}" not in matched]
-    kapt, kapt_error = {}, ""
+    kapt, kapt_error, klist = {}, "", {}
     try:
         for gu, lawd in LAWD.items():
             lst, page = [], 1
             while True:
                 h, body = kcall(KAPT_LIST, {"serviceKey": key, "sigunguCode": lawd, "pageNo": page, "numOfRows": 1000})
-                items = kitems(body); lst += [{"code": str(i.get("kaptCode", "")).strip(), "name": str(i.get("kaptName", "")).strip()} for i in items]
+                items = kitems(body); lst += [{"code": str(i.get("kaptCode", "")).strip(), "name": str(i.get("kaptName", "")).strip(), "dong": str(i.get("as3", "")).strip()} for i in items]
                 if len(items) < 1000: break
                 page += 1
-            for a in lst:
-                nk = norm_name(a["name"])
-                if nk in want.get(gu, {}):
-                    h, body = kcall(KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]}); it = body.get("item") if isinstance(body, dict) else None
-                    if isinstance(it, list): it = it[0] if it else None
-                    if it: kapt[f"{gu}|{nk}"] = {"code": a["code"], "name": a["name"], "households": str(it.get("kaptdaCnt", "")).strip(), "approved": str(it.get("kaptUsedate", "")).strip(), "addr": str(it.get("kaptAddr", "")).strip(), "dongs": str(it.get("kaptDongCnt", "")).strip()}
+            tdongs = {v["dong"] for k2, v in trades.items() if k2.startswith(gu + "|")}
+            klist[gu] = [{"name": a["name"], "code": a["code"], "dong": a["dong"]} for a in lst if a["dong"] in tdongs]
+            for wk, sm in want.get(gu, {}).items():
+                cand = [a for a in lst if norm_name(a["name"]) == wk]
+                if not cand:
+                    dong = (trades.get(f"{gu}|{wk}") or {}).get("dong", "")
+                    cand = sorted((a for a in lst if a["dong"] == dong and (inside(norm_name(a["name"]), wk) or inside(wk, norm_name(a["name"])))), key=lambda a: abs(len(norm_name(a["name"])) - len(wk)))
+                if not cand: continue
+                a = cand[0]; h, body = kcall(KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]}); it = body.get("item") if isinstance(body, dict) else None
+                if isinstance(it, list): it = it[0] if it else None
+                if it: kapt[f"{gu}|{wk}"] = {"code": a["code"], "name": a["name"], "households": str(it.get("kaptdaCnt", "")).strip(), "approved": str(it.get("kaptUsedate", "")).strip(), "addr": str(it.get("kaptAddr", "")).strip(), "dongs": str(it.get("kaptDongCnt", "")).strip()}
             log(gu, "K-apt 완료", len([k for k in kapt if k.startswith(gu)]))
     except ApiError as e:
         kapt_error = str(e); log("K-apt 건너뜀:", e)
-    return {"version": 2, "generatedAt": today.isoformat(), "months": months, "trades": trades, "kapt": kapt, "kaptError": kapt_error, "unmatched": unmatched, "namesSeen": seen}
+    return {"version": 2, "generatedAt": today.isoformat(), "months": months, "trades": trades, "kapt": kapt, "kaptError": kapt_error, "kaptList": klist, "unmatched": unmatched, "namesSeen": seen}

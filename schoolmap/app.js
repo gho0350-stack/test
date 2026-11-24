@@ -90,9 +90,10 @@
   const schoolOf = (a) => schoolById(a.sid);
   const realTrade = (a) => (R.trades || {})[`${REG[schoolById(a.sid).region].gu}|${normName(a.name)}`] || null;
   APTS.forEach((a) => {
-    const t = realTrade(a); if (t && t.build) a.year = t.build;
+    const t = realTrade(a); if (t && t.build) { a.year = t.build; a.yearReal = true; }
     const ga = ((R.geo || {}).apts || {})[a.id]; if (ga && ga.walk_min_est) { a.hi = ga.walk_min_est; a.hiEst = true; a.straight = ga.straight_m; }
     const kp = (R.kapt || {})[`${REG[schoolById(a.sid).region].gu}|${normName(a.name)}`]; if (kp && +kp.households) { a.hh = +kp.households; a.hhReal = true; }
+    if (kp && /^\d{8}$/.test(kp.approved || '')) { a.year = +kp.approved.slice(0, 4); a.yearReal = true; }
   });
   const walkHi = (a) => `${a.hi}분${a.hiEst ? ' (추정)' : ''}`;
   const realStat = (a, k) => { const t = realTrade(a); return t && t[k] && t[k][ui.area] ? t[k][ui.area] : null; };
@@ -121,13 +122,13 @@
     return (facCache[key] = f.map((x) => x / f[59]));
   }
   const realSeries = (a, kind) => {
-    const t = realTrade(a), ser = t && t.series && t.series[kind] && t.series[kind][ui.area]; if (!ser || ser.length < 6) return null;
-    const m = {}; ser.forEach(([ym, med]) => { m[ym] = med; }); const out = []; let last = null;
-    for (let i = 0; i < 60; i++) { const tt = 2026 * 12 + 10 - (59 - i), ym = `${Math.floor(tt / 12)}${String((tt % 12) + 1).padStart(2, '0')}`; if (m[ym] != null) last = m[ym]; out.push(m[ym] != null ? m[ym] : last); }
-    const first = out.find((v) => v != null); return out.map((v) => (v == null ? first : v));
+    const t = realTrade(a), ser = t && t.series && t.series[kind] && t.series[kind][ui.area]; if (!ser || ser.length < 2) return null;
+    const m = {}; ser.forEach(([ym, med]) => { m[ym] = med; }); const out = [];
+    for (let i = 0; i < 60; i++) { const tt = 2026 * 12 + 10 - (59 - i), ym = `${Math.floor(tt / 12)}${String((tt % 12) + 1).padStart(2, '0')}`; out.push(m[ym] != null ? m[ym] : null); }
+    return out;
   };
   const seriesOf = (a, kind) => { if (linked(a)) return realSeries(a, kind); return factors(a, kind).map((x) => x * pr(a, kind)); };
-  const change1y = (a, kind) => { if (linked(a)) { const v = realSeries(a, kind); return v ? v[59] / v[47] - 1 : null; } const f = factors(a, kind); return f[59] / f[47] - 1; };
+  const change1y = (a, kind) => { if (linked(a)) { const v = realSeries(a, kind); if (!v) return null; const win = (from, to) => { const x = v.slice(from, to).filter((q) => q != null); return x.length ? avg(x) : null; }, cur = win(57, 60), prev = win(45, 49); return cur != null && prev != null ? cur / prev - 1 : null; } const f = factors(a, kind); return f[59] / f[47] - 1; };
   const chgHtml = (c) => c == null ? '<small class="muted">추이 데이터 없음</small>' : `${tri(c >= 0)}${c >= 0 ? '+' : ''}${(c * 100).toFixed(1)}%</span> <small class="muted">(1년)</small>`;
 
   /* ---------- 저장소 ---------- */
@@ -164,20 +165,21 @@
   const monthLabel = (idx59) => { const t = 2026 * 12 + 10 - (59 - idx59); return `${String(Math.floor(t / 12)).slice(2)}.${String((t % 12) + 1).padStart(2, '0')}`; };
   function lineChart(lines, N) {
     const W = 640, H = 250, L = 46, R = 64, T = 14, B = 26;
-    const all = lines.flatMap((l) => l.vals.slice(-N)); let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.14 || 1; lo -= pad; hi += pad;
+    const all = lines.flatMap((l) => l.vals.slice(-N).filter((q) => q != null)); let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.14 || 1; lo -= pad; hi += pad;
     const x = (i) => L + ((W - L - R) * i) / (N - 1), y = (v) => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
     let g = '';
     for (let k = 0; k <= 4; k++) { const v = lo + ((hi - lo) * k) / 4; g += `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${eokS(v)}</text>`; }
     const step = N <= 12 ? 3 : N <= 36 ? 6 : 12;
     for (let i = N - 1; i >= 0; i -= step) g += `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === N - 1 ? 'end' : 'middle'}">${monthLabel(59 - (N - 1 - i))}</text>`;
     lines.forEach((l) => {
-      const v = l.vals.slice(-N), d = v.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join('');
-      g += `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${x(N - 1).toFixed(1)}" cy="${y(v[N - 1]).toFixed(1)}" r="4.5" fill="${l.color}"/><text x="${(x(N - 1) + 8).toFixed(1)}" y="${(y(v[N - 1]) + 4).toFixed(1)}" style="fill:${l.color};font-weight:800;font-size:12px">${eokS(v[N - 1])}</text>`;
+      const v = l.vals.slice(-N), pts = v.map((p, i) => (p == null ? null : [i, p])).filter(Boolean); if (!pts.length) return;
+      const d = pts.map(([i, p], j) => `${j ? 'L' : 'M'}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join(''), last = pts[pts.length - 1];
+      g += `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="2.5" stroke-linejoin="round"/>${pts.length <= 36 ? pts.map(([i, p]) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p).toFixed(1)}" r="3.2" fill="${l.color}"/>`).join('') : ''}<circle cx="${x(last[0]).toFixed(1)}" cy="${y(last[1]).toFixed(1)}" r="4.5" fill="${l.color}"/><text x="${(x(last[0]) + 8).toFixed(1)}" y="${(y(last[1]) + 4).toFixed(1)}" style="fill:${l.color};font-weight:800;font-size:12px">${eokS(last[1])}</text>`;
     });
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="실거래가 추이 차트">${g}</svg>`;
   }
   function spark(vals, color) {
-    const v = vals.slice(-24), lo = Math.min(...v), hi = Math.max(...v), d = v.map((p, i) => `${i ? 'L' : 'M'}${((i / 23) * 200).toFixed(1)},${(40 - ((p - lo) / (hi - lo || 1)) * 34).toFixed(1)}`).join('');
+    const v0 = vals.slice(-24).map((p, i) => (p == null ? null : [i, p])).filter(Boolean); if (v0.length < 2) return ''; const lo = Math.min(...v0.map((q) => q[1])), hi = Math.max(...v0.map((q) => q[1])), d = v0.map(([i, p], j) => `${j ? 'L' : 'M'}${((i / 23) * 200).toFixed(1)},${(40 - ((p - lo) / (hi - lo || 1)) * 34).toFixed(1)}`).join('');
     return `<svg viewBox="0 0 200 44" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg>`;
   }
 
@@ -485,7 +487,7 @@
       }
       main = `<div class="ctl"><span class="seg">${[['both', '매매+전세'], ['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${kind === v ? 'on' : ''}" data-act="apt-kind" data-v="${v}">${l}</button>`).join('')}</span>
         <span class="seg">${[1, 3, 5].map((y) => `<button class="${ui.aptRange === y ? 'on' : ''}" data-act="apt-range" data-v="${y}">${y}년</button>`).join('')}</span></div>
-        <div class="chart">${lines.length ? lineChart(lines, N) : '<div class="empty">이 면적대의 월별 추이 데이터가 아직 없어요.<br>(실거래 월별 집계 연동 후 제공)</div>'}</div><div class="lg">${lines.map((l) => `<span><i style="background:${l.color}"></i>${esc(l.name)}</span>`).join('')}<span>${ui.area}㎡ 기준 · ${linked(a) ? '국토교통부 실거래' : '샘플'}</span></div>
+        <div class="chart">${lines.length ? lineChart(lines, N) : '<div class="empty">이 면적대의 월별 추이 데이터가 아직 없어요.<br>(실거래 월별 집계 연동 후 제공)</div>'}</div><div class="lg">${lines.map((l) => `<span><i style="background:${l.color}"></i>${esc(l.name)}</span>`).join('')}<span>${ui.area}㎡ 기준 · ${linked(a) ? '국토교통부 실거래 (거래가 있는 달만 표시, 월 중앙값)' : '샘플'}</span></div>
         <div class="tbox">${!t.sale.length && !t.jeonse.length ? '<p class="muted" style="font-size:13px;padding:8px 0">개별 거래 내역은 실거래 상세 연동 후 표시돼요.</p>' : ''}<table style="${!t.sale.length && !t.jeonse.length ? 'display:none' : ''}"><tr><th>구분</th><th>계약일</th><th>층</th><th>금액</th></tr>${t.sale.slice(0, 3).map((x) => `<tr><td>매매</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}${t.jeonse.slice(0, 2).map((x) => `<tr><td>전세</td><td>${x.date}</td><td>${x.floor}층</td><td><b>${eokL(x.price)}</b></td></tr>`).join('')}</table></div>`;
     } else if (ui.aptTab === 'price') {
       const reg_ = APTS.filter((x) => schoolOf(x).region === s.region).map((x) => ps(x, 'sale', ui.area)).filter((v) => v != null), me_ = ps(a, 'sale', ui.area), diff = me_ != null && reg_.length ? me_ / avg(reg_) - 1 : null;
@@ -512,7 +514,7 @@
       </div>
       <div class="facts">
         <div class="card fact">${ic('backpack')}${esc(edu[0])}<b>도보 ${a.elem}분 (샘플)</b></div><div class="card fact">${ic('school')}${esc(edu[1])}<b>도보 ${a.mid}분 (샘플)</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${walkHi(a)}</b></div>
-        <div class="card fact">${ic('building')}세대수<b>${a.hh.toLocaleString()}세대${a.hhReal ? '' : ' (샘플)'}</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year}년 (${2026 - a.year}년차)</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
+        <div class="card fact">${ic('building')}세대수<b>${a.hh.toLocaleString()}세대${a.hhReal ? '' : ' (샘플)'}</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year}년 (${2026 - a.year}년차)${a.yearReal ? '' : ' (샘플)'}</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
       </div>
       <div class="a-low">
         <section class="card"><div class="subtabs">${tabs.map(([v, l]) => `<button class="${ui.aptTab === v ? 'on' : ''}" data-act="apt-tab" data-v="${v}">${l}</button>`).join('')}</div>${main}</section>
