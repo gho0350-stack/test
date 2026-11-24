@@ -32,3 +32,11 @@
 
 ## 반영 방법
 `python3 pipeline/load_admissions.py` 가 검증한 뒤 `schoolmap/admissions-data.js`를 만듭니다. 검증에 실패하면 어떤 행의 어떤 칸이 문제인지 알려줍니다.
+
+## 대학·학과 마스터와 진학 실적 파일 구조 (추가)
+
+- `university_master.csv`, `major_master.csv`: 공공데이터포털 대학정보(15158665)·학과정보(15158666)에서 자동 생성 (collect-data 의 `reference` 옵션, 월 1회). 분류 플래그(med/dent/kmed/pharm/vet/sky/inseoul)는 `admission_category.csv` 의 서비스 자체 규칙이며 국가 공식 분류가 아님.
+- 사람이 관리하는 파일(자동 덮어쓰기 금지): `university_alias.csv`, `admission_sources.csv`, `admissions_raw.csv`, `admissions.csv`, `school_graduates.csv`.
+- 필수 필드: 학교코드, 연도, 범주/대학/학과, 수치 종류(합격건수 vs 등록인원), 재학생/졸업생 구분, 중복합격 처리, 발표 단계(수시/정시/최종), 출처 URL, 발표일, 수집일, 검증 상태(unverified/verified).
+- 값이 없으면 빈칸(미공개). 0 은 실제 0명일 때만. 검증 완료(verified) 값은 미검증 값으로 덮어쓰지 않음.
+- 합격건수나 졸업생 수를 "진학률"로 표시하지 않음. 베리타스알파·내일교육·아파트위키는 이용약관 확인 전까지 수집원으로 쓰지 않음.

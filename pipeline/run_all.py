@@ -87,8 +87,20 @@ def do_master():
         res["report"]["geocoded"] = sum(1 for a in res["apts"] if a.get("coord")); 
     dump_gz(p, res)
 
+def do_reference():
+    import collect_reference as cr, build_university as bu
+    p = "out/reference.json.gz"; old = prev_gz(p)
+    ref = cr.collect_university(os.environ["DATA_GO_KR_KEY"])
+    if not ref["univ"] or not ref["major"]:
+        WARN.append("대학/학과 API 응답 비어 있음(활용신청·승인 확인): 이전 결과 유지"); return
+    if old and len(ref["major"]) < 0.8 * len(old["major"]):
+        WARN.append("학과 수 급감: 이전 결과 유지"); return
+    dump_gz(p, ref)
+    um, mm = bu.build(ref); bu.write(um, mm); dump("out/university_report.json", bu.report(um, mm))
+
 JOBS = [("DATA_GO_KR_KEY", "API 점검", do_probe), ("NEIS_KEY", "서울 전체 학교", do_schools_all), ("DATA_GO_KR_KEY", "국토부 실거래", do_molit),
         ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)]
+if os.environ.get("RUN_REFERENCE") == "1": JOBS.append(("DATA_GO_KR_KEY", "대학·학과 마스터", do_reference))   # 월 1회 수동
 if os.environ.get("RUN_MASTER") == "1": JOBS.append(("DATA_GO_KR_KEY", "전체 아파트 마스터", do_master))   # 무거운 작업: 수동 실행 때만
 for key, name, fn in JOBS:
     if os.environ.get(key): step(name, fn)
