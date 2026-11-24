@@ -66,3 +66,14 @@ python3 build_data.py                      # -> ../schoolmap/real-data.js
 3. Actions > collect-data > Run workflow 로 즉시 실행하거나 일정에 맡깁니다. 없는 키의 단계는 건너뜁니다.
 
 서비스 단계에서는 같은 수집 코드를 서버(스케줄러)로 옮기고, 앱은 서버 API 로 읽는 구조로 바꿉니다.
+
+## 지도 (카카오맵) 와 공개 배포
+
+- 학교 화면 지도는 카카오맵 JavaScript SDK 로 그립니다 (학교군 영역, 아파트 가격 말풍선, 주변 시설, 도보 5·10·15분 원). 키가 없거나 공개 주소가 아니면 좌표 기반 약도로 자동 대체됩니다.
+- `.github/workflows/deploy-pages.yml` 이 `schoolmap/` 을 GitHub Pages 로 배포하고, 저장소 변수 `KAKAO_JS_KEY` 를 `config.js` 로 주입합니다. 데이터 수집(collect-data)이 끝나면 자동으로 다시 배포됩니다.
+- 설정 (처음 한 번)
+  1. Settings > Pages > Build and deployment > Source: **GitHub Actions**
+  2. Settings > Secrets and variables > Actions > **Variables** 탭 > New repository variable: `KAKAO_JS_KEY` = 카카오 JavaScript 키 (도메인으로 보호되는 공개용 키)
+  3. 카카오 개발자 콘솔 > 내 애플리케이션 > 플랫폼 > Web 사이트 도메인에 `https://gho0350-stack.github.io` 등록, 제품 설정에서 카카오맵 사용 설정 ON
+  4. Actions > deploy-pages > Run workflow. 주소: https://gho0350-stack.github.io/test/
+- 학교군 영역은 현재 학교군 해당 단지들의 범위(임시)입니다. 학구도(SHP) 경계를 연결하면 실제 통학구역·학교군으로 바뀝니다.

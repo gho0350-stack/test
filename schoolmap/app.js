@@ -311,12 +311,16 @@
     s.apts.forEach((a) => { const p = pos[a.id]; if (!p) return; const [cx, cy] = P(p), zr = clamp(20 + Math.sqrt(a.hh) * 0.4, 28, 46);
       for (let q = 0; q < 10; q++) { const t = (q / 10) * Math.PI * 2; hp.push([cx + Math.cos(t) * (zr + 34) * 1.15, cy + Math.sin(t) * (zr + 34)]); }
       zones.push({ id: a.id, cx, cy, path: blobPath(cx, cy, zr, r) }); });
-    const pois = [], shown = [[sx, sy]];
+    const pois = [], poisLL = [], shown = [[sx, sy]];
     Object.entries(g.infra || {}).forEach(([code, v]) => { const type = POI_TYPE[code]; if (!type) return;
+      (v.items || []).slice(0, 3).forEach((it) => { poisLL.push({ type, name: it.name, lat: it.y, lng: it.x, dist: it.dist }); });
       (v.items || []).slice(0, 2).forEach((it) => { const [px, py] = P(proj(it.x, it.y)); if (px < 30 || px > MW - 30 || py < 40 || py > MH - 40) return;
         const label = shown.every((q) => Math.hypot(q[0] - px, q[1] - py) > 60); shown.push([px, py]); pois.push({ type, name: it.name, x: px, y: py, dist: it.dist, label }); }); });
     const rings = [5, 10, 15].map((m) => { const rad = ((m * 80) / 1.3) * k; return { m, rx: rad, ry: rad }; });
-    return { zones, pois, roads: [], hull: hp.length > 2 ? hull(hp) : [], rings, geo: true, sx, sy, scaleBar: { m: 500, px: 500 * k }, academy: ((g.infra || {}).AC5 || {}).counts };
+    const inv = (p) => ({ lat: g.y - p[1] / 110540, lng: g.x + p[0] / (Math.cos((g.y * Math.PI) / 180) * 111320) }), hm = [];
+    Object.values(pos).forEach((p) => { for (let q = 0; q < 8; q++) { const t = (q / 8) * Math.PI * 2; hm.push([p[0] + Math.cos(t) * 130, p[1] + Math.sin(t) * 130]); } });
+    const ll = { school: { lat: g.y, lng: g.x }, apts: Object.fromEntries(Object.entries(pos).map(([id, p]) => [id, inv(p)])), hull: hm.length > 2 ? hull(hm).map(inv) : [], pois: poisLL };
+    return { ll, zones, pois, roads: [], hull: hp.length > 2 ? hull(hp) : [], rings, geo: true, sx, sy, scaleBar: { m: 500, px: 500 * k }, academy: ((g.infra || {}).AC5 || {}).counts };
   }
   function layoutOf(s) {
     if (layoutCache[s.id]) return layoutCache[s.id];
@@ -339,6 +343,57 @@
     return (layoutCache[s.id] = { zones, pois, roads, hull: hull(hp), rings: [[5, 70], [10, 125], [15, 180]].map(([m, rad]) => ({ m, rx: rad * SX, ry: rad })) });
   }
 
+  /* ---------- 카카오맵 (키가 있고 공개 주소에서 열렸을 때만 사용, 아니면 약도로 대체) ---------- */
+  const CFG = window.SG_CONFIG || {};
+  const km = { map: null, items: [], active: false, fit: false };
+  let kakaoP = null;
+  function loadKakao() {
+    if (kakaoP) return kakaoP;
+    kakaoP = new Promise((res, rej) => {
+      if (!CFG.kakaoJsKey || !/^https?:$/.test(location.protocol)) return rej(new Error('no-key'));
+      if (window.kakao && window.kakao.maps && window.kakao.maps.Map) return res();
+      const sc = document.createElement('script'), to = setTimeout(() => rej(new Error('timeout')), 8000);
+      sc.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + encodeURIComponent(CFG.kakaoJsKey) + '&autoload=false';
+      sc.onload = () => { clearTimeout(to); try { window.kakao.maps.load(() => res()); } catch (e) { rej(e); } };
+      sc.onerror = () => { clearTimeout(to); rej(new Error('load')); };
+      document.head.appendChild(sc);
+    });
+    kakaoP.catch(() => { kakaoP = null; });
+    return kakaoP;
+  }
+  function kakaoReset() { km.items.forEach((o) => o.setMap(null)); km.items = []; km.map = null; km.active = false; km.fit = false; }
+  function initKakao(s) {
+    const L = layoutOf(s); if (!L.geo || !L.ll) return;
+    loadKakao().then(() => {
+      if (curSchool() !== s) return; const box = $('#kmap'); if (!box) return;
+      box.hidden = false; $('#map').style.display = 'none'; const mc = $('.mapctl'); if (mc) mc.style.display = 'none';
+      km.map = new kakao.maps.Map(box, { center: new kakao.maps.LatLng(L.ll.school.lat, L.ll.school.lng), level: 5 });
+      km.map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+      km.active = true; km.fit = true; drawKakao(s);
+    }).catch(() => { /* 약도 유지 */ });
+  }
+  function drawKakao(s) {
+    const L = layoutOf(s), ly = ui.layers, M = km.map, cs = getComputedStyle(document.documentElement), acc = cs.getPropertyValue('--accent').trim() || '#1c6b45';
+    km.items.forEach((o) => o.setMap(null)); km.items = [];
+    const ll = (p) => new kakao.maps.LatLng(p.lat, p.lng), keep = (o) => { o.setMap(M); km.items.push(o); return o; };
+    const node = (cls, html, fn) => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; if (fn) d.addEventListener('click', (e) => { e.stopPropagation(); fn(); }); return d; };
+    const ov = (p, n, y, z) => keep(new kakao.maps.CustomOverlay({ position: ll(p), content: n, xAnchor: 0.5, yAnchor: y, zIndex: z || 1 }));
+    // 학교군 해당 영역
+    if (ly.zone && L.ll.hull.length > 2) keep(new kakao.maps.Polygon({ path: L.ll.hull.map(ll), strokeWeight: 3, strokeColor: acc, strokeOpacity: 0.95, fillColor: acc, fillOpacity: 0.16 }));
+    // 도보 5·10·15분(직선거리 기준 추정) 원
+    [5, 10, 15].forEach((m) => keep(new kakao.maps.Circle({ center: ll(L.ll.school), radius: (m * 80) / 1.3, strokeWeight: 1.5, strokeColor: '#7a8a80', strokeOpacity: 0.7, strokeStyle: 'dash', fillOpacity: 0 })));
+    // 주변 인프라
+    L.ll.pois.filter((p) => ly[LAYER_OF[p.type]]).forEach((p) => ov(p, node('kp', ic(D.INFRA[p.type].icon) + `<span class="kpl">${esc(p.name.length > 9 ? p.name.slice(0, 9) + '…' : p.name)}</span>`), 0.5, 2));
+    // 아파트 가격 말풍선
+    if (ly.apt) s.apts.forEach((a) => { const p = L.ll.apts[a.id]; if (!p) return; const on = ui.sel === a.id;
+      ov(p, node('kb' + (on ? ' on' : ''), `<b>${pr(a, 'sale') == null ? '거래없음' : eokS(pr(a, 'sale'))}</b><span>${esc(a.name)}</span>`, () => pick(s, a.id)), 1.15, on ? 9 : 5); });
+    // 학교
+    ov(L.ll.school, node('ks', `${ic('cap')}<b>${esc(s.name)}</b>`), 1.1, 10);
+    // 학원 반경 집계
+    let info = $('#kinfo'); if (!info) { info = document.createElement('div'); info.id = 'kinfo'; info.className = 'kinfo'; $('#kmap').parentElement.appendChild(info); }
+    info.innerHTML = ly.academy && L.academy ? `학원 반경 500m <b>${Number(L.academy['500']).toLocaleString()}</b> · 1km <b>${Number(L.academy['1000']).toLocaleString()}</b> · 2km <b>${Number(L.academy['2000']).toLocaleString()}</b>곳` : '';
+    if (km.fit) { km.fit = false; const b = new kakao.maps.LatLngBounds(); b.extend(ll(L.ll.school)); Object.values(L.ll.apts).forEach((p) => b.extend(ll(p))); M.setBounds(b, 90, 60, 90, window.innerWidth >= 900 ? 210 : 60); }
+  }
   function viewSchool(id) {
     const s = schoolById(id);
     if (!s) { view.innerHTML = '<div class="empty">학교를 찾을 수 없어요. <a href="#/schools" class="chip">학교 목록</a></div>'; return; }
@@ -350,20 +405,21 @@
         <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${esc(reg.tag)} · 의대 ${s.stats[0]} · SKY ${s.stats[1]} · 인서울 ${s.stats[2]} (샘플)</p></div>
         <a class="btn primary" href="#/community?region=${s.region}">${ic('chat')}${reg.gu} 커뮤니티</a>
       </div>
-      ${schoolInfoHtml(s)}
       <div class="m-layout">
         <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도">
           <div class="mapbar"><div class="chips" id="layer-chips"></div></div>
           <div class="mapbox">
+            <div id="kmap" hidden></div>
             <svg id="map" viewBox="0 0 ${MW} ${MH}" role="img" aria-label="${esc(s.name)} 학교군 해당 아파트 영역 지도"><g id="map-g"></g></svg>
             <div class="layerbox" id="layer-box"></div>
             <div class="mapctl"><button data-act="zoom" data-v="1" aria-label="확대">${ic('plus')}</button><button data-act="zoom" data-v="-1" aria-label="축소">${ic('minus')}</button><button data-act="zoom" data-v="0" aria-label="원래대로">${ic('reset')}</button></div>
           </div>
-          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치는 실제 좌표 기준 (지도 타일·학구도 경계 연동 전)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
+          <div class="legend"><span>색이 진할수록 매매가 높음</span><i class="grad"></i><span>점선: 학교까지 도보 5·10·15분</span><span>영역을 누르면 상세 정보</span><span>${(R.geo && R.geo.schools && R.geo.schools[s.id]) ? '위치는 실제 좌표 기준 · 영역은 단지 범위 (학구도 경계 연동 전)' : '위치·구역은 개념도 (지도·학구도 GIS 연동 전)'}</span></div>
         </section>
         <aside class="card" id="panel" aria-live="polite"></aside>
-      </div>`;
-    drawLayers(s); drawMap(s); drawPanel(s); bindMap(s);
+      </div>
+      ${schoolInfoHtml(s)}`;
+    drawLayers(s); drawMap(s); drawPanel(s); bindMap(s); initKakao(s);
   }
   function academyLine(s) {
     const reg = regOf(s), ac = (R.academy || {})[reg.gu]; if (!ac) return '';
@@ -400,6 +456,7 @@
     $('#layer-box').innerHTML = LAYERS.map(([k, l]) => `<button class="${ui.layers[k] ? 'on' : ''}" data-act="layer" data-v="${k}"><span class="cb">${ic('check')}</span>${l}</button>`).join('');
   }
   function drawMap(s) {
+    if (km.active && km.map) { drawKakao(s); return; }
     const L = layoutOf(s), r = rng(s.id + 'park'), ly = ui.layers;
     const parks = ly.culture ? L.pois.filter((p) => p.type === 'park').map((p) => `<ellipse cx="${p.x.toFixed(0)}" cy="${p.y.toFixed(0)}" rx="${(48 + r() * 22).toFixed(0)}" ry="${(30 + r() * 14).toFixed(0)}" fill="var(--map-park)"/>`).join('') : '';
     const roads = L.roads.map((d) => `<path d="${d}" fill="none" stroke="var(--map-road)" stroke-width="9" stroke-linecap="round"/>`).join('');
@@ -432,7 +489,7 @@
     $('#panel').innerHTML = `<div class="plist-h"><h3>학교군 해당 아파트 (${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
       <div style="padding:0 var(--gx) 10px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted" style="font-size:13px">매매 ${range(agg(s).sMin, agg(s).sMax)} · 전세 ${range(agg(s).jMin, agg(s).jMax)}</span>${areaSeg()}</div>${rows}`;
   }
-  function pick(s, id) { ui.sel = ui.sel === id ? null : id; drawMap(s); drawPanel(s); }
+  function pick(s, id) { ui.sel = ui.sel === id ? null : id; drawMap(s); drawPanel(s); if (km.active && ui.sel) { const p = layoutOf(s).ll.apts[id]; if (p) km.map.panTo(new kakao.maps.LatLng(p.lat, p.lng)); } }
   function setVB() { const v = ui.vb; $('#map').setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); }
   function zoomBy(f, cx, cy) {
     const v = ui.vb, nw = clamp(v.w * f, MW / 4, MW), nh = nw * (MH / MW), px = cx == null ? v.x + v.w / 2 : cx, py = cy == null ? v.y + v.h / 2 : cy;
@@ -758,6 +815,7 @@
   const ROOT_PAGES = ['home', 'schools', 'budget', 'community', 'me'];
   function route() {
     if (cleanup) { cleanup(); cleanup = null; }
+    kakaoReset();
     const h = location.hash.slice(1) || '/', [path, qs] = h.split('?'), q = new URLSearchParams(route.last === h ? '' : qs || ''), seg = path.split('/').filter(Boolean), page = seg[0] || 'home';
     const R = { school: () => viewSchool(seg[1]), schools: () => viewSchools(q), apt: () => viewApt(seg[1]), budget: viewBudget, compare: () => viewCompare(q), guide: viewGuide, search: () => viewSearch(q), community: () => viewCommunity(q), post: () => viewPost(seg[1]), write: () => viewWrite(q), messages: () => viewMessages(q), me: viewMe };
     route.last = h;
@@ -784,7 +842,7 @@
       'cmp-toggle': () => { const i = ui.cmp.indexOf(v); if (i >= 0) ui.cmp.splice(i, 1); else if (ui.cmp.length < 3) ui.cmp.push(v); else toast('최대 3개까지 비교할 수 있어요'); rerender(); },
       layer: () => { ui.layers[v] = !ui.layers[v]; const s = curSchool(); drawLayers(s); drawMap(s); },
       pick: () => pick(curSchool(), v), 'list-kind': () => { ui.listKind = v; drawPanel(curSchool()); },
-      zoom: () => { if (v === '0') { ui.vb = { x: 0, y: 0, w: MW, h: MH }; setVB(); } else zoomBy(v === '1' ? 0.75 : 1.33); },
+      zoom: () => { if (km.active) { if (v === '0') { km.fit = true; drawKakao(curSchool()); } else km.map.setLevel(km.map.getLevel() + (v === '1' ? -1 : 1), { animate: true }); return; } if (v === '0') { ui.vb = { x: 0, y: 0, w: MW, h: MH }; setVB(); } else zoomBy(v === '1' ? 0.75 : 1.33); },
       'apt-tab': () => { ui.aptTab = v; rerender(); }, 'apt-kind': () => { ui.aptKind = v; rerender(); }, 'apt-range': () => { ui.aptRange = +v; rerender(); },
       fav: () => {
         e.preventDefault(); const [t, id] = v.split(':'), i = db.favs[t].indexOf(id);

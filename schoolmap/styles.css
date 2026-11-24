@@ -422,3 +422,17 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 @media (min-width: 900px) { .srow .sale, .srow .jeo { white-space: nowrap; font-size: 13.5px; } }
 
 .chip.sm { padding: 3px 10px; font-size: 12px; margin-left: 2px; }
+
+/* ---------- 카카오맵 오버레이 ---------- */
+#kmap { width: 100%; height: clamp(320px, 62vw, 640px); }
+.kb { position: relative; background: var(--card); border: 2px solid var(--accent); border-radius: 12px; padding: 4px 10px 5px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.2); cursor: pointer; white-space: nowrap; line-height: 1.25; }
+.kb::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--accent); border-bottom: 0; }
+.kb b { display: block; color: var(--accent); font-size: 14px; font-weight: 800; } .kb span { display: block; color: var(--muted); font-size: 11px; font-weight: 600; max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.kb.on { background: var(--accent); } .kb.on b, .kb.on span { color: var(--accent-ink); } .kb.on::after { border-top-color: var(--accent); }
+.kp { display: flex; align-items: center; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px 3px 5px; color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.18); white-space: nowrap; font-size: 11px; font-weight: 700; }
+.kp .ic { width: 16px; height: 16px; } .kpl { color: var(--ink); }
+.ks { display: flex; align-items: center; gap: 6px; background: var(--ink); color: var(--card); border-radius: 999px; padding: 6px 12px 6px 9px; box-shadow: 0 2px 8px rgba(0,0,0,.3); white-space: nowrap; font-size: 13px; }
+.ks .ic { width: 18px; height: 18px; color: var(--gold); }
+.kinfo { position: absolute; left: 12px; top: 12px; z-index: 5; background: color-mix(in srgb, var(--card) 92%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 12px; box-shadow: var(--shadow); } .kinfo:empty { display: none; } .kinfo b { color: var(--accent); }
+
+@media (max-width: 899px) { #kmap { height: clamp(380px, 62vh, 560px); } #map { height: clamp(340px, 56vh, 520px); } }
