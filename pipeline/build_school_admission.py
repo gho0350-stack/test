@@ -15,6 +15,9 @@ def main():
     real = load_js("schoolmap/real-data.js", "SG_REAL")["schools"]; Z = load_js("schoolmap/zones-data.js", "SG_ZONES")
     zname = {z["id"]: z["name"] for z in Z["zones"]}
     vp = os.path.join(ROOT, "data/school_admission_verified.csv"); ver = {r["school_id"]: r for r in csv.DictReader(open(vp, encoding="utf-8-sig"))} if os.path.exists(vp) else {}
+    hp = os.path.join(ROOT, "pipeline/out/hinfo_schools.json")
+    hinfo = {x["name"]: x for x in json.load(open(hp, encoding="utf8"))["schools"]} if os.path.exists(hp) else {}
+    hdate = __import__("datetime").datetime.fromtimestamp(os.path.getmtime(hp)).date().isoformat() if hinfo else ""
     rows = []
     INTEG = [r["member_general_groups"].split("|") for r in csv.DictReader(open(os.path.join(ROOT, "data/integrated_school_group.csv"), encoding="utf-8-sig"))]
     for sid, r in real.items():
@@ -29,6 +32,20 @@ def main():
         row.update({"school_id": sid, "school_name": r["officialName"], "admission_year": "", "general_school_group": zname.get(zid, ""), "integrated_school_group": "; ".join("·".join(p) for p in INTEG if zname.get(zid, "").replace("학교군", "") in p) if (t == "일반고") else "", "verified_at": "", "verify_status": "NEIS 학교유형 기준(미확인)", "note": ""})
         row.update({k: x for k, x in v.items() if x})
         if row["school_type"].startswith("교육감 선발"): row["school_type"] = "일반고(평준화)"
+        h = hinfo.get(r["officialName"])
+        if h:   # 하이인포(서울시교육청 고교홍보사이트) 학교목록으로 자동 대조
+            gen_row = row["school_type"].startswith("일반고")
+            if h["type"] == "교육감배정교" and gen_row:
+                row["verify_status"] = f"확인: 하이인포 교육감배정교 명단 일치({hdate}) · 2027 기본계획 학교장 선발 24교 명단에 없음"
+                row["verified_at"] = hdate
+            elif h["type"] == "학교장선발교" and not gen_row:
+                row["verify_status"] = f"확인: 하이인포 학교장선발교 명단 일치({hdate})" + (" · 2027 기본계획 자사고 15교 명단 포함" if "자율형" in row["school_type"] else "")
+                row["verified_at"] = hdate
+            else:
+                row["verify_status"] = f"불일치: 하이인포는 {h['type']}, 현재 분류는 {row['school_type']} → 확인 필요"
+            zk = (zname.get(zid, "") or "").replace("학교군", "")
+            if zk and h["zone"] and zk != h["zone"]: row["verify_status"] += f" (학군 불일치: 하이인포 {h['zone']}, 경계 판정 {zk})"
+        elif hinfo: row["verify_status"] += " · 하이인포 목록에서 찾지 못함"
         rows.append(row)
     with open(os.path.join(ROOT, "data/school_admission.csv"), "w", newline="", encoding="utf-8-sig") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS); w.writeheader(); w.writerows(rows)
