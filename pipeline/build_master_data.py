@@ -29,6 +29,30 @@ def zone_of(x, y, zones, tol=250):
     d = min(((dist_m(x, y, r), z["id"]) for z in zones for r in z["rings"]), default=(1e18, None))
     return (d[1], round(d[0])) if d[0] <= tol else (None, round(d[0]))
 
+def load_edu():
+    """초등 통학구역/중학교 학교군(build_edu_zones.py 결과). 없으면 건너뛴다."""
+    p = os.path.join(ROOT, "pipeline/data/edu_zones.json.gz")
+    if not os.path.exists(p): return None
+    d = json.load(gzip.open(p, "rt", encoding="utf8"))
+    def prep(zs): return [dict(z, bb=(min(x for r in z["rings"] for x, _ in r), min(y for r in z["rings"] for _, y in r), max(x for r in z["rings"] for x, _ in r), max(y for r in z["rings"] for _, y in r))) for z in zs]
+    return {"es": prep(d["es"]), "ms": prep(d["ms"])}
+
+def hit_edu(x, y, zs):
+    for z in zs:
+        bx0, by0, bx1, by1 = z["bb"]
+        if not (bx0 <= x <= bx1 and by0 <= y <= by1): continue
+        inside = False
+        for r in z["rings"]:
+            if pip(x, y, r): inside = not inside     # 짝수-홀수 규칙: 구멍(내부 링)은 제외
+        if inside: return z
+    return None
+
+def es_names(zname):
+    """'서울미아초통학구역' -> ['서울미아초등학교'], '서울금옥초서울옥수초공동통학구역' -> 두 학교."""
+    t = re.sub(r"(공동)?통학구역$", "", zname)
+    parts = re.split(r"(?<=초)(?=서울)", t)
+    return [re.sub(r"초$", "초등학교", p) for p in parts if p]
+
 def avg12(rows, as_of):
     """월별 시리즈 [ym, 월 중앙값, 건수] 중 기준일 직전 12개월(달력 기준)을 건수로 가중평균. 단일 거래 달은 그 거래가가 그대로 들어가 거래가 평균에 가깝다."""
     y, mth = int(as_of[:4]), int(as_of[5:7]); lo = y * 12 + mth - 11
@@ -51,6 +75,7 @@ def run():
     meta = open(os.path.join(ROOT, "schoolmap/admission-rules.js"), encoding="utf8").read(); mi = meta.find("window.SG_RULES_META=")
     pairs = json.loads(meta[mi + len("window.SG_RULES_META="):meta.rindex(";")])["integrated"] if mi >= 0 else []
     need = set(sch_zone) | {name2id[x] for p in pairs for x in p if any(name2id.get(y) in sch_zone for y in p) and x in name2id}
+    edu = load_edu(); n_es = n_ms = 0
     out, skipped, nocoord, border, outside, notneeded = [], 0, 0, 0, [], 0
     for a in m["apts"]:
         if SKIP.search(a["name"]): skipped += 1; continue
@@ -66,6 +91,10 @@ def run():
         if hh: rec["hh"] = hh
         yr = int(ap[:4]) if re.match(r"^\d{8}$", ap) else a.get("build_year")
         if yr: rec["yr"] = yr; rec["yk"] = 1 if re.match(r"^\d{8}$", ap) else 0
+        if edu:
+            ze = hit_edu(c["lng"], c["lat"], edu["es"]); zm = hit_edu(c["lng"], c["lat"], edu["ms"])
+            if ze: rec["es"] = es_names(ze["name"]); n_es += 1
+            if zm: rec["ms"] = zm["name"]; n_ms += 1
         if d: rec["zb"] = d                      # 경계 밖 250m 이내라 가까운 학교군으로 편입(단순화 오차 가능)
         if a.get("sale"): rec["sale"] = b(a["sale"], a["series"].get("sale"), a.get("asof", m["generatedAt"]))
         if a.get("jeonse"): rec["jeonse"] = b(a["jeonse"], a["series"].get("jeonse"), a.get("asof", m["generatedAt"]))
@@ -76,7 +105,7 @@ def run():
         out.append(rec)
     js = "window.SG_MASTER=" + json.dumps({"asOf": m["generatedAt"], "months": m["months"], "apts": out}, ensure_ascii=False, separators=(",", ":")) + ";\n"
     open(os.path.join(ROOT, "schoolmap/master-data.js"), "w", encoding="utf8").write(js)
-    rep = {"단지": len(out), "오피스텔 등 제외": skipped, "좌표 없음 제외": nocoord, "경계 밖 250m 이내 편입": border, "학교군 밖 제외": len(outside), "앱 대상 학교군 밖(미탑재)": notneeded, "학교군 밖 예": outside[:10], "KB": round(len(js.encode()) / 1024)}
+    rep = {"단지": len(out), "오피스텔 등 제외": skipped, "좌표 없음 제외": nocoord, "경계 밖 250m 이내 편입": border, "학교군 밖 제외": len(outside), "앱 대상 학교군 밖(미탑재)": notneeded, "학교군 밖 예": outside[:10], "초등 통학구역 판정": n_es if edu else "자료 없음", "중학교 학교군 판정": n_ms if edu else "자료 없음", "KB": round(len(js.encode()) / 1024)}
     print(json.dumps(rep, ensure_ascii=False, indent=1)); return rep
 
 if __name__ == "__main__": run()
