@@ -418,11 +418,12 @@
     L.ll.pois.filter((p) => ly[LAYER_OF[p.type]]).forEach((p) => ov(p, node('kp', ic(D.INFRA[p.type].icon) + `<span class="kpl">${esc(p.name.length > 9 ? p.name.slice(0, 9) + '…' : p.name)}</span>`), 0.5, 2));
     // 아파트 가격 말풍선: 확대 수준별 표시(이름+가격 / 가격만 / 점), 겹침 제거, 학교군 안·밖 구분, 선택 평형에 거래가 없으면 다른 평형 가격
     if (ly.apt) {
-      const lv = M.getLevel(), tier = lv <= 4 ? 2 : lv <= 6 ? 1 : 0, kind = ui.listKind, proj = M.getProjection(), rings = L.ll.zone ? L.ll.zone.rings : null;
+      const lv = M.getLevel(), tier = lv <= 5 ? 2 : lv <= 7 ? 1 : 0, kind = ui.listKind, proj = M.getProjection(), rings = L.ll.zone ? L.ll.zone.rings : null;
       const rows = s.apts.map((a) => { const p = L.ll.apts[a.id]; if (!p) return null;
         let v = pr(a, kind), alt = null; if (v == null) { const o = [59, 84, 101].filter((q) => q !== ui.area).find((q) => ps(a, kind === 'jeonse' ? 'jeonse' : 'sale', q) != null); if (o) { v = ps(a, kind === 'jeonse' ? 'jeonse' : 'sale', o); alt = o; } }
         return { a, p, v, alt, out: rings ? !rings.some((r) => ptIn(p, r)) : false, on: ui.sel === a.id, pt: proj.containerPointFromCoords(ll(p)) }; }).filter(Boolean);
-      rows.sort((x, y) => (y.on - x.on) || (x.out - y.out) || ((y.v || 0) - (x.v || 0)));
+      const sc = L.ll.school, kx = Math.cos((sc.lat * Math.PI) / 180) * 111320; rows.forEach((o) => { o.dist = Math.hypot((o.p.lng - sc.lng) * kx, (o.p.lat - sc.lat) * 110540); });
+      rows.sort((x, y) => (y.on - x.on) || (x.out - y.out) || ((y.v != null) - (x.v != null)) || (x.dist - y.dist));   // 선택 > 학교군 안 > 거래 있는 단지 > 학교와 가까운 순으로 이름표를 우선 배치
       const placed = [], hit = (r) => placed.some((q) => r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y);
       rows.forEach((o) => {
         const w = tier === 2 ? 132 : tier === 1 ? 64 : 14, h = tier === 2 ? 44 : tier === 1 ? 30 : 14, box = { x: o.pt.x - w / 2, y: o.pt.y - h, w, h };
@@ -441,7 +442,8 @@
     let info = $('#kinfo'); if (!info) { info = document.createElement('div'); info.id = 'kinfo'; info.className = 'kinfo'; $('#kmap').parentElement.appendChild(info); }
     const zname = L.ll.zone ? `<div class="kz">${esc(L.ll.zone.name)} 경계 (기준 ${esc((zoneOf(s) || {}).baseDt || '')})</div>` : '';
     info.innerHTML = zname + (ly.academy && L.academy ? `학원 반경 500m <b>${Number(L.academy['500']).toLocaleString()}</b> · 1km <b>${Number(L.academy['1000']).toLocaleString()}</b> · 2km <b>${Number(L.academy['2000']).toLocaleString()}</b>곳` : '');
-    if (km.fit) { km.fit = false; const b = new kakao.maps.LatLngBounds(); b.extend(ll(L.ll.school)); Object.values(L.ll.apts).forEach((p) => b.extend(ll(p))); M.setBounds(b, 90, 60, 90, window.innerWidth >= 900 ? 210 : 60); }
+    /* 처음에는 학교 반경 약 1.3km 안 단지가 보이게 맞춘다(전체 학교군은 축소해서 확인) */
+    if (km.fit) { km.fit = false; const b = new kakao.maps.LatLngBounds(); b.extend(ll(L.ll.school)); const sc = L.ll.school, kx = Math.cos((sc.lat * Math.PI) / 180) * 111320; let nb = 0; Object.values(L.ll.apts).forEach((p) => { if (Math.hypot((p.lng - sc.lng) * kx, (p.lat - sc.lat) * 110540) <= 1300) { b.extend(ll(p)); nb++; } }); if (nb < 3) Object.values(L.ll.apts).forEach((p) => b.extend(ll(p)));  M.setBounds(b, 90, 60, 90, window.innerWidth >= 900 ? 210 : 60); }
   }
   function viewSchool(id) {
     const s = schoolById(id);
