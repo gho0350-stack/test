@@ -30,7 +30,7 @@ def _retry(fn, tries=5, base=2.0):
     for t in range(tries):
         try: return fn()
         except m.ApiError as e:
-            if "[04]" not in str(e) and "요청 실패" not in str(e): raise
+            if "[04]" not in str(e) and "[05]" not in str(e) and "요청 실패" not in str(e): raise
             if t == tries - 1: raise
             time.sleep(base * (t + 1))
 
@@ -147,19 +147,21 @@ def bldrgst_fill(key, master, kapt, log=print):
     bjd = {}   # (gu, dong) -> 법정동코드 10자리 (K-apt 단지에서 확보)
     for a in kapt.values():
         if a.get("bjd"): bjd[(a["gu"], a["dong"])] = a["bjd"]
-    res = {"filled": 0, "failed": 0, "skipped_no_bjd": 0, "error": ""}
+    res = {"filled": 0, "failed": 0, "skipped_no_bjd": 0, "error": ""}; errs = 0
     for r in master:
         if "kapt" in r["sources"] or not r["lots"]: continue
         code = bjd.get((r["gu"], r["dong"]))
         if not code: res["skipped_no_bjd"] += 1; continue
         main, _, sub = r["lots"][0].replace("산", "").partition("-")
         try:
-            root = m.call(BLD, {"serviceKey": key, "sigunguCd": code[:5], "bjdongCd": code[5:], "platGbCd": "0", "bun": main.zfill(4), "ji": (sub or "0").zfill(4), "numOfRows": 10, "pageNo": 1})
+            root = _retry(lambda: m.call(BLD, {"serviceKey": key, "sigunguCd": code[:5], "bjdongCd": code[5:], "platGbCd": "0", "bun": main.zfill(4), "ji": (sub or "0").zfill(4), "numOfRows": 10, "pageNo": 1}), tries=3)
             items = root.findall(".//item"); apt = [i for i in items if "공동주택" in (i.findtext("mainPurpsCdNm") or "")]
             if apt:
                 i = apt[0]; r["households"] = r["households"] or (i.findtext("hhldCnt") or "").strip(); r["approved"] = r["approved"] or (i.findtext("useAprDay") or "").strip(); r["sources"].append("bldrgst"); res["filled"] += 1
             else: res["failed"] += 1
-        except m.ApiError as e: res["error"] = str(e)[:200]; res["failed"] += 1; break
+        except m.ApiError as e:
+            res["error"] = str(e)[:200]; res["failed"] += 1; errs += 1
+            if errs >= 5 and not res["filled"]: break          # 연속 실패면 활용신청/주소 문제로 보고 중단(사유는 report 에 남김)
     return res
 
 def run_master(key, targets=None, months=60, today=None, cache=None, log=print, on_kapt=None, deadline=None):

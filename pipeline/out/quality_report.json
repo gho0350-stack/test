@@ -3,9 +3,9 @@
  "warnings": [],
  "metrics": {
   "실거래 연결 단지": "43/46 (93.5%)",
-  "K-apt 연결 단지": "36/43 (83.7%)",
+  "K-apt 연결 단지": "43/43 (100.0%)",
   "K-apt 이전값 유지(stale)": 0,
-  "해제(취소) 거래 제외": "미집계",
+  "해제(취소) 거래 제외": 4355,
   "K-apt 오류": "없음",
   "실거래 기준일": "2026-11-24",
   "실거래 미연결 단지": [
@@ -19,7 +19,20 @@
    "단지:seorabeol-1"
   ],
   "NEIS 학원 동 단위": "있음",
-  "서울 전체 학교(NEIS)": "미수집",
+  "서울 전체 학교(NEIS)": 1416,
+  "API 점검 기준월": "202610",
+  "엔드포인트 응답": {
+   "RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev": "실패: [30] 등록되지 않은 서비스키 - 등록되지 않은 서비스키예요. 일반 인증키(Decoding)를 복사했는지 확인하고, 방금 신청했다면 1~2시간",
+   "RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade": "정상",
+   "RTMSDataSvcAptRent/getRTMSDataSvcAptRent": "정상",
+   "kapt_list": "정상",
+   "kapt_info": "정상"
+  },
+  "거래 응답에 해제 필드 존재": true,
+  "거래유형/계약구분 필드 존재": {
+   "거래유형": true,
+   "계약구분": true
+  },
   "학구도(학교군) 매칭": "미구현",
   "단지 폴리곤 확보율": "미구현"
  }
