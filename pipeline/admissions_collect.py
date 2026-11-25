@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+"""진학 실적 자동 수집(검색 -> 출처 정책 확인 -> 본문 가져오기 -> AI 추출 -> 근거 문구 검증 -> 검토대기 행 추가).
+  NAVER_CLIENT_ID/SECRET 과 AI 키(AI_PROVIDER 에 맞는 것)가 있어야 동작한다. 키가 없으면 아무것도 하지 않고 안내만 출력한다.
+출처 정책(data/admission_sources.csv 의 auto_policy): 예 = 자동 수집 허용 / 보류·아니오 = 본문을 가져오지 않고 링크만 data/admissions_manual_links.csv 에 올려 관리자 확인 대상으로 분리.
+이미 승인·대기 중인 (학교, 학년도, 범주)는 다시 검색하지 않는다(결측 중심). 같은 URL 은 한 번만 처리한다."""
+import csv, datetime, html, os, re, sys, urllib.parse, urllib.request
+import admissions_ai as ai
+import admissions_build as ab
+D = ab.D
+
+def policy_of(url, sources):
+    host = urllib.parse.urlparse(url).netloc.lower()
+    for s in sources:
+        for d in filter(None, s.get("domains", "").split(";")):
+            if d.split("/")[0] in host: return s
+    return None
+
+def fetch_text(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; school-map-pipeline)"})
+    t = urllib.request.urlopen(req, timeout=30).read().decode("utf8", "ignore")
+    t = re.sub(r"<script.*?</script>|<style.*?</style>", "", t, flags=re.S)
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", t))).strip()
+
+def in_season(today=None):
+    """입시 시즌(12~4월)은 매주, 그 외는 월 1회(매월 첫 주)만 실행한다."""
+    t = today or datetime.date.today(); return t.month in (12, 1, 2, 3, 4) or t.day <= 7
+
+def run(years=(2024, 2025, 2026), max_pages=30, log=print, search=ai.naver_search, extract=None, fetch=fetch_text, force=False):
+    if not force and not in_season(): log("시즌 외 주기(월 1회)에 해당하지 않아 건너뜁니다"); return {}
+    sources = ab.rd(D("admission_sources.csv")); raw = ab.rd(D("admissions_raw.csv")); usage = ai.Usage()
+    schools = [{"id": r["school_id"], "name": r["school_name"]} for r in ab.rd(D("school_admission.csv"))]
+    have = {}
+    for r in raw:
+        if r["status"] != "반려": have.setdefault((r["school_id"], int(r["admission_year"])), set()).add(r["category"])
+    seen_urls = {r["source_url"] for r in raw} | {r["url"] for r in ab.rd(D("admissions_manual_links.csv"))}
+    manual, added, pages = [], [], 0; stats = {"queries": 0, "auto_pages": 0, "manual_links": 0, "rows": 0, "rejected": 0}
+    for plan in ai.plan_queries(schools, list(years), have):
+        school = next(s for s in schools if s["id"] == plan["school_id"])
+        for q in plan["queries"][:3]:
+            try: items = search(q, usage=usage)
+            except Exception as e: log("검색 중단:", str(e)[:100]); items = []
+            stats["queries"] += 1
+            for it in items:
+                url = it["link"]
+                if url in seen_urls or not re.search(r"합격|진학|입시|대입|실적", it["title"] + it["desc"]) or school["name"][:2] not in it["title"] + it["desc"]: continue
+                seen_urls.add(url); src = policy_of(url, sources)
+                if not src or src["auto_policy"] != "예":   # 이용 조건이 불명확하거나 금지된 출처: 링크만 남겨 관리자 확인
+                    manual.append({"school_id": school["id"], "school_name": school["name"], "year": plan["year"], "title": it["title"], "url": url, "source_id": src["source_id"] if src else "unknown", "policy": src["auto_policy"] if src else "미분류", "found_at": datetime.date.today().isoformat()}); stats["manual_links"] += 1; continue
+                if pages >= max_pages: continue
+                pages += 1; stats["auto_pages"] += 1
+                try:
+                    text = fetch(url); resp = (extract or ai.ask_ai)(ai.PROMPT.format(school=school["name"], year=plan["year"]), text=text[:20000], usage=usage)
+                    ok, bad = ai.parse_rows(resp, text); stats["rejected"] += len(bad)
+                    for x in ok: added.append(ai.to_raw_row(x, school, plan["year"], src["source_id"], url, "텍스트", f"{src['source_id']}:{urllib.parse.urlparse(url).path}"))
+                except Exception as e: log("추출 실패:", url, str(e)[:100])
+    existing = {r["record_id"] for r in raw}; new = [r for r in added if r["record_id"] not in existing]
+    if new: ab.wr(D("admissions_raw.csv"), raw + new, ab.RAW_F)
+    if manual:
+        old = ab.rd(D("admissions_manual_links.csv")); ab.wr(D("admissions_manual_links.csv"), old + manual, ["school_id", "school_name", "year", "title", "url", "source_id", "policy", "found_at"])
+    usage.save(); stats["rows"] = len(new); log("수집 결과:", stats); return stats
+
+if __name__ == "__main__":
+    if not (os.environ.get("NAVER_CLIENT_ID") and os.environ.get("NAVER_CLIENT_SECRET")): print("NAVER_CLIENT_ID/NAVER_CLIENT_SECRET 이 없어 건너뜁니다"); sys.exit(0)
+    prov = os.environ.get("AI_PROVIDER", "gemini"); key = {"gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(prov)
+    if not key or not os.environ.get(key): print(f"{key} 가 없어 AI 추출을 건너뜁니다(검색 링크만 관리자 확인 목록에 올리려면 키 없이도 가능하도록 이후 확장)"); sys.exit(0)
+    run(force=os.environ.get("FORCE") == "1"); ab.main()   # 새 후보를 검증·검토 목록/HTML 로 반영

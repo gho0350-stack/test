@@ -1,0 +1,50 @@
+name: collect-admissions
+# 진학 실적 자동 수집: 검색(네이버) -> 출처 정책 확인 -> AI 추출 -> 검토 대기 행 추가. 서비스에는 관리자가 승인한 행만 반영된다.
+# 입시 시즌(12~4월)은 매주, 그 외에는 매월 첫 주에만 실제 수집한다(스크립트가 판단). 키가 없으면 아무것도 하지 않고 끝난다.
+on:
+  schedule:
+    - cron: '0 20 * * 1'    # 매주 화요일 05:00 (KST)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '시즌·주기와 무관하게 지금 실행'
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: collect-data
+  cancel-in-progress: false
+jobs:
+  admissions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python3 pipeline/test_admissions_ai.py
+      - id: collect
+        continue-on-error: true
+        run: python3 pipeline/admissions_collect.py
+        working-directory: pipeline
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          AI_MAX_CALLS: ${{ vars.AI_MAX_CALLS || '40' }}
+          NAVER_MAX_CALLS: ${{ vars.NAVER_MAX_CALLS || '200' }}
+          FORCE: ${{ inputs.force && '1' || '0' }}
+      - name: 변경된 데이터 커밋
+        run: |
+          git config user.name "eodisalji-bot"
+          git config user.email "eodisalji-bot@users.noreply.github.com"
+          git add data/admissions_raw.csv data/admissions_review.csv data/admissions_manual_links.csv pipeline/out/api_usage.json pipeline/out/admissions_review.md pipeline/out/admissions_review.html 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: 진학 실적 후보 갱신(검토 대기)" && git pull --rebase origin "$GITHUB_REF_NAME" && git push)
+      - name: 실패 표시
+        if: steps.collect.outcome == 'failure'
+        run: echo "수집 단계가 실패했습니다. collect 단계 로그를 확인하세요."; exit 1
