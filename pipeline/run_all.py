@@ -93,6 +93,9 @@ def do_master():
         gc = mm.geocode_master(os.environ["KAKAO_REST_KEY"], res["apts"], gc); dump("out/geo_cache.json", gc)
         res["report"]["geocoded"] = sum(1 for a in res["apts"] if a.get("coord")); 
     dump_gz(p, res)
+    try:
+        import build_master_data as bmd; bmd.run()   # 앱이 읽는 schoolmap/master-data.js 갱신(학교군 판정 포함)
+    except Exception as e: WARN.append(f"master-data.js 생성 실패: {type(e).__name__}: {str(e)[:100]}")
 
 def do_reference():
     import collect_reference as cr, build_university as bu
