@@ -2,7 +2,7 @@
 import csv, json, os, re, sys
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 CSV = os.path.join(ROOT, "data", "admissions.csv"); OUT = os.path.join(ROOT, "schoolmap", "admissions-data.js")
-NUMS = ("graduate_count", "medical_count", "sky_count", "inseoul_count")
+NUMS = ("graduate_count", "medical_count", "sky_count", "inseoul_count", "snu_count", "medgrp_count")
 ENUM = {"count_type": {"합격건수", "등록인원"}, "student_scope": {"재학생만", "재학생+졸업생"}, "duplicate_included": {"포함", "제외", "알수없음"}, "source_type": {"학교발표", "공식공시", "언론", "기타"}, "verified_status": {"확인완료", "미확인"}}
 
 def load():
