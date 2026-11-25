@@ -46,13 +46,19 @@ def b(v, ser=None, as_of=''):
 def run():
     m = json.load(gzip.open(os.path.join(ROOT, "pipeline/out/master.json.gz"), "rt", encoding="utf8"))
     zs = open(os.path.join(ROOT, "schoolmap/zones-data.js"), encoding="utf8").read(); Z = json.loads(zs[zs.index("{"):zs.rindex("}") + 1])
-    out, skipped, nocoord, border, outside = [], 0, 0, 0, []
+    # 앱에 싣는 구역: 샘플 학교가 속한 일반학교군 + 3단계로 묶인 학교군(용량 절감). 학교를 늘리면 자동으로 넓어진다.
+    sch_zone = set(Z["schoolZone"].values()); name2id = {z["name"].replace("학교군", ""): z["id"] for z in Z["zones"]}
+    meta = open(os.path.join(ROOT, "schoolmap/admission-rules.js"), encoding="utf8").read(); mi = meta.find("window.SG_RULES_META=")
+    pairs = json.loads(meta[mi + len("window.SG_RULES_META="):meta.rindex(";")])["integrated"] if mi >= 0 else []
+    need = set(sch_zone) | {name2id[x] for p in pairs for x in p if any(name2id.get(y) in sch_zone for y in p) and x in name2id}
+    out, skipped, nocoord, border, outside, notneeded = [], 0, 0, 0, [], 0
     for a in m["apts"]:
         if SKIP.search(a["name"]): skipped += 1; continue
         c = a.get("coord")
         if not c: nocoord += 1; continue
         zid, d = zone_of(c["lng"], c["lat"], Z["zones"])
         if zid is None: outside.append(f"{a['gu']} {a['dong']} {a['name']} ({d}m)"); continue
+        if zid not in need: notneeded += 1; continue
         if d: border += 1
         hh = int(float(a["households"])) if a.get("households") else None
         ap = a.get("approved") or ""
@@ -61,8 +67,8 @@ def run():
         yr = int(ap[:4]) if re.match(r"^\d{8}$", ap) else a.get("build_year")
         if yr: rec["yr"] = yr; rec["yk"] = 1 if re.match(r"^\d{8}$", ap) else 0
         if d: rec["zb"] = d                      # 경계 밖 250m 이내라 가까운 학교군으로 편입(단순화 오차 가능)
-        if a.get("sale"): rec["sale"] = b(a["sale"], a["series"].get("sale"), m["generatedAt"])
-        if a.get("jeonse"): rec["jeonse"] = b(a["jeonse"], a["series"].get("jeonse"), m["generatedAt"])
+        if a.get("sale"): rec["sale"] = b(a["sale"], a["series"].get("sale"), a.get("asof", m["generatedAt"]))
+        if a.get("jeonse"): rec["jeonse"] = b(a["jeonse"], a["series"].get("jeonse"), a.get("asof", m["generatedAt"]))
         ser = {k: {p: [[ym, v] for ym, v, _n in rows] for p, rows in (a["series"].get(k) or {}).items()} for k in ("sale", "jeonse")}
         if any(ser[k] for k in ser): rec["ser"] = ser
         rc = a.get("recent") or {}
@@ -70,7 +76,7 @@ def run():
         out.append(rec)
     js = "window.SG_MASTER=" + json.dumps({"asOf": m["generatedAt"], "months": m["months"], "apts": out}, ensure_ascii=False, separators=(",", ":")) + ";\n"
     open(os.path.join(ROOT, "schoolmap/master-data.js"), "w", encoding="utf8").write(js)
-    rep = {"단지": len(out), "오피스텔 등 제외": skipped, "좌표 없음 제외": nocoord, "경계 밖 250m 이내 편입": border, "학교군 밖 제외": len(outside), "학교군 밖 예": outside[:10], "KB": round(len(js.encode()) / 1024)}
+    rep = {"단지": len(out), "오피스텔 등 제외": skipped, "좌표 없음 제외": nocoord, "경계 밖 250m 이내 편입": border, "학교군 밖 제외": len(outside), "앱 대상 학교군 밖(미탑재)": notneeded, "학교군 밖 예": outside[:10], "KB": round(len(js.encode()) / 1024)}
     print(json.dumps(rep, ensure_ascii=False, indent=1)); return rep
 
 if __name__ == "__main__": run()

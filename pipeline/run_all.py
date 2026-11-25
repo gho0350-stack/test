@@ -76,23 +76,46 @@ def do_schools_all():
     import collect_schools_all as c
     print("== NEIS 서울 전체 학교"); rows = c.collect(os.environ["NEIS_KEY"]); dump("out/schools_all.json", rows); print(len(rows), "개교")
 
+GU_ORDER = ["강남구", "서초구", "송파구", "양천구", "노원구", "강동구", "성동구", "광진구", "동작구", "관악구", "종로구", "중구", "용산구",
+            "강서구", "영등포구", "구로구", "금천구", "성북구", "강북구", "도봉구", "동대문구", "중랑구", "마포구", "서대문구", "은평구"]
+
 def do_master():
-    import master as mm
-    print("== 전체 아파트 마스터 (K-apt + 실거래 + 건축물대장)")
-    p = "out/master.json.gz"; old = prev_gz(p)
+    """25개 구를 구 단위로 나눠 이어서 수집한다. 구마다 out/master_gu/<구>.json.gz 에 저장하고, 신선한(기본 30일) 구는 건너뛴다.
+    실행 예산(MASTER_BUDGET_MIN)이 끝나면 멈추고 다음 실행에서 이어간다. 끝나면 전체를 합쳐 master.json.gz 와 앱용 master-data.js 를 만든다."""
+    import master as mm, datetime
+    print("== 전체 아파트 마스터 (구 단위 이어받기)", flush=True)
+    key = os.environ["DATA_GO_KR_KEY"]; months = int(os.environ.get("MONTHS", "60")); fresh_days = int(os.environ.get("MASTER_REFRESH_DAYS", "30"))
+    deadline = START + float(os.environ.get("MASTER_BUDGET_MIN", "130")) * 60
+    os.makedirs("out/master_gu", exist_ok=True)
     kc = prev_gz("out/kapt_cache.json.gz") or {}
-    cache = dict(old or {}); cache["kapt_cache"] = {**kc, **(old or {}).get("kapt_cache", {})}
-    res = mm.run_master(os.environ["DATA_GO_KR_KEY"], months=int(os.environ.get("MONTHS", "60")), cache=cache,
-                        on_kapt=lambda kp: dump_gz("out/kapt_cache.json.gz", kp), deadline=START + float(os.environ.get("MASTER_BUDGET_MIN", "130")) * 60)
-    if res.get("partial"):
-        WARN.append(f"마스터: 시간 제한으로 실거래 수집이 미완료({', '.join(res['partial'])}). K-apt 조회분만 저장하고 마스터는 덮어쓰지 않음. 다시 실행하면 이어서 진행"); return
-    if old and res["report"]["complexes"] < 0.8 * old["report"]["complexes"]:
-        WARN.append(f"마스터 단지 수 {old['report']['complexes']} -> {res['report']['complexes']} 급감: 이전 결과 유지"); return
-    if os.environ.get("KAKAO_REST_KEY"):
-        gc = prev("out/geo_cache.json") or {}
-        gc = mm.geocode_master(os.environ["KAKAO_REST_KEY"], res["apts"], gc); dump("out/geo_cache.json", gc)
-        res["report"]["geocoded"] = sum(1 for a in res["apts"] if a.get("coord")); 
-    dump_gz(p, res)
+    gc = prev("out/geo_cache.json") or {}
+    today = datetime.date.today(); done, todo = [], []
+    for gu in GU_ORDER:
+        part = prev_gz(f"out/master_gu/{gu}.json.gz")
+        if part and (today - datetime.date.fromisoformat(part["generatedAt"])).days < fresh_days: done.append(gu)
+        else: todo.append(gu)
+    print(f"최신 구 {len(done)}개, 수집할 구 {len(todo)}개: {', '.join(todo) or '-'}", flush=True)
+    for gu in todo:
+        if _t.time() > deadline - 20 * 60:       # 한 구에 약 20분 걸릴 수 있어, 남은 예산이 그보다 적으면 새 구를 시작하지 않는다
+            print(f"{gu}부터는 시간 예산이 부족해 다음 실행으로 넘깁니다", flush=True); break
+        res = mm.run_master(key, targets=[gu], months=months, cache={"kapt_cache": kc}, deadline=deadline,
+                            on_kapt=lambda kp: (kc.update(kp), dump_gz("out/kapt_cache.json.gz", kc)))
+        if res.get("partial"): WARN.append(f"{gu}: 시간 제한으로 실거래 수집이 미완료. 저장하지 않고 다음 실행에서 다시 시도"); break
+        old = prev_gz(f"out/master_gu/{gu}.json.gz")
+        if old and len(res["apts"]) < 0.8 * len(old["apts"]):
+            WARN.append(f"{gu}: 단지 수 {len(old['apts'])} -> {len(res['apts'])} 급감, 이전 결과 유지"); continue
+        if os.environ.get("KAKAO_REST_KEY"):
+            gc = mm.geocode_master(os.environ["KAKAO_REST_KEY"], res["apts"], gc); dump("out/geo_cache.json", gc)
+        for a in res["apts"]: a["asof"] = res["generatedAt"]
+        dump_gz(f"out/master_gu/{gu}.json.gz", {"gu": gu, "generatedAt": res["generatedAt"], "apts": res["apts"], "report": res["report"]})
+        print(f"{gu} 저장: {len(res['apts'])}개 단지", flush=True)
+    parts = [p for p in (prev_gz(f"out/master_gu/{g}.json.gz") for g in GU_ORDER) if p]
+    if not parts: return
+    apts = [a for p in parts for a in p["apts"]]
+    rep = {"gus": [p["gu"] for p in parts], "gu_count": len(parts), "complexes": len(apts), "geocoded": sum(1 for a in apts if a.get("coord")), "by_gu": {p["gu"]: len(p["apts"]) for p in parts},
+           "pending_gus": [g for g in GU_ORDER if g not in [p["gu"] for p in parts]]}
+    dump_gz("out/master.json.gz", {"version": 2, "generatedAt": max(p["generatedAt"] for p in parts), "months": months, "apts": apts, "report": rep})
+    print(f"마스터 통합: {len(parts)}/25개 구, {len(apts)}개 단지", flush=True)
     try:
         import build_master_data as bmd; bmd.run()   # 앱이 읽는 schoolmap/master-data.js 갱신(학교군 판정 포함)
     except Exception as e: WARN.append(f"master-data.js 생성 실패: {type(e).__name__}: {str(e)[:100]}")
@@ -113,7 +136,8 @@ def do_reference():
 JOBS = [("DATA_GO_KR_KEY", "API 점검", do_probe), ("NEIS_KEY", "서울 전체 학교", do_schools_all), ("DATA_GO_KR_KEY", "국토부 실거래", do_molit),
         ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)]
 if os.environ.get("RUN_REFERENCE") == "1": JOBS.append(("DATA_GO_KR_KEY", "대학·학과 마스터", do_reference))   # 월 1회 수동
-if os.environ.get("RUN_MASTER") == "1": JOBS.append(("DATA_GO_KR_KEY", "전체 아파트 마스터", do_master))   # 무거운 작업: 수동 실행 때만
+if os.environ.get("RUN_ONLY") == "master": JOBS = []
+if os.environ.get("RUN_MASTER") == "1" or os.environ.get("RUN_ONLY") == "master": JOBS.append(("DATA_GO_KR_KEY", "전체 아파트 마스터", do_master))   # 무거운 작업: 수동 실행 때만
 for key, name, fn in JOBS:
     if os.environ.get(key): step(name, fn)
     else: print(f"{key} 없음: {name} 건너뜀")
