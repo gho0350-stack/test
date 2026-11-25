@@ -134,6 +134,10 @@
   const zoneIdByKey = Object.fromEntries((Z.zones || []).map((z) => [zKey(z), z.id]));
   const partnerZones = (s) => { const k = zKey(zoneOf(s)); if (!k) return []; const out = new Set(); META.integrated.forEach((p) => { if (p.includes(k)) p.filter((x) => x !== k).forEach((x) => { if (zoneIdByKey[x]) out.add(zoneIdByKey[x]); }); }); return [...out]; };
   SCHOOLS.forEach((sc) => { if (isGen(sc) && MAPTS.length) { sc.apts3 = partnerZones(sc).flatMap((zid) => ZAPTS[zid] || []); sc.partners = partnerZones(sc).map((zid) => zKey(Z.zones.find((z) => z.id === zid))); } });
+  /* 수집 범위: 일반학교군별 소속 자치구(서울시교육청 2027 기본계획 붙임2)와 현재 마스터에 있는 구 */
+  const ZGU = { 동부: ['동대문구', '중랑구'], 서부: ['마포구', '서대문구', '은평구'], 남부: ['영등포구', '구로구', '금천구'], 북부: ['노원구', '도봉구'], 중부: ['종로구', '중구', '용산구'], 강동송파: ['강동구', '송파구'], 강서양천: ['강서구', '양천구'], 강남서초: ['강남구', '서초구'], 동작관악: ['동작구', '관악구'], 성동광진: ['성동구', '광진구'], 성북강북: ['성북구', '강북구'] };
+  const GUS = new Set(MD.map((m) => m.gu));
+  const covOf = (key) => { const g = ZGU[key] || [], got = g.filter((x) => GUS.has(x)); return { got, miss: g.filter((x) => !GUS.has(x)), full: got.length === g.length }; };
   const isGenAny = () => true;
   const hasData = (a) => (a.master ? !!(a.rt && (a.rt.sale || a.rt.jeonse)) : linked(a));
   const wm = (v) => (v == null ? '-' : v + '분'), hhT = (a) => (a.hh ? a.hh.toLocaleString() : '-'), yrT = (a) => (a.year ? a.year + '년' : '-');
@@ -446,7 +450,7 @@
         const show = o.on || !hit(box); if (show) placed.push(box);
         const cls = 'kb' + (o.on ? ' on' : '') + (o.out ? ' out' : '') + (o.alt ? ' alt' : '') + (o.v == null ? ' na' : '');
         const price = o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? `<small>${o.alt}㎡</small>` : '');
-        const tip = `${o.a.name} · ${o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? ' (' + o.alt + '㎡형)' : '')}${o.out ? ' · 3단계 배정 검토 범위' : ''}`;
+        const tip = `${o.a.name} · ${o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? ' (' + o.alt + '㎡형)' : '')}${o.out ? ' · 3단계 통합학교군 지역(배정 보장 아님)' : ''}`;
         const n = show && (tier > 1 || (tier > 0 && o.v != null)) ? node(cls + (tier === 1 ? ' sm' : ''), `<b>${price}</b>${tier === 2 ? `<span>${esc(o.a.name)}${kind === 'jeonse' ? ' · 전세' : ''}</span>` : ''}`, () => pick(s, o.a.id))
           : node('kd' + (o.out ? ' out' : '') + (o.on ? ' on' : ''), '', () => pick(s, o.a.id));
         n.title = tip; ov(o.p, n, n.className.indexOf('kb') === 0 ? 1.15 : 0.5, o.on ? 9 : 5);
@@ -573,16 +577,26 @@
     let list = matched.slice(0, ui.lim || 30); const sel = pool.find((a) => a.id === ui.sel); if (sel && !list.includes(sel)) list = [sel].concat(list);
     const rows = list.map((a) => {
       const on = a.id === ui.sel, no = all.indexOf(a) + 1, w = walkTo(a, s);
-      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${no < 1 || no > 99 ? '·' : no}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}<small class="muted" style="display:block">${a.master ? esc(a.dong) + ' · ' : ''}${gen ? (s.apts.includes(a) ? '2단계 지원 가능 · ' : '3단계 검토 · ') : ''}도보 ${w == null ? '-' : w + '분 (추정)'}</small></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매 평균</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세 평균</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
+      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${no < 1 || no > 99 ? '·' : no}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}<small class="muted" style="display:block">${a.master ? esc(a.dong) + ' · ' : ''}${gen ? (s.apts.includes(a) ? '2단계 지원 가능 지역 · ' : '3단계 통합학교군 지역 · ') : ''}도보 ${w == null ? '-' : w + '분 (추정)'}</small></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매 평균</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세 평균</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
         ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${hhT(a)}</b></div><div><span>준공연도</span><b>${yrT(a)}</b></div><div><span>${esc(s.name)} 도보</span><b>${walkHi(a, s)}</b></div><div><span>초등 도보</span><b>${wm(a.elem)}</b></div><div><span>중등 도보</span><b>${wm(a.mid)}</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
     }).join('');
     const sv = near.map((a) => pr(a, 'sale')).filter((v) => v != null), jv = near.map((a) => pr(a, 'jeonse')).filter((v) => v != null), withData = near.filter((a) => pr(a, k) != null).length;
-    const rl = gen ? (ui.stage3 ? '2단계 지원 가능 + 3단계 배정 검토' : '2단계 지원 가능') + (ui.radius ? ` · 도보 ${ui.radius}분 이내` : '') : `통학권 · 학교 도보 ${ui.radius}분 이내`;
-    $('#panel').innerHTML = `<div class="plist-h"><h3>${rl} 아파트 (${all.length}곳 · ${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
+    const rule = RULES[s.id] || {}, myKey = zKey(zoneOf(s)), cov = (k) => covOf(k), covTxt = (k) => `${k} ${cov(k).got.length}/${(ZGU[k] || []).length}개 구`;
+    let notice = '';
+    if (gen) {
+      const mine = cov(myKey);
+      const allPartners = [...new Set(META.integrated.filter((p) => p.includes(myKey)).flat().filter((x) => x !== myKey))];
+      notice += `<div class="cov"><b>데이터 수집 범위</b> · 서울 25개 구 중 ${GUS.size}개 구(${[...GUS].join('·').replace(/구/g, '')})만 수집했어요. 아래 곳수는 전체 아파트가 아니라 수집된 데이터 기준이에요.<br>2단계 지역: ${covTxt(myKey)}${mine.full ? '' : ` (미수집 ${mine.miss.join('·')})`}</div>`;
+      if (ui.stage3) notice += `<div class="cov s3"><b>3단계 통합학교군 지역</b> · 1·2단계 미배정자를 대상으로 통합학교군 안에서 배정하는 범위예요. 실제 배정 학교는 지원 이력, 통학 편의, 학교별 수용 여건 등에 따라 달라지며 특정 학교 배정을 보장하지 않아요. 배정 확률은 계산하지 않아요.<br>이 학교와 묶인 학교군: ${allPartners.map((k) => `${covTxt(k)}${cov(k).got.length ? '' : ' (미수집)'}`).join(' · ')}</div>`;
+    }
+    if (rule.note) notice += `<div class="cov"><b>별도 안내</b> · ${esc(rule.note)}</div>`;
+    const rl = gen ? (ui.stage3 ? '2단계 지원 가능 지역 + 3단계 통합학교군 지역' : '2단계 지원 가능 지역') + (ui.radius ? ` · 도보 ${ui.radius}분 이내` : '') : `학교 주변 통학권 · 도보 ${ui.radius}분 이내`;
+    $('#panel').innerHTML = `<div class="plist-h"><h3>${rl} 아파트 (수집 기준 ${all.length}곳 · ${ui.area}㎡)</h3><span class="seg">${[['sale', '매매가'], ['jeonse', '전세가']].map(([v, l]) => `<button class="${k === v ? 'on' : ''}" data-act="list-kind" data-v="${v}">${l}</button>`).join('')}</span></div>
       <div style="padding:0 var(--gx) 8px;display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted" style="font-size:13px">매매 ${range(sv.length ? Math.min(...sv) : null, sv.length ? Math.max(...sv) : null)} · 전세 ${range(jv.length ? Math.min(...jv) : null, jv.length ? Math.max(...jv) : null)}</span>${areaSeg()}</div>
-      <div class="chips" style="padding:0 var(--gx) 8px">${(gen ? [[0, '2단계 지원 가능 전체'], [10, '도보 10분'], [20, '도보 20분']] : [[10, '도보 10분'], [20, '도보 20분'], [30, '도보 30분']]).map(([v, l]) => `<button class="chip ${ui.radius === v ? 'on' : ''}" data-act="radius" data-v="${v}">${l}</button>`).join('')}<span class="seg" style="margin-left:auto">${[['dist', '가까운 순'], ['price', '가격 순']].map(([v, l]) => `<button class="${ui.sortBy === v ? 'on' : ''}" data-act="sortby" data-v="${v}">${l}</button>`).join('')}</span>${gen ? `<button class="chip ${ui.stage3 ? 'on' : ''}" data-act="stage3" title="3단계는 1·2단계에서 배정되지 않은 학생을 통합학교군 안에서 전산배정하는 절차예요">3단계 배정 검토</button>` : ''}</div>
+      <div class="chips" style="padding:0 var(--gx) 8px">${(gen ? [[0, '2단계 지원 가능 전체'], [10, '도보 10분'], [20, '도보 20분']] : [[10, '도보 10분'], [20, '도보 20분'], [30, '도보 30분']]).map(([v, l]) => `<button class="chip ${ui.radius === v ? 'on' : ''}" data-act="radius" data-v="${v}">${l}</button>`).join('')}<span class="seg" style="margin-left:auto">${[['dist', '가까운 순'], ['price', '가격 순']].map(([v, l]) => `<button class="${ui.sortBy === v ? 'on' : ''}" data-act="sortby" data-v="${v}">${l}</button>`).join('')}</span>${gen ? `<button class="chip ${ui.stage3 ? 'on' : ''}" data-act="stage3" title="3단계는 1·2단계에서 배정되지 않은 학생을 통합학교군 안에서 전산배정하는 절차예요">3단계 통합학교군 지역</button>` : ''}</div>
+      ${notice}
       <div class="pf"><label>${ui.area}㎡ 매매 <input id="mxs" type="number" min="1" step="0.5" inputmode="decimal" placeholder="최대 억" value="${ui.maxSale == null ? '' : ui.maxSale}"></label><label>전세 <input id="mxj" type="number" min="1" step="0.5" inputmode="decimal" placeholder="최대 억" value="${ui.maxJeonse == null ? '' : ui.maxJeonse}"></label></div>
-      <div style="padding:0 var(--gx) 10px"><input id="aq" class="aq" type="search" value="${esc(q)}" placeholder="단지명·동 검색" aria-label="단지 검색"><small class="muted" style="display:block;margin-top:6px">가격은 최근 12개월 거래 평균이에요. 이 ${ui.area}㎡형은 ${withData}곳에 거래가 있고, 없는 단지는 '-'로 보여요. ${gen ? `학교군 경계 안이면 2단계 지원 대상이지만 특정 학교 배정이 확정되거나 배정 확률이 높다는 뜻은 아니에요. ${ui.stage3 ? `3단계는 1·2단계에서 배정되지 않은 학생을 통합학교군(${esc((s.partners || []).join('·') || '-')}과 묶인 범위) 안에서 통학편의·수용여건 등을 고려해 전산배정하는 절차라서, 인접 학교군 거주가 곧 지원 자격이나 배정 가능성을 뜻하지 않아요. 이번 데이터는 수집한 6개 구 안의 단지만 보여요. ` : ''}거리는 통학 참고용이에요.` : '자율고·자사고는 거주지로 배정되지 않아요. 거리는 통학 참고용이에요.'} 가까운 순에서는 거래가 있는 단지를 먼저 보여줘요.</small></div>
+      <div style="padding:0 var(--gx) 10px"><input id="aq" class="aq" type="search" value="${esc(q)}" placeholder="단지명·동 검색" aria-label="단지 검색"><small class="muted" style="display:block;margin-top:6px">가격은 최근 12개월 거래 평균이에요. 이 ${ui.area}㎡형은 ${withData}곳에 거래가 있고, 없는 단지는 '-'로 보여요. ${gen ? `학교군 경계 안이면 2단계 지원 대상이지만 특정 학교 배정이 확정되거나 배정 확률이 높다는 뜻은 아니에요. 거리는 통학 참고용이에요.` : '자율고·자사고는 거주지로 배정되지 않아요. 거리는 통학 참고용이에요.'} 가까운 순에서는 거래가 있는 단지를 먼저 보여줘요.</small></div>
       ${rows || '<div class="empty">조건에 맞는 단지가 없어요. 범위를 넓혀 보세요.</div>'}
       ${matched.length > list.length ? `<div style="padding:10px var(--gx) 16px"><button class="btn block" data-act="more">${matched.length - list.length}곳 더 보기</button></div>` : ''}`;
     const num = (id, key) => { const el = $(id); if (el) el.onchange = (e) => { const v = parseFloat(e.target.value); ui[key] = isNaN(v) || v <= 0 ? null : v; ui.lim = 30; const cs = curSchool(); drawPanel(cs); drawMap(cs); }; }; num('#mxs', 'maxSale'); num('#mxj', 'maxJeonse');
