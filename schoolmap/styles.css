@@ -438,3 +438,13 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 @media (max-width: 899px) { #kmap { height: clamp(380px, 62vh, 560px); } #map { height: clamp(340px, 56vh, 520px); } }
 
 .kz { font-weight: 800; color: var(--accent); margin-bottom: 2px; }
+
+/* 지도 말풍선: 확대 수준별/학교군 밖/다른 평형 가격 */
+.kb.sm { padding: 3px 7px 4px; border-radius: 10px; } .kb.sm b { font-size: 12px; }
+.kb b small { font-size: 10px; font-weight: 600; margin-left: 3px; opacity: .8; }
+.kb.out { border-color: #8a9490; } .kb.out b { color: #6b7570; } .kb.out::after { border-top-color: #8a9490; } .kb.out.on { background: #6b7570; }
+.kb.alt { border-style: dashed; } .kb.na b { color: var(--muted); font-weight: 600; }
+.kd { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); cursor: pointer; }
+.kd.out { background: #8a9490; } .kd.on { background: #e5483b; }
+
+.aq { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); font: inherit; font-size: 14px; }

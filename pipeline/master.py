@@ -30,9 +30,12 @@ def _retry(fn, tries=5, base=2.0):
     for t in range(tries):
         try: return fn()
         except m.ApiError as e:
-            if "[04]" not in str(e) and "요청 실패" not in str(e): raise
+            if "[04]" not in str(e) and "[05]" not in str(e) and "요청 실패" not in str(e): raise
             if t == tries - 1: raise
             time.sleep(base * (t + 1))
+
+DEADLINE = [None]   # epoch 초. 넘으면 새 호출을 멈추고 지금까지의 결과를 돌려준다(워크플로 제한 시간 보호)
+def over(): return DEADLINE[0] is not None and time.time() > DEADLINE[0]
 
 def kapt_collect(key, targets, cache=None, log=print, max_calls=None, pause=0.15):
     """대상 구의 K-apt 단지 전체 + 기본정보. cache(이전 결과)에 있는 단지코드는 재조회하지 않는다.
@@ -51,7 +54,7 @@ def kapt_collect(key, targets, cache=None, log=print, max_calls=None, pause=0.15
         new = fail = 0
         for a in lst:
             if a["code"] in cache: out[a["code"]] = dict(cache[a["code"]], gu=gu); continue
-            if max_calls is not None and calls >= max_calls: skipped += 1; continue
+            if (max_calls is not None and calls >= max_calls) or over(): skipped += 1; continue
             try:
                 time.sleep(pause); calls += 1
                 h, body = _retry(lambda: m.kcall(m.KAPT_INFO, {"serviceKey": key, "kaptCode": a["code"]})); it = body.get("item") if isinstance(body, dict) else None
@@ -66,11 +69,13 @@ def kapt_collect(key, targets, cache=None, log=print, max_calls=None, pause=0.15
     if skipped: log(f"K-apt 호출 한도 보호: {skipped}개 단지는 다음 실행에서 이어서 조회")
     return out
 
+PARTIAL = []
 def molit_collect(key, targets, months, today, ep, log=print):
     """대상 구의 실거래를 (구, 동, 정규화 단지명) 단위로 집계. 해제 거래 제외, 월별 시리즈 포함."""
     ents = {}; excluded = defaultdict(int); yms = m.months_back(months, today)
     for gu, lawd in m.LAWD.items():
         if gu not in targets: continue
+        if over(): log(gu, "시간 제한으로 실거래 수집 중단"); PARTIAL.append(gu); continue
         for kind in ("trade", "rent"):
             for ym in yms:
                 for r in m.fetch_month(kind, lawd, ym, key, ep[kind]):
@@ -142,30 +147,34 @@ def bldrgst_fill(key, master, kapt, log=print):
     bjd = {}   # (gu, dong) -> 법정동코드 10자리 (K-apt 단지에서 확보)
     for a in kapt.values():
         if a.get("bjd"): bjd[(a["gu"], a["dong"])] = a["bjd"]
-    res = {"filled": 0, "failed": 0, "skipped_no_bjd": 0, "error": ""}
+    res = {"filled": 0, "failed": 0, "skipped_no_bjd": 0, "error": ""}; errs = 0
     for r in master:
         if "kapt" in r["sources"] or not r["lots"]: continue
         code = bjd.get((r["gu"], r["dong"]))
         if not code: res["skipped_no_bjd"] += 1; continue
         main, _, sub = r["lots"][0].replace("산", "").partition("-")
         try:
-            root = m.call(BLD, {"serviceKey": key, "sigunguCd": code[:5], "bjdongCd": code[5:], "platGbCd": "0", "bun": main.zfill(4), "ji": (sub or "0").zfill(4), "numOfRows": 10, "pageNo": 1})
+            root = _retry(lambda: m.call(BLD, {"serviceKey": key, "sigunguCd": code[:5], "bjdongCd": code[5:], "platGbCd": "0", "bun": main.zfill(4), "ji": (sub or "0").zfill(4), "numOfRows": 10, "pageNo": 1}), tries=3)
             items = root.findall(".//item"); apt = [i for i in items if "공동주택" in (i.findtext("mainPurpsCdNm") or "")]
             if apt:
                 i = apt[0]; r["households"] = r["households"] or (i.findtext("hhldCnt") or "").strip(); r["approved"] = r["approved"] or (i.findtext("useAprDay") or "").strip(); r["sources"].append("bldrgst"); res["filled"] += 1
             else: res["failed"] += 1
-        except m.ApiError as e: res["error"] = str(e)[:200]; res["failed"] += 1; break
+        except m.ApiError as e:
+            res["error"] = str(e)[:200]; res["failed"] += 1; errs += 1
+            if errs >= 5 and not res["filled"]: break          # 연속 실패면 활용신청/주소 문제로 보고 중단(사유는 report 에 남김)
     return res
 
-def run_master(key, targets=None, months=60, today=None, cache=None, log=print):
+def run_master(key, targets=None, months=60, today=None, cache=None, log=print, on_kapt=None, deadline=None):
     key = urllib.parse.unquote(key.strip()); today = today or date.today(); targets = targets or list(m.LAWD)
     ep = {k: m.find_endpoint(k, key, today) for k in m.EP}
+    DEADLINE[0] = deadline; PARTIAL.clear()
     kapt = kapt_collect(key, targets, (cache or {}).get("kapt_cache"), log, max_calls=int(os.environ.get("KAPT_MAX_CALLS", "6000")))
+    if on_kapt: on_kapt(kapt)                       # K-apt 조회분은 먼저 저장해 다음 실행에서 이어받는다
     ents, excluded = molit_collect(key, targets, months, today, ep, log)
     master, rep = join(kapt, ents, today)
     rep["bldrgst"] = bldrgst_fill(key, master, kapt, log); rep["cancelled_excluded"] = excluded
     rep.update({"complexes": len(master), "kapt_total": len(kapt), "molit_entities": len(ents), "endpoints": {k: m.EP[k][ep[k]] for k in ep}})
-    return {"version": 1, "generatedAt": today.isoformat(), "months": months, "apts": master, "kapt_cache": kapt, "report": rep}
+    return {"version": 1, "generatedAt": today.isoformat(), "months": months, "apts": master, "kapt_cache": kapt, "report": rep, "partial": list(PARTIAL)}
 
 def geocode_master(kakao_key, master, cache=None, log=print, limit=None):
     """마스터 단지의 대표 좌표(첫 번째 지번 기준). 이미 변환한 단지(uid)는 cache 에서 재사용한다."""

@@ -5,9 +5,11 @@ import csv, gzip, json, os, re, sys
 from collections import Counter
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 SKY_UNIV = ("서울대학교", "연세대학교", "고려대학교")
-RULES = {   # 의치한약수: 학과명 기준 (한의/치의/수의가 의학과로 잡히지 않도록 앵커)
-    "MED": (r"^(의예과|의학과|의학부|의과대학)$", r"한의|치의|수의"), "DENT": (r"^(치의예과|치의학과|치의학부)$", None), "KMED": (r"^(한의예과|한의학과|한의학부)$", None),
-    "PHARM": (r"^(약학과|약학부)$", None), "VET": (r"^(수의예과|수의학과|수의학부)$", None)}
+UNDERGRAD_KINDS = ("대학교", "교육대학", "산업대학")   # 실서버 schlKndNm 값 기준
+SUF = r"(\((본과|예과|본|예|.*)\))?$"      # "의학과(본과)", "의학부(의예)" 같은 변형 허용
+RULES = {   # 의치한약수: 학과명 기준 (실서버 변형 확인: 의학과(본과)/의학부(의예)/의예과)
+    "MED": (r"^(의예과|의학과|의학부|의과대학)" + SUF, r"한의|치의|수의"), "DENT": (r"^(치의예과|치의학과|치의학부)" + SUF, None), "KMED": (r"^(한의예과|한의학과|한의학부)" + SUF, None),
+    "PHARM": (r"^(약학과|약학부|약학대학)" + SUF, None), "VET": (r"^(수의예과|수의학과|수의학부)" + SUF, None)}
 INSEOUL_EXCLUDE_NAME = ("사이버", "방송통신", "원격", "디지털")
 
 def g(d, *keys):
@@ -17,15 +19,16 @@ def g(d, *keys):
 
 def classify_major(m, univ_kind):
     name = g(m, "korMjrNm"); school = g(m, "schlNm"); area = g(m, "mjrAreaNm"); degree = g(m, "pbnfDgriCrseDivNm"); status = g(m, "schlMjrStatNm")
-    flags = {}
-    for cat, (inc, exc) in RULES.items(): flags[cat] = bool(re.search(inc, name)) and not (exc and re.search(exc, name))
+    kind = g(m, "schlKndNm") or univ_kind
     seoul = area.startswith("서울")
+    ok_kind = kind in UNDERGRAD_KINDS and not any(x in school for x in INSEOUL_EXCLUDE_NAME)   # 대학교·교육대학·산업대학. 전문대·사이버·방송통신·각종학교·대학원 제외
+    ok_degree = degree in ("학사", "학석사통합")                                                # "전문학사"·"석사" 등 제외
+    ok_status = not any(x in status for x in ("폐지", "폐과", "폐쇄"))                         # 학과 상태 값은 실서버 기준(기존/변경/신설/분리/통합 허용)
+    ok = ok_kind and ok_degree and ok_status
+    flags = {cat: ok and bool(re.search(inc, name)) and not (exc and re.search(exc, name)) for cat, (inc, exc) in RULES.items()}
     flags["SEOUL_CAMPUS"] = seoul
-    flags["SKY"] = any(school == u for u in SKY_UNIV) and seoul
-    ok_kind = ("대학" in univ_kind) and not any(x in univ_kind for x in ("전문", "대학원")) and not any(x in school for x in INSEOUL_EXCLUDE_NAME)
-    ok_degree = ("학사" in degree) or (degree == "")          # 학위과정 값은 실서버 확인 후 조정
-    ok_status = not any(x in status for x in ("폐지", "폐과", "폐쇄"))
-    flags["INSEOUL"] = seoul and ok_kind and ok_degree and ok_status
+    flags["SKY"] = ok and seoul and school in SKY_UNIV      # 서울대, 연세 신촌(서울 캠퍼스), 고려 서울 (강원·세종 등 분교 제외)
+    flags["INSEOUL"] = ok and seoul
     return flags
 
 def build(ref):
@@ -35,7 +38,7 @@ def build(ref):
     for x in ref["major"]:
         f = classify_major(x, kind.get(g(x, "schlNm"), ""))
         mm.append({"major_id": g(x, "kediMjrId"), "school": g(x, "schlNm"), "college": g(x, "clgNm"), "major": g(x, "korMjrNm"), "std_class_id": g(x, "stdClftMjrId"), "area": g(x, "mjrAreaNm"), "area_sigungu": g(x, "mjrAreaSignguNm"),
-                   "degree": g(x, "pbnfDgriCrseDivNm"), "status": g(x, "schlMjrStatNm"), "day_night": g(x, "dghtDivNm"), "quota": g(x, "eschlPscpNum"), "survey_year": g(x, "svyYr"), **{k.lower(): int(v) for k, v in f.items()}})
+                   "degree": g(x, "pbnfDgriCrseDivNm"), "status": g(x, "schlMjrStatNm"), "day_night": g(x, "dghtDivNm"), "quota": g(x, "eschlPscpNum"), "survey_year": g(x, "svyYr"), "school_kind": g(x, "schlKndNm"), **{k.lower(): int(v) for k, v in f.items()}})
     return um, mm
 
 def write(um, mm):
@@ -48,7 +51,8 @@ def report(um, mm):
     c = Counter(); kinds = Counter(u["kind"] for u in um); degs = Counter(x["degree"] for x in mm); stat = Counter(x["status"] for x in mm)
     for x in mm:
         for k in ("med", "dent", "kmed", "pharm", "vet", "sky", "inseoul", "seoul_campus"): c[k] += x[k]
-    return {"대학 수": len(um), "학과 수": len(mm), "분류별 학과 수": dict(c), "대학 종류 값": dict(kinds), "학위과정 값": dict(degs), "학과 상태 값": dict(stat)}
+    missing = {s: [k for k in ("med",) if not any(x["school"] == s and x[k] for x in mm)] for s in SKY_UNIV}
+    return {"SKY 대학 중 의대 학과가 잡히지 않은 곳(수동 확인 필요)": [s for s, v in missing.items() if v], "의대 학과가 잡힌 학교 수": len({x["school"] for x in mm if x["med"]}), "대학 수": len(um), "학과 수": len(mm), "분류별 학과 수": dict(c), "대학 종류 값": dict(kinds), "학위과정 값": dict(degs), "학과 상태 값": dict(stat)}
 
 if __name__ == "__main__":
     with gzip.open(os.path.join(ROOT, "pipeline", "out", "reference.json.gz"), "rt", encoding="utf8") as f: ref = json.load(f)

@@ -4,7 +4,7 @@
  - 대학별 학과정보      apis.data.go.kr/B340014/SchoolMajorInfoService/getSchoolMajorInfo
  - 학교학구도연계정보 표준데이터  api.data.go.kr/openapi/tn_pubr_public_schul_atndskl_zn_drw_lnkinfo_api
 각 API 는 활용신청이 필요하다. 응답 필드는 페이지 명세 기준이며 실서버 응답은 처음 실행 때 확인한다(미확인 값은 리포트에 남김)."""
-import json, urllib.parse, urllib.request
+import json, urllib.error, urllib.parse, urllib.request
 import colab_molit as m
 
 BASE_B34 = "https://apis.data.go.kr/B340014/"
@@ -38,16 +38,25 @@ def _first_nonempty(url, key, log, label):
     return []
 
 def collect_university(key, log=print):
-    return {"univ": _first_nonempty(UNIV, key, log, "대학"), "major": _first_nonempty(MAJOR, key, log, "학과")}
+    UK = ("schlId", "schlNm", "schlKndNm", "schlDivNm", "schlEstbDivNm", "psbsDivNm", "pbnfAreaNm", "postNoAdrs", "schlUrlAdrs", "svyYr")
+    MK = ("kediMjrId", "schlNm", "schlKndNm", "clgNm", "korMjrNm", "stdClftMjrId", "mjrAreaNm", "mjrAreaSignguNm", "pbnfDgriCrseDivNm", "schlMjrStatNm", "schlMjrCharNm", "dghtDivNm", "lsnTrmNm", "onsfSrsClftNm", "eschlPscpNum", "svyYr")
+    univ = _first_nonempty(UNIV, key, log, "대학"); major = _first_nonempty(MAJOR, key, log, "학과")   # 용량 절감: 쓰는 필드만 저장
+    return {"univ": [{k: u.get(k) for k in UK} for u in univ], "major": [{k: x.get(k) for k in MK} for x in major]}
 
 def collect_zone_links(key, log=print):
-    """odcloud 형식: ?page=&perPage=&serviceKey= -> {data:[...], totalCount}. 서울 행만 남긴다(컬럼명은 첫 실행 후 확인)."""
+    """odcloud 형식: ?page=&perPage=&serviceKey= -> {data:[...], totalCount}. (kcall 은 data.go.kr 표준 형식 전용이라 직접 호출) 서울 행만 남긴다."""
     out, page = [], 1
     while page <= 100:
-        h, body = m.kcall(ZONELINK, {"serviceKey": key, "page": page, "perPage": 1000, "returnType": "JSON"})
-        rows = (body or {}).get("data") or []
+        q = urllib.parse.urlencode({"serviceKey": key, "page": page, "perPage": 1000, "returnType": "JSON"})
+        try: raw = urllib.request.urlopen(ZONELINK + "?" + q, timeout=60).read()
+        except urllib.error.HTTPError as e: raw = e.read()
+        try: d = json.loads(raw)
+        except ValueError: log("학구도 연계정보 응답 형식 오류:", raw[:150].decode("utf8", "replace").replace(key, "***")); break
+        rows = d.get("data") or []
+        if page == 1:
+            log("학구도 연계정보 totalCount", d.get("totalCount"), "첫 행", json.dumps(rows[0], ensure_ascii=False)[:300] if rows else {k: v for k, v in d.items() if k != "data"})
         out += rows
-        total = int(str((body or {}).get("totalCount") or 0) or 0)
+        total = int(d.get("totalCount") or 0)
         if not rows or (total and len(out) >= total): break
         page += 1
     log("학구도 연계정보 전국", len(out))
