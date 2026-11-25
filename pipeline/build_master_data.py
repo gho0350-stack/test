@@ -29,7 +29,19 @@ def zone_of(x, y, zones, tol=250):
     d = min(((dist_m(x, y, r), z["id"]) for z in zones for r in z["rings"]), default=(1e18, None))
     return (d[1], round(d[0])) if d[0] <= tol else (None, round(d[0]))
 
-def b(v): return {k: [s["median"], s["min"], s["max"], s["count"], s["last"]] for k, s in (v or {}).items()}
+def avg12(rows, as_of):
+    """월별 시리즈 [ym, 월 중앙값, 건수] 중 기준일 직전 12개월(달력 기준)을 건수로 가중평균. 단일 거래 달은 그 거래가가 그대로 들어가 거래가 평균에 가깝다."""
+    y, mth = int(as_of[:4]), int(as_of[5:7]); lo = y * 12 + mth - 11
+    rows = [r for r in (rows or []) if int(r[0][:4]) * 12 + int(r[0][4:6]) >= lo]
+    n = sum(r[2] for r in rows)
+    return round(sum(r[1] * r[2] for r in rows) / n, 2) if n else None
+
+def b(v, ser=None, as_of=''):
+    out = {}
+    for k, s in (v or {}).items():
+        av = avg12((ser or {}).get(k) or [], as_of)
+        out[k] = [s["median"], s["min"], s["max"], s["count"], s["last"], av]
+    return out
 
 def run():
     m = json.load(gzip.open(os.path.join(ROOT, "pipeline/out/master.json.gz"), "rt", encoding="utf8"))
@@ -49,8 +61,8 @@ def run():
         yr = int(ap[:4]) if re.match(r"^\d{8}$", ap) else a.get("build_year")
         if yr: rec["yr"] = yr; rec["yk"] = 1 if re.match(r"^\d{8}$", ap) else 0
         if d: rec["zb"] = d                      # 경계 밖 250m 이내라 가까운 학교군으로 편입(단순화 오차 가능)
-        if a.get("sale"): rec["sale"] = b(a["sale"])
-        if a.get("jeonse"): rec["jeonse"] = b(a["jeonse"])
+        if a.get("sale"): rec["sale"] = b(a["sale"], a["series"].get("sale"), m["generatedAt"])
+        if a.get("jeonse"): rec["jeonse"] = b(a["jeonse"], a["series"].get("jeonse"), m["generatedAt"])
         ser = {k: {p: [[ym, v] for ym, v, _n in rows] for p, rows in (a["series"].get(k) or {}).items()} for k in ("sale", "jeonse")}
         if any(ser[k] for k in ser): rec["ser"] = ser
         rc = a.get("recent") or {}
