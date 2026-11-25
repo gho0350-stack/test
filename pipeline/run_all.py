@@ -120,6 +120,14 @@ def do_master():
         import build_master_data as bmd; bmd.run()   # 앱이 읽는 schoolmap/master-data.js 갱신(학교군 판정 포함)
     except Exception as e: WARN.append(f"master-data.js 생성 실패: {type(e).__name__}: {str(e)[:100]}")
 
+def do_school_geo():
+    import school_geo as sg
+    print("== 서울 초·중·고 학교 좌표", flush=True)
+    old = prev("out/school_geo.json") or {}
+    new = sg.run(os.environ["KAKAO_REST_KEY"], load("out/schools_all.json"), old)
+    if len(new) < 0.8 * len(old): WARN.append(f"학교 좌표 {len(old)} -> {len(new)} 급감: 이전 결과 유지"); return
+    dump("out/school_geo.json", new)
+
 def do_reference():
     import collect_reference as cr, build_university as bu
     p = "out/reference.json.gz"; old = prev_gz(p)
@@ -136,7 +144,8 @@ def do_reference():
 JOBS = [("DATA_GO_KR_KEY", "API 점검", do_probe), ("NEIS_KEY", "서울 전체 학교", do_schools_all), ("DATA_GO_KR_KEY", "국토부 실거래", do_molit),
         ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)]
 if os.environ.get("RUN_REFERENCE") == "1": JOBS.append(("DATA_GO_KR_KEY", "대학·학과 마스터", do_reference))   # 월 1회 수동
-if os.environ.get("RUN_ONLY") == "master": JOBS = []
+JOBS.append(("KAKAO_REST_KEY", "서울 학교 좌표", do_school_geo))   # 캐시로 한 번만 변환, 이후엔 즉시 끝남
+if os.environ.get("RUN_ONLY") == "master": JOBS = [("KAKAO_REST_KEY", "서울 학교 좌표", do_school_geo)]
 if os.environ.get("RUN_MASTER") == "1" or os.environ.get("RUN_ONLY") == "master": JOBS.append(("DATA_GO_KR_KEY", "전체 아파트 마스터", do_master))   # 무거운 작업: 수동 실행 때만
 for key, name, fn in JOBS:
     if os.environ.get(key): step(name, fn)

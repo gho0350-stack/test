@@ -110,7 +110,7 @@
   MD.forEach((m, i) => {
     const sc = (ZSCH[m.z] || [])[0]; if (!sc) return;
     const a = { id: 'm' + i, master: true, sid: sc.id, zone: m.z, name: m.n, gu: m.gu, dong: m.d, hh: m.hh || 0, hhReal: !!m.hh, year: m.yr || 0, yearReal: !!m.yk, coord: { lat: m.la, lng: m.lo }, elem: null, mid: null, hi: null, zb: m.zb || 0,
-      rt: m.sale || m.jeonse ? { sale: toStat(m.sale), jeonse: toStat(m.jeonse), series: m.ser, recent: m.rc } : null, es: m.es || null, ms: m.ms || null };
+      rt: m.sale || m.jeonse ? { sale: toStat(m.sale), jeonse: toStat(m.jeonse), series: m.ser, recent: m.rc } : null, es: m.es || null, ed: m.ed || null, ms: m.ms || null };
     MAPTS.push(a); (ZAPTS[m.z] = ZAPTS[m.z] || []).push(a);
   });
   if (MAPTS.length) { SCHOOLS.forEach((s) => { const l = ZAPTS[(Z.schoolZone || {})[s.id]]; if (l && l.length) { s.sampleApts = s.apts; s.apts = l; } }); APTS = MAPTS; }
@@ -140,6 +140,10 @@
   const covOf = (key) => { const g = ZGU[key] || [], got = g.filter((x) => GUS.has(x)); return { got, miss: g.filter((x) => !GUS.has(x)), full: got.length === g.length }; };
   const isGenAny = () => true;
   const esT = (a) => (a.es && a.es.length ? a.es.join(' · ') + (a.es.length > 1 ? ' (공동)' : '') : '-'), msT = (a) => (a.ms ? a.ms.replace('학교군', ' 중학교군') : '-');
+  const wmin = (m) => (m == null ? null : Math.max(1, Math.round((m * 1.3) / 80)));   // 직선거리 x1.3 / 분속 80m (추정)
+  const esDist = (a) => (a.ed ? a.ed.map(wmin) : []);
+  const esWalk = (a) => { const v = esDist(a).filter((x) => x != null); return v.length ? Math.min(...v) : null; };
+  const esWalkT = (a) => { const w = esWalk(a); return w == null ? '' : ` · 도보 ${w}분(추정)`; };
   const hasData = (a) => (a.master ? !!(a.rt && (a.rt.sale || a.rt.jeonse)) : linked(a));
   const wm = (v) => (v == null ? '-' : v + '분'), hhT = (a) => (a.hh ? a.hh.toLocaleString() : '-'), yrT = (a) => (a.year ? a.year + '년' : '-');
   const walkHi = (a, s) => (a.master ? (walkTo(a, s || schoolOf(a)) == null ? '-' : walkTo(a, s || schoolOf(a)) + '분 (추정)') : `${a.hi}분${a.hiEst ? ' (추정)' : ''}`);
@@ -579,7 +583,7 @@
     const rows = list.map((a) => {
       const on = a.id === ui.sel, no = all.indexOf(a) + 1, w = walkTo(a, s);
       return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${no < 1 || no > 99 ? '·' : no}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}<small class="muted" style="display:block">${a.master ? esc(a.dong) + ' · ' : ''}${gen ? (s.apts.includes(a) ? '2단계 지원 가능 지역 · ' : '3단계 통합학교군 지역 · ') : ''}도보 ${w == null ? '-' : w + '분 (추정)'}</small></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매 평균</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세 평균</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
-        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${hhT(a)}</b></div><div><span>준공연도</span><b>${yrT(a)}</b></div><div><span>${esc(s.name)} 도보</span><b>${walkHi(a, s)}</b></div><div><span>초등 통학구역</span><b>${a.master ? esc(esT(a)) : wm(a.elem)}</b></div><div><span>${a.master ? '중학교군' : '중등 도보'}</span><b>${a.master ? esc(msT(a)) : wm(a.mid)}</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
+        ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${hhT(a)}</b></div><div><span>준공연도</span><b>${yrT(a)}</b></div><div><span>${esc(s.name)} 도보</span><b>${walkHi(a, s)}</b></div><div><span>초등 통학구역</span><b>${a.master ? esc(esT(a)) + esc(esWalkT(a)) : wm(a.elem)}</b></div><div><span>${a.master ? '중학교군' : '중등 도보'}</span><b>${a.master ? esc(msT(a)) : wm(a.mid)}</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
     }).join('');
     const sv = near.map((a) => pr(a, 'sale')).filter((v) => v != null), jv = near.map((a) => pr(a, 'jeonse')).filter((v) => v != null), withData = near.filter((a) => pr(a, k) != null).length;
     const rule = RULES[s.id] || {}, myKey = zKey(zoneOf(s)), cov = (k) => covOf(k), covTxt = (k) => `${k} ${cov(k).got.length}/${(ZGU[k] || []).length}개 구`;
@@ -665,7 +669,7 @@
       main = `<div class="tbox"><table style="margin-top:8px"><tr><th>평형</th><th>매매</th><th>전세</th><th>전세가율</th></tr>${[59, 84, 101].map((p) => `<tr><td>${p}㎡</td><td><b>${eokL(ps(a, 'sale', p))}</b></td><td>${eokL(ps(a, 'jeonse', p))}</td><td>${ratio(a, p)}</td></tr>`).join('')}</table>
         <p style="margin-top:14px;font-size:14px">${reg.dong} 지역 평균 대비 ${ui.area}㎡ 매매가 ${diff == null ? '-' : `<span class="${diff >= 0 ? 'up' : 'down'}"><i class="tri"></i>${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(1)}%</span>`}</p></div>`;
     } else if (ui.aptTab === 'feat') {
-      const f = []; if (a.elem != null && a.elem <= 5) f.push('초품아'); if (a.hh >= 2000) f.push('대단지'); else if (a.hh >= 1000) f.push('1천세대 이상'); if (a.year && 2026 - a.year <= 10) f.push('준신축'); if (a.year && 2026 - a.year >= 30) f.push('재건축 기대'); { const hw = walkTo(a, s); if (hw != null && hw <= 8) f.push('고교 도보 8분 이내'); } if (!a.master) { f.push('학원가 접근 양호'); f.push(`${reg.infra.subway[0]} 이용`); }
+      const f = []; if (a.elem != null && a.elem <= 5) f.push('초품아'); if (a.master && esWalk(a) != null && esWalk(a) <= 5) f.push('초등학교 도보 5분 이내(추정)'); if (a.hh >= 2000) f.push('대단지'); else if (a.hh >= 1000) f.push('1천세대 이상'); if (a.year && 2026 - a.year <= 10) f.push('준신축'); if (a.year && 2026 - a.year >= 30) f.push('재건축 기대'); { const hw = walkTo(a, s); if (hw != null && hw <= 8) f.push('고교 도보 8분 이내'); } if (!a.master) { f.push('학원가 접근 양호'); f.push(`${reg.infra.subway[0]} 이용`); }
       main = `<div class="feat">${f.map((x) => `<span>${x}</span>`).join('')}</div><p class="muted" style="padding:0 var(--gx) 16px;font-size:13px">${a.master ? '세대수·준공연도·학교까지 추정 도보 거리로 자동 생성했어요.' : '단지 특징은 입력된 정보로 자동 생성한 샘플입니다.'}</p>`;
     } else {
       const rv = db.posts.filter((p) => p.region === s.region && (p.cat === 'life' || p.cat === 'moving')).slice(0, 3);
@@ -684,7 +688,7 @@
         </div>
       </div>
       <div class="facts">
-        <div class="card fact">${ic('backpack')}${a.master ? '초등학교' : esc(edu[0])}<b>${a.master ? esc(esT(a)) + ' 통학구역' : '도보 ' + a.elem + '분 (샘플)'}</b></div><div class="card fact">${ic('school')}${a.master ? '중학교' : esc(edu[1])}<b>${a.master ? esc(msT(a)) : '도보 ' + a.mid + '분 (샘플)'}</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${walkHi(a, s)}</b></div>
+        <div class="card fact">${ic('backpack')}${a.master ? '초등학교' : esc(edu[0])}<b>${a.master ? esc(esT(a)) + ' 통학구역' + esc(esWalkT(a)) : '도보 ' + a.elem + '분 (샘플)'}</b></div><div class="card fact">${ic('school')}${a.master ? '중학교' : esc(edu[1])}<b>${a.master ? esc(msT(a)) : '도보 ' + a.mid + '분 (샘플)'}</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${walkHi(a, s)}</b></div>
         <div class="card fact">${ic('building')}세대수<b>${a.hh ? a.hh.toLocaleString() + '세대' : '정보 없음'}${a.hh && !a.hhReal ? ' (샘플)' : ''}</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year ? a.year + '년 (' + (2026 - a.year) + '년차)' : '정보 없음'}${a.year && !a.yearReal ? (a.master ? ' (실거래 기준)' : ' (샘플)') : ''}</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
       </div>
       ${a.master ? '<p class="muted" style="padding:0 var(--gx) 12px;font-size:12px">초등학교 통학구역과 중학교 학교군은 한국교육시설안전원 학구도(2026-09-20 기준)로 단지 위치를 판정한 값이에요. 해당 구역에 속한다는 뜻이며 배정을 보장하지 않으니 교육지원청 안내로 확인하세요. 중학교는 학교군 단위라 개별 학교는 표시하지 않아요.</p>' : ''}
