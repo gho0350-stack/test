@@ -40,3 +40,20 @@
 - 필수 필드: 학교코드, 연도, 범주/대학/학과, 수치 종류(합격건수 vs 등록인원), 재학생/졸업생 구분, 중복합격 처리, 발표 단계(수시/정시/최종), 출처 URL, 발표일, 수집일, 검증 상태(unverified/verified).
 - 값이 없으면 빈칸(미공개). 0 은 실제 0명일 때만. 검증 완료(verified) 값은 미검증 값으로 덮어쓰지 않음.
 - 합격건수나 졸업생 수를 "진학률"로 표시하지 않음. 베리타스알파·내일교육·아파트위키는 이용약관 확인 전까지 수집원으로 쓰지 않음.
+
+
+## 진학 실적 자동 수집 설정 (collect-admissions)
+
+필요한 GitHub 설정 (Settings → Secrets and variables → Actions)
+- Secrets: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` (네이버 개발자센터 → 애플리케이션 등록 → 검색 API)
+- Secrets (AI 제공자 하나만): `GEMINI_API_KEY` 또는 `ANTHROPIC_API_KEY` 또는 `OPENAI_API_KEY`
+- Variables(선택): `AI_PROVIDER`(gemini|anthropic|openai, 기본 gemini), `GEMINI_MODEL` 등 모델명, `AI_MAX_CALLS`(하루 AI 호출 한도, 기본 40), `NAVER_MAX_CALLS`(기본 200)
+
+동작
+1. 이미 확보한 (학교·학년도·범주)는 건너뛰고 부족한 지표만 검색한다.
+2. 검색 결과의 출처가 `admission_sources.csv`에서 `auto_policy=예`인 경우에만 본문을 가져와 AI로 추출한다. `보류/아니오`는 링크만 `admissions_manual_links.csv`에 남겨 관리자가 직접 확인한다.
+3. AI가 준 근거 문구가 원문에 실제로 없으면 버린다(환각 방지). 이미지에서 뽑은 값은 원본 대조 필요로 분류된다.
+4. 결과는 모두 검토대기. `pipeline/out/admissions_review.html`에서 승인/반려를 고르고 결정 CSV(`data/admissions_decisions.csv`)를 저장한 뒤 `python3 pipeline/admissions_build.py --apply` 로 반영한다.
+5. 사용량은 `pipeline/out/api_usage.json`에 날짜·제공자별 호출 수와 토큰 수로 누적된다.
+
+범주 정의: MED4 = 의치한약 합계(수의대 제외·미명시), MEDGRP = 수의대 포함이 확인된 의치한약수 합계, MEDSCI_RAW = 원문의 '의약학 계열'(구성 미확인). 연세·고려 합격 수는 캠퍼스 범위가 확인되지 않으면(range_check=불명확) SKY 합계에 쓰지 않는다.
