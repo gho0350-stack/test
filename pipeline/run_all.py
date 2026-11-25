@@ -128,6 +128,15 @@ def do_school_geo():
     if len(new) < 0.8 * len(old): WARN.append(f"학교 좌표 {len(old)} -> {len(new)} 급감: 이전 결과 유지"); return
     dump("out/school_geo.json", new)
 
+def do_hinfo():
+    import collect_hinfo as ch
+    print("== 하이인포 학교목록(교육감배정교/학교장선발교)", flush=True)
+    new = ch.run(); old = prev("out/hinfo_schools.json")
+    if len(new["schools"]) < 200 or len(new["schools"]) < new["total"] * 0.95:
+        WARN.append(f"하이인포 학교 {len(new['schools'])}/{new['total']}곳만 수집됨: 이전 결과 유지"); return
+    if old and len(new["schools"]) < 0.9 * len(old["schools"]): WARN.append("하이인포 학교 수 급감: 이전 결과 유지"); return
+    dump("out/hinfo_schools.json", new)
+
 def do_reference():
     import collect_reference as cr, build_university as bu
     p = "out/reference.json.gz"; old = prev_gz(p)
@@ -144,14 +153,18 @@ def do_reference():
 JOBS = [("DATA_GO_KR_KEY", "API 점검", do_probe), ("NEIS_KEY", "서울 전체 학교", do_schools_all), ("DATA_GO_KR_KEY", "국토부 실거래", do_molit),
         ("KAKAO_REST_KEY", "카카오", do_kakao), ("NEIS_KEY", "NEIS", do_neis)]
 if os.environ.get("RUN_REFERENCE") == "1": JOBS.append(("DATA_GO_KR_KEY", "대학·학과 마스터", do_reference))   # 월 1회 수동
+JOBS.append(("PUBLIC", "하이인포 학교목록", do_hinfo))   # 키 불필요
 JOBS.append(("KAKAO_REST_KEY", "서울 학교 좌표", do_school_geo))   # 캐시로 한 번만 변환, 이후엔 즉시 끝남
 if os.environ.get("RUN_ONLY") == "master": JOBS = [("KAKAO_REST_KEY", "서울 학교 좌표", do_school_geo)]
 if os.environ.get("RUN_MASTER") == "1" or os.environ.get("RUN_ONLY") == "master": JOBS.append(("DATA_GO_KR_KEY", "전체 아파트 마스터", do_master))   # 무거운 작업: 수동 실행 때만
 for key, name, fn in JOBS:
-    if os.environ.get(key): step(name, fn)
+    if key == "PUBLIC" or os.environ.get(key): step(name, fn)
     else: print(f"{key} 없음: {name} 건너뜀")
 
 subprocess.run([sys.executable, "build_data.py"], check=True)
+if os.environ.get("RUN_ONLY") != "master":
+    try: import build_school_admission as bsa; bsa.main()   # 하이인포 명단과 대조해 학교 입학 방식 분류 갱신
+    except Exception as e: WARN.append(f"학교 입학 방식 갱신 실패: {type(e).__name__}: {str(e)[:100]}")
 import quality_report; quality_report.write(ERRORS, WARN)
 
 if ERRORS:
