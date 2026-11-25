@@ -1,0 +1,44 @@
+name: collect-master
+# 서울 25개 구 아파트 마스터를 구 단위로 이어서 수집한다. 매일 새벽에 돌며, 최신(30일 이내)인 구는 건너뛰고
+# 아직 없거나 오래된 구만 실행 예산(기본 130분) 안에서 처리한다. 모든 구가 최신이면 곧바로 끝난다.
+on:
+  schedule:
+    - cron: '30 17 * * *'   # 매일 02:30 (KST)
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: '실행 예산(분). 기본 130'
+        default: '130'
+permissions:
+  contents: write
+concurrency:
+  group: collect-data
+  cancel-in-progress: false
+jobs:
+  master:
+    runs-on: ubuntu-latest
+    timeout-minutes: 175
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: node pipeline/make_inputs.js
+      - id: collect
+        continue-on-error: true
+        run: python3 pipeline/run_all.py
+        env:
+          RUN_ONLY: master
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          MONTHS: '60'
+          MASTER_BUDGET_MIN: ${{ inputs.budget || '130' }}
+      - name: 변경된 데이터 커밋
+        run: |
+          git config user.name "eodisalji-bot"
+          git config user.email "eodisalji-bot@users.noreply.github.com"
+          git add schoolmap/master-data.js pipeline/out/master.json.gz pipeline/out/kapt_cache.json.gz pipeline/out/master_gu pipeline/out/geo_cache.json pipeline/out/quality_report.json pipeline/out/quality_report.md 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: update master (구 단위)" && git pull --rebase origin "$GITHUB_REF_NAME" && git push)
+      - name: 수집 단계 실패 여부 표시
+        if: steps.collect.outcome == 'failure'
+        run: |
+          echo "마스터 수집 중 일부 단계가 실패했습니다. collect 단계 로그의 '실패한 단계'를 확인하세요."; exit 1

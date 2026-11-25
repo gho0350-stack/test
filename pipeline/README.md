@@ -77,3 +77,11 @@ python3 build_data.py                      # -> ../schoolmap/real-data.js
   3. 카카오 개발자 콘솔 > 내 애플리케이션 > 플랫폼 > Web 사이트 도메인에 `https://gho0350-stack.github.io` 등록, 제품 설정에서 카카오맵 사용 설정 ON
   4. Actions > deploy-pages > Run workflow. 주소: https://gho0350-stack.github.io/test/
 - 학교군 영역은 현재 학교군 해당 단지들의 범위(임시)입니다. 학구도(SHP) 경계를 연결하면 실제 통학구역·학교군으로 바뀝니다.
+
+## 아파트 마스터 (서울 25개 구, 구 단위 이어받기)
+
+- `collect-master` 워크플로가 매일 02:30(KST)에 `RUN_ONLY=master` 로 `run_all.py` 를 돌립니다. 수동 실행(Run workflow)도 됩니다.
+- 구마다 `out/master_gu/<구>.json.gz` 로 저장하고, 30일 이내인 구는 건너뜁니다. 실행 예산(`MASTER_BUDGET_MIN`, 기본 130분) 안에서 못 끝낸 구는 다음 실행에서 이어갑니다. 구 하나는 약 20분 걸립니다.
+- K-apt 단지 기본정보는 `out/kapt_cache.json.gz` 에 쌓아 두고 재조회하지 않습니다(`KAPT_MAX_CALLS` 로 일 호출 한도 보호).
+- 모든 구가 모이면 `out/master.json.gz`(통합)와 앱용 `schoolmap/master-data.js` 를 만듭니다. 앱에는 샘플 학교의 학교군과 3단계로 묶인 학교군의 단지만 싣습니다.
+- 진행 상황은 `out/master.json.gz` 의 `report.pending_gus`(남은 구)와 `report.gu_count` 로 확인합니다.

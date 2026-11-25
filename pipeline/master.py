@@ -9,6 +9,12 @@ from datetime import date, timedelta
 from statistics import median
 import colab_molit as m
 
+# 서울 25개 자치구 법정동 시군구코드(5자리). 수집 우선순위: 12개 샘플 학교의 학교군·3단계 통합학교군과 가까운 구부터.
+LAWD_ALL = {"강남구": "11680", "서초구": "11650", "송파구": "11710", "양천구": "11470", "노원구": "11350", "강동구": "11740",
+            "성동구": "11200", "광진구": "11215", "동작구": "11590", "관악구": "11620", "종로구": "11110", "중구": "11140", "용산구": "11170",
+            "강서구": "11500", "영등포구": "11560", "구로구": "11530", "금천구": "11545", "성북구": "11290", "강북구": "11305", "도봉구": "11320",
+            "동대문구": "11230", "중랑구": "11260", "마포구": "11440", "서대문구": "11410", "은평구": "11380"}
+
 BLD = m.BASE + "BldRgstHubService/getBrTitleInfo"          # 건축HUB 건축물대장 표제부 (활용신청 필요)
 BJD_RE = lambda dong: re.compile(re.escape(dong) + r"\s*(산)?\s*(\d+)(?:-(\d+))?")
 
@@ -41,7 +47,7 @@ def kapt_collect(key, targets, cache=None, log=print, max_calls=None, pause=0.15
     """대상 구의 K-apt 단지 전체 + 기본정보. cache(이전 결과)에 있는 단지코드는 재조회하지 않는다.
     일 호출 한도(개발계정 10,000건)를 넘기지 않도록 max_calls 까지만 신규 조회하고, 못 한 단지는 다음 실행에서 이어서 받는다(부분 결과 반환)."""
     cache = cache or {}; out = {}; calls = 0; skipped = 0
-    for gu, lawd in m.LAWD.items():
+    for gu, lawd in LAWD_ALL.items():
         if gu not in targets: continue
         lst, page = [], 1
         try:
@@ -73,7 +79,7 @@ PARTIAL = []
 def molit_collect(key, targets, months, today, ep, log=print):
     """대상 구의 실거래를 (구, 동, 정규화 단지명) 단위로 집계. 해제 거래 제외, 월별 시리즈 포함."""
     ents = {}; excluded = defaultdict(int); yms = m.months_back(months, today)
-    for gu, lawd in m.LAWD.items():
+    for gu, lawd in LAWD_ALL.items():
         if gu not in targets: continue
         if over(): log(gu, "시간 제한으로 실거래 수집 중단"); PARTIAL.append(gu); continue
         for kind in ("trade", "rent"):
@@ -128,7 +134,7 @@ def join(kapt, ents, today):
         lots = set(e["lots"]);
         if a and lot_of(a.get("addr"), dong): lots.add(lot_of(a["addr"], dong))
         lot = sorted(lots)[0] if lots else None
-        uid = uid_of(m.LAWD[gu], dong, lot or nk, taken); taken.add(uid)
+        uid = uid_of(LAWD_ALL[gu], dong, lot or nk, taken); taken.add(uid)
         rec = {"uid": uid, "name": (a or {}).get("name") or e["name"], "aliases": sorted({e["name"]} | ({a["name"]} if a else set())), "gu": gu, "dong": dong, "lots": sorted(lots), "multi_lot": len(lots) > 1,
                "kapt_code": c, "road": (a or {}).get("road", ""), "households": (a or {}).get("households"), "approved": (a or {}).get("approved"), "build_year": e["build"] or None,
                "sources": (["kapt"] if a else []) + ["molit"], "match": method, "boundary": "none"}
@@ -136,7 +142,7 @@ def join(kapt, ents, today):
         report["multi_lot"] += len(lots) > 1; report["by_lot" if method == "lot" else "by_name" if method == "name" else "molit_only"] += 1
     for c, a in kapt.items():   # 거래가 없는 K-apt 단지
         if c in used: continue
-        lot = lot_of(a.get("addr"), a.get("dong")); uid = uid_of(m.LAWD[a["gu"]], a["dong"], lot or m.norm_name(a["name"]), taken); taken.add(uid)
+        lot = lot_of(a.get("addr"), a.get("dong")); uid = uid_of(LAWD_ALL[a["gu"]], a["dong"], lot or m.norm_name(a["name"]), taken); taken.add(uid)
         master.append({"uid": uid, "name": a["name"], "aliases": [a["name"]], "gu": a["gu"], "dong": a["dong"], "lots": [lot] if lot else [], "multi_lot": False, "kapt_code": c, "road": a.get("road", ""),
                        "households": a.get("households"), "approved": a.get("approved"), "build_year": None, "sources": ["kapt"], "match": "none", "boundary": "none", "sale": {}, "jeonse": {}, "series": {"sale": {}, "jeonse": {}}, "recent": {"sale": {}, "jeonse": {}}})
         report["kapt_only"] += 1
@@ -165,7 +171,7 @@ def bldrgst_fill(key, master, kapt, log=print):
     return res
 
 def run_master(key, targets=None, months=60, today=None, cache=None, log=print, on_kapt=None, deadline=None):
-    key = urllib.parse.unquote(key.strip()); today = today or date.today(); targets = targets or list(m.LAWD)
+    key = urllib.parse.unquote(key.strip()); today = today or date.today(); targets = targets or list(LAWD_ALL)
     ep = {k: m.find_endpoint(k, key, today) for k in m.EP}
     DEADLINE[0] = deadline; PARTIAL.clear()
     kapt = kapt_collect(key, targets, (cache or {}).get("kapt_cache"), log, max_calls=int(os.environ.get("KAPT_MAX_CALLS", "6000")))

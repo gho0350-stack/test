@@ -4,7 +4,7 @@ on:
     branches: [claude/claude-settings-config-od8zs3]
     paths: ['schoolmap/**']
   workflow_run:
-    workflows: [collect-data]
+    workflows: [collect-data, collect-master]
     types: [completed]
   workflow_dispatch:
 permissions:
