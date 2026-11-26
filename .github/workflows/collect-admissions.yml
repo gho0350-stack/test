@@ -27,7 +27,7 @@ jobs:
       - run: python3 pipeline/test_admissions_ai.py && python3 pipeline/test_admissions_sites.py
       - id: collect
         continue-on-error: true
-        run: python3 pipeline/admissions_collect.py
+        run: python3 admissions_collect.py
         working-directory: pipeline
         env:
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
