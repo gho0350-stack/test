@@ -37,7 +37,7 @@ jobs:
           git config user.name "eodisalji-bot"
           git config user.email "eodisalji-bot@users.noreply.github.com"
           git add schoolmap/master-data.js pipeline/out/master.json.gz pipeline/out/kapt_cache.json.gz pipeline/out/master_gu pipeline/out/geo_cache.json pipeline/out/school_geo.json pipeline/out/quality_report.json pipeline/out/quality_report.md 2>/dev/null || true
-          git diff --cached --quiet || (git commit -m "chore: update master (구 단위)" && git pull --rebase origin "$GITHUB_REF_NAME" && git push)
+          git diff --cached --quiet || (git commit -m "chore: update master (구 단위)" && git pull --rebase --autostash origin "$GITHUB_REF_NAME" && git push)
       - name: 수집 단계 실패 여부 표시
         if: steps.collect.outcome == 'failure'
         run: |

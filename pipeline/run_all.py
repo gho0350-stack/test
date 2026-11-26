@@ -161,7 +161,7 @@ for key, name, fn in JOBS:
     if key == "PUBLIC" or os.environ.get(key): step(name, fn)
     else: print(f"{key} 없음: {name} 건너뜀")
 
-subprocess.run([sys.executable, "build_data.py"], check=True)
+if os.environ.get("RUN_ONLY") != "master": subprocess.run([sys.executable, "build_data.py"], check=True)   # 마스터 전용 실행은 앱 데이터(real-data.js)를 건드리지 않는다
 if os.environ.get("RUN_ONLY") != "master":
     try: import build_school_admission as bsa; bsa.main()   # 하이인포 명단과 대조해 학교 입학 방식 분류 갱신
     except Exception as e: WARN.append(f"학교 입학 방식 갱신 실패: {type(e).__name__}: {str(e)[:100]}")
