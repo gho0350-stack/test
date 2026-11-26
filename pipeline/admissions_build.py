@@ -9,7 +9,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 D = lambda n: os.path.join(ROOT, "data", n)
 CATS = {"MED": "의대", "DENT": "치대", "KMED": "한의대", "PHARM": "약대", "VET": "수의대", "MEDGRP": "의치한약수 합계(수의대 포함 확인)", "MED4": "의치한약 합계(수의대 제외·미명시, 확인된 소계)", "MEDSCI_RAW": "의약학 계열(원문 범주, 구성 미확인)", "SNU": "서울대", "SNU_MED": "서울대 의대",
         "YONSEI": "연세대", "KOREA": "고려대", "SKY": "SKY 합계", "INSEOUL": "인서울", "GRAD": "졸업생 수"}
-COUNT_TYPES = {"합격건수", "등록인원"}; SCOPES = {"재학생만", "재학생+졸업생", "알수없음"}; DUPS = {"포함", "제외", "알수없음"}
+COUNT_TYPES = {"합격건수", "등록인원", "해당없음"}; SCOPES = {"재학생만", "재학생+졸업생", "알수없음"}; DUPS = {"포함", "제외", "알수없음"}
 RANGE = {"확인", "불명확"}; METHODS = {"텍스트", "이미지", "PDF", "표(HTML)", "API"}
 STATUS = {"검토대기", "승인", "반려", "출처미확인"}
 RAW_F = ["record_id", "school_id", "school_name", "admission_year", "category", "count", "count_type", "phase", "student_scope", "duplicate_included", "source_id", "source_url", "publish_date", "collected_at", "evidence", "status", "reviewer", "reviewed_at", "campus_scope", "range_check", "extract_method", "origin_id", "range_note", "note"]
