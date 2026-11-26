@@ -49,7 +49,7 @@ def ask_ai(prompt, text=None, image_bytes=None, image_mime="image/png", usage=No
     prov = os.environ.get("AI_PROVIDER", "gemini")
     if usage and usage.today(prov) >= int(os.environ.get("AI_MAX_CALLS", "40")): raise RuntimeError("AI 일일 호출 한도(AI_MAX_CALLS) 도달")
     if prov == "gemini":
-        model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")      # 모델명은 제공자 문서로 확인해 환경변수로 지정
+        model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")      # 모델명은 제공자 문서로 확인해 환경변수로 지정
         parts = [{"text": prompt + ("\n\n[자료]\n" + text if text else "")}]
         if image_bytes: import base64; parts.append({"inline_data": {"mime_type": image_mime, "data": base64.b64encode(image_bytes).decode()}})
         d = _post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent", {"x-goog-api-key": os.environ["GEMINI_API_KEY"]}, {"contents": [{"parts": parts}], "generationConfig": {"temperature": 0, "responseMimeType": "application/json"}})
