@@ -106,7 +106,7 @@ def apply_decisions(raw):
         d = dec.get(r["record_id"])
         if d and r["status"] in ("검토대기", "출처미확인"):
             if d["decision"] == "승인" and r["status"] == "출처미확인": continue   # 출처를 특정하기 전에는 승인할 수 없다
-            r["status"] = d["decision"]; r["reviewer"] = r["reviewer"] or "admin"; r["reviewed_at"] = today; n += 1
+            r["status"] = d["decision"]; r["reviewer"] = r["reviewer"] or os.environ.get("REVIEWER", "admin"); r["reviewed_at"] = today; n += 1
     return n
 
 def aggregate(raw):
@@ -130,7 +130,7 @@ def aggregate(raw):
             b = {basis(r) for r in used}
             if len(b) == 1: row["count_type"], row["student_scope"], row["duplicate_included"] = next(iter(b))
             else: row["count_type"] = row["student_scope"] = row["duplicate_included"] = "알수없음"; row["note"] = (row.get("note", "") + " 집계 기준이 서로 다른 행이 섞여 있음(관리자 확인 필요)").strip()
-        row["source_type"] = "언론(학교 제공 자료)"; row["source_url"] = rs[0]["source_url"]; row["verified_status"] = "확인완료"; row["verified_at"] = max(r["reviewed_at"] for r in rs)
+        row["source_type"] = "학교발표"; row["source_url"] = rs[0]["source_url"]; row["verified_status"] = "확인완료"; row["verified_at"] = max(r["reviewed_at"] for r in rs)
         out[(sid, y)] = row
     return out
 
