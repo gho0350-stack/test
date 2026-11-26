@@ -97,7 +97,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   // 7. 상점 (테스트 결제)
   await page.click('.cur button:first-child'); await page.waitForSelector('.sheet h2:has-text("상점")'); await sleep(500); await shot('10-shop');
   await page.click('.prod:has-text("질문권 10개") button'); await page.waitForSelector('text=테스트 결제 승인'); await shot('11-pay');
-  await page.click('button:has-text("테스트 결제 승인")'); await sleep(1500);
+  await page.click('button:has-text("테스트 결제 승인")'); await page.waitForFunction((n) => window.__dg.getState().state.wallet.tickets > n, t2, { timeout: 15000 }).catch(() => {});
   const t3 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
   ok('질문권 결제 후 지급', t3 === t2 + 10, `${t2}→${t3}`);
   await page.click('.sheet .x'); await sleep(300);

@@ -7,6 +7,7 @@ import { signup } from '../src/lib/server/auth';
 import * as G from '../src/lib/server/game';
 import { C } from '../src/lib/content';
 import { tx } from '../src/lib/server/db';
+import { sb } from '../src/lib/server/supabase';
 
 const RUN = Date.now().toString(36);
 const em = (n: string) => `${n}.${RUN}@test.kr`;
@@ -80,16 +81,16 @@ test('타로: 하루 1회, 새로고침해도 동일, 퀘스트 지급', async (
 test('결제: 주문→승인→질문권 지급, 중복 승인 무시, 금액 위변조 거부', async () => {
   const o = await G.createOrder(uid, 'ticket_10');
   assert.equal(o.amount, 7900);
-  await assert.rejects(() => G.confirmOrder(uid, { paymentKey: 'mock_x', orderId: o.orderId, amount: 100 }), /금액/);
+  await assert.rejects(() => G.confirmOrder(uid, { paymentKey: `mock_${RUN}_x`, orderId: o.orderId, amount: 100 }), /금액/);
   await assert.rejects(() => G.confirmOrder(uid, { paymentKey: 'real_key', orderId: o.orderId, amount: 7900 }), /테스트 결제 키/);
-  const c1 = await G.confirmOrder(uid, { paymentKey: 'mock_1', orderId: o.orderId, amount: 7900 });
+  const c1 = await G.confirmOrder(uid, { paymentKey: `mock_${RUN}_1`, orderId: o.orderId, amount: 7900 });
   assert.equal(c1.state.wallet.tickets, 10);
-  const c2 = await G.confirmOrder(uid, { paymentKey: 'mock_1', orderId: o.orderId, amount: 7900 });
+  const c2 = await G.confirmOrder(uid, { paymentKey: `mock_${RUN}_1`, orderId: o.orderId, amount: 7900 });
   assert.equal(c2.already, true);
   assert.equal((await G.getState(uid)).wallet.tickets, 10);
   // 다른 사용자의 주문 접근 불가
   const other = await signup(em('d'), 'password123', true);
-  await assert.rejects(() => G.confirmOrder(other, { paymentKey: 'mock_2', orderId: o.orderId, amount: 7900 }), /주문을 찾을 수 없/);
+  await assert.rejects(() => G.confirmOrder(other, { paymentKey: `mock_${RUN}_2`, orderId: o.orderId, amount: 7900 }), /주문을 찾을 수 없/);
 });
 
 test('환불: 미사용 질문권 회수, 사용 후에는 거부', async () => {
@@ -97,7 +98,7 @@ test('환불: 미사용 질문권 회수, 사용 후에는 거부', async () => 
   const st = await G.refundOrder(uid, (await G.orderHistory(uid))[0].id);
   assert.equal(st.wallet.tickets, s0.wallet.tickets - 10);
   const o = await G.createOrder(uid, 'ticket_3');
-  await G.confirmOrder(uid, { paymentKey: 'mock_3', orderId: o.orderId, amount: 2900 });
+  await G.confirmOrder(uid, { paymentKey: `mock_${RUN}_3`, orderId: o.orderId, amount: 2900 });
   await G.consult(uid, { npcId: 'sage', question: '내 사주에서 가장 특별한 부분은 무엇일까요?' });
   await G.consult(uid, { npcId: 'sage', question: '올해 조심할 점은 무엇인가요?' });
   await G.consult(uid, { npcId: 'sage', question: '지금 이직해도 괜찮을까요?' });
@@ -107,7 +108,7 @@ test('환불: 미사용 질문권 회수, 사용 후에는 거부', async () => 
 test('리포트: 미구매 열람 거부 → 구매 후 열람/캐시, 열람 후 환불 불가, 궁합은 상대 필요', async () => {
   await assert.rejects(() => G.getReport(uid, 'wealth'), /구매 후/);
   const o = await G.createOrder(uid, 'report_wealth');
-  await G.confirmOrder(uid, { paymentKey: 'mock_4', orderId: o.orderId, amount: 3900 });
+  await G.confirmOrder(uid, { paymentKey: `mock_${RUN}_4`, orderId: o.orderId, amount: 3900 });
   await assert.rejects(() => G.createOrder(uid, 'report_wealth'), /이미 구매/);
   const r = await G.getReport(uid, 'wealth');
   assert.ok(r.sections.length >= 3);
@@ -118,7 +119,7 @@ test('리포트: 미구매 열람 거부 → 구매 후 열람/캐시, 열람 �
   const rel = st.relationships[0];
   assert.ok(rel.compat!.score >= 20 && rel.compat!.score <= 98);
   const oc = await G.createOrder(uid, 'report_compat', rel.id);
-  await G.confirmOrder(uid, { paymentKey: 'mock_5', orderId: oc.orderId, amount: 3900 });
+  await G.confirmOrder(uid, { paymentKey: `mock_${RUN}_5`, orderId: oc.orderId, amount: 3900 });
   const cr = await G.getReport(uid, 'compat', rel.id);
   assert.match(cr.title, /민준/);
 });
@@ -155,7 +156,17 @@ test('OpenAI Responses API 연동: 요청 형식·구조화 출력 파싱·질�
     const payload = JSON.parse(seen.body.input);
     assert.equal(payload.saju.day_pillar, '무인'); assert.equal(payload.topic, 'wealth'); assert.ok(payload.rules.length > 0);
     assert.match(seen.body.instructions, /사주 계산은 절대 직접 하지 마세요/); assert.match(seen.body.instructions, /현실적이고 분석적인/);
-    const log = await tx(u, (db) => db.ai_usage_logs.filter((l) => l.user_id === u));
+    const log = SB ? await sb(`/rest/v1/ai_usage_logs?user_id=eq.${u}&select=*`) : await tx(u, (db) => db.ai_usage_logs.filter((l) => l.user_id === u));
     assert.equal(log[0].tokens, 321); assert.equal(log[0].ok, true);
   } finally { srv.close(); delete process.env.OPENAI_API_KEY; delete process.env.OPENAI_BASE_URL; delete process.env.OPENAI_MODEL; }
+});
+
+test('동시 요청: 질문권 2장으로 4건 동시 상담 → 정확히 2건만 성공(이중 차감/초과 사용 없음)', async () => {
+  const u = await signup(em('f'), 'password123', true);
+  await G.createCharacter(u, { nickname: '동시', avatar: 0, ...birth });
+  const rs = await Promise.allSettled([1, 2, 3, 4].map((i) => G.consult(u, { npcId: 'sage', question: `동시 질문 번호 ${i} 입니다` })));
+  assert.equal(rs.filter((r) => r.status === 'fulfilled').length, 2);
+  assert.equal((await G.getState(u)).wallet.tickets, 0);
+  const h = await G.consultHistory(u, 'sage');
+  assert.equal(h.messages.filter((m) => m.role === 'user').length, 2);
 });
