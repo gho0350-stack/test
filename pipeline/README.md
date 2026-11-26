@@ -85,3 +85,20 @@ python3 build_data.py                      # -> ../schoolmap/real-data.js
 - K-apt 단지 기본정보는 `out/kapt_cache.json.gz` 에 쌓아 두고 재조회하지 않습니다(`KAPT_MAX_CALLS` 로 일 호출 한도 보호).
 - 모든 구가 모이면 `out/master.json.gz`(통합)와 앱용 `schoolmap/master-data.js` 를 만듭니다. 앱에는 샘플 학교의 학교군과 3단계로 묶인 학교군의 단지만 싣습니다.
 - 진행 상황은 `out/master.json.gz` 의 `report.pending_gus`(남은 구)와 `report.gu_count` 로 확인합니다.
+
+## 워크플로 한눈에 보기 (2026-11 기준)
+
+| 워크플로 | 주기 | 하는 일 |
+|---|---|---|
+| collect-data | 매주 월요일 + 수동 | 학교·실거래·카카오·NEIS 수집, 하이인포 대조(학교 입학 방식), 옵션: reference(대학·학과·학구도 연계) / master |
+| collect-master | 매일 02:30(KST) + 수동 | 서울 25개 구 아파트 마스터를 구 단위로 이어받기, 학교 좌표, master-data.js·master-detail 갱신 |
+| collect-admissions | 매주 화요일(시즌 외 월 1회) + 수동 | 진학 실적 후보 수집(seed 링크·학교 홈페이지) -> 검토 대기. 서비스에는 승인된 행만 반영 |
+| gemini-models | 수동 | 등록한 키로 쓸 수 있는 Gemini 모델 이름 출력 |
+| deploy-pages | collect-* 완료 후 자동 + 수동 | schoolmap/ 을 GitHub Pages 로 배포 |
+
+필요 Secrets: `DATA_GO_KR_KEY`, `KAKAO_REST_KEY`, `NEIS_KEY`, `GEMINI_API_KEY`(진학 실적 추출). Variables: `KAKAO_JS_KEY`, `GEMINI_MODEL`(선택).
+
+## 앱 데이터 파일
+- `schoolmap/master-data.js`: 단지 목록·가격 통계·통학구역(초등/중학교군)·가까운 학교. `schoolmap/master-detail/<구코드>.json`: 월별 추이·개별 거래(상세 화면에서만 불러옴)
+- `schoolmap/admission-rules.js`: 학교별 입학 방식·통합학교군. `schoolmap/admissions-data.js`: 승인된 진학 실적
+- `pipeline/data/edu_zones.json.gz`: 초등 통학구역·중학교 학교군 경계(서울, 단순화). 생성: `build_edu_zones.py`
