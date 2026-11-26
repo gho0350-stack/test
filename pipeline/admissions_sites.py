@@ -55,21 +55,24 @@ def same_site(u, base):
 
 def discover(home, fetch=get, max_pages=12, delay=1.0, log=print):
     """홈페이지에서 시작해 진학 관련 후보 페이지의 (url, 본문 텍스트)를 모은다."""
-    home = norm_url(home); seen, out, queue = set(), [], [(home, 0)]
+    home = norm_url(home); seen, out, queue = set(), [], [(home, 0)]; stat = {"fetched": 0, "robots_blocked": 0, "failed": 0, "keyword_pages": 0}
     while queue and len(out) < max_pages:
         url, depth = queue.pop(0)
-        if url in seen or not robots_ok(url): continue
+        if url in seen: continue
+        if not robots_ok(url): stat["robots_blocked"] += 1; seen.add(url); continue
         seen.add(url)
         try: ct, data = fetch(url)
-        except Exception as e: log("  가져오기 실패:", url[:80], type(e).__name__); continue
-        time.sleep(delay)
+        except Exception as e: stat["failed"] += 1; log("  가져오기 실패:", url[:80], type(e).__name__); continue
+        stat["fetched"] += 1; time.sleep(delay)
         if "pdf" in ct.lower() or url.lower().endswith(".pdf"):
             t = pdf_text(data)
             if t and NEED.search(t) and YEAR.search(t): out.append((url, t))
             continue
         raw, text = html_text(data)
         if NEED.search(text) and YEAR.search(text) and len(text) > 200: out.append((url, text))
+        if KEY.search(text[:3000]): stat["keyword_pages"] += 1
         if depth < 2:
             for u, label in links(raw, url):
                 if same_site(u, home) and u not in seen and not re.search(r"\.(jpg|jpeg|png|gif|zip|hwp|hwpx|xlsx?|pptx?)$", u, re.I): queue.append((u, depth + 1))
+    log(f"  탐색 통계: {stat}")
     return out

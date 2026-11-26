@@ -28,20 +28,24 @@ def school_homepages():
     p = os.path.join(ab.ROOT, "pipeline", "out", "schools_all.json")
     return {x["SCHUL_NM"]: x.get("HMPG_ADRES") for x in json.load(open(p, encoding="utf8"))} if os.path.exists(p) else {}
 
-def collect_school_sites(schools, have, raw_rows, years, usage, extract=None, discover=sites.discover, max_schools=8, log=print):
+def collect_school_sites(schools, have, raw_rows, years, usage, extract=None, discover=sites.discover, max_schools=12, log=print):
     """auto_policy=예 로 허용된 '학교 공식 홈페이지'에서 아직 값이 없는 학교의 후보를 모은다."""
     homes = school_homepages(); added = []; stats = {"schools": 0, "pages": 0, "rows": 0, "rejected": 0}
-    todo = [s for s in schools if any(not have.get((s["id"], y)) for y in years) and homes.get(s["name"])][:max_schools]
+    # 승인된 값이 하나도 없는 학교를 먼저, 그다음 일부만 있는 학교 순서로(실행당 최대 max_schools 곳)
+    cand = [s for s in schools if any(not have.get((s["id"], y)) for y in years) and homes.get(s["name"])]
+    todo = sorted(cand, key=lambda s: sum(1 for y in years if have.get((s["id"], y))))[:max_schools]
     for s in todo:
         stats["schools"] += 1; log("학교 홈페이지 탐색:", s["name"], homes[s["name"]])
         try: pages = discover(homes[s["name"]], log=log)
         except Exception as e: log("  탐색 실패:", type(e).__name__); continue
+        log(f"  진학 후보 페이지 {len(pages)}개:", [(u[-60:], len(t)) for u, t in pages[:4]])
         for url, text in pages[:4]:                          # 학교당 AI 호출 상한
             for y in sorted({int("20" + m.group(1)) for m in sites.YEAR.finditer(text)} & set(years)):
                 if have.get((s["id"], y)): continue
                 try:
                     resp = (extract or ai.ask_ai)(ai.PROMPT.format(school=s["name"], year=y), text=text[:20000], usage=usage)
                     ok, bad = ai.parse_rows(resp, text); stats["rejected"] += len(bad); stats["pages"] += 1
+                    log(f"  AI 추출 {s['name']} {y}학년도: 통과 {len(ok)}건, 거부 {len(bad)}건 {bad[:2]} | 응답 앞부분: {resp[:120]!r}")
                     for x in ok: added.append(ai.to_raw_row(x, s, y, "school_site", url, "텍스트", "school_site:" + urllib.parse.urlparse(url).netloc + urllib.parse.urlparse(url).path))
                 except Exception as e: log("  추출 실패:", url[:80], str(e)[:80])
     existing = {r["record_id"] for r in raw_rows}; new = [r for r in added if r["record_id"] not in existing]
