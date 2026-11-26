@@ -1,0 +1,203 @@
+[
+  {
+    "id": 0,
+    "name": "자",
+    "hanja": "子",
+    "animal": "쥐",
+    "element": "수",
+    "hour_range": "23:00~01:00",
+    "hidden_stems": [
+      "임",
+      "계"
+    ],
+    "setting": "한밤의 샘가",
+    "strength": "지혜롭고 민첩한 정보력",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 1,
+    "name": "축",
+    "hanja": "丑",
+    "animal": "소",
+    "element": "토",
+    "hour_range": "01:00~03:00",
+    "hidden_stems": [
+      "계",
+      "신",
+      "기"
+    ],
+    "setting": "겨울 들판",
+    "strength": "묵묵한 끈기와 축적",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 2,
+    "name": "인",
+    "hanja": "寅",
+    "animal": "호랑이",
+    "element": "목",
+    "hour_range": "03:00~05:00",
+    "hidden_stems": [
+      "무",
+      "병",
+      "갑"
+    ],
+    "setting": "새벽 숲",
+    "strength": "과감한 개척 정신",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 3,
+    "name": "묘",
+    "hanja": "卯",
+    "animal": "토끼",
+    "element": "목",
+    "hour_range": "05:00~07:00",
+    "hidden_stems": [
+      "갑",
+      "을"
+    ],
+    "setting": "봄 꽃밭",
+    "strength": "감각적이고 사교적인 섬세함",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 4,
+    "name": "진",
+    "hanja": "辰",
+    "animal": "용",
+    "element": "토",
+    "hour_range": "07:00~09:00",
+    "hidden_stems": [
+      "을",
+      "계",
+      "무"
+    ],
+    "setting": "구름 낀 연못",
+    "strength": "큰 야망과 변화의 에너지",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 5,
+    "name": "사",
+    "hanja": "巳",
+    "animal": "뱀",
+    "element": "화",
+    "hour_range": "09:00~11:00",
+    "hidden_stems": [
+      "무",
+      "경",
+      "병"
+    ],
+    "setting": "한낮의 바위터",
+    "strength": "깊은 통찰과 집중력",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 6,
+    "name": "오",
+    "hanja": "午",
+    "animal": "말",
+    "element": "화",
+    "hour_range": "11:00~13:00",
+    "hidden_stems": [
+      "병",
+      "기",
+      "정"
+    ],
+    "setting": "여름 초원",
+    "strength": "뜨거운 열정과 자유로움",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 7,
+    "name": "미",
+    "hanja": "未",
+    "animal": "양",
+    "element": "토",
+    "hour_range": "13:00~15:00",
+    "hidden_stems": [
+      "정",
+      "을",
+      "기"
+    ],
+    "setting": "노을 진 목장",
+    "strength": "온화함과 예술적 감성",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 8,
+    "name": "신",
+    "hanja": "申",
+    "animal": "원숭이",
+    "element": "금",
+    "hour_range": "15:00~17:00",
+    "hidden_stems": [
+      "무",
+      "임",
+      "경"
+    ],
+    "setting": "가을 과수원",
+    "strength": "재치와 임기응변",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 9,
+    "name": "유",
+    "hanja": "酉",
+    "animal": "닭",
+    "element": "금",
+    "hour_range": "17:00~19:00",
+    "hidden_stems": [
+      "경",
+      "신"
+    ],
+    "setting": "황금 들녘",
+    "strength": "정확하고 미적인 완성도",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 10,
+    "name": "술",
+    "hanja": "戌",
+    "animal": "개",
+    "element": "토",
+    "hour_range": "19:00~21:00",
+    "hidden_stems": [
+      "신",
+      "정",
+      "무"
+    ],
+    "setting": "저녁 성곽",
+    "strength": "의리와 신념",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 11,
+    "name": "해",
+    "hanja": "亥",
+    "animal": "돼지",
+    "element": "수",
+    "hour_range": "21:00~23:00",
+    "hidden_stems": [
+      "무",
+      "갑",
+      "임"
+    ],
+    "setting": "겨울 바다",
+    "strength": "낙천적이고 넉넉한 포용",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  }
+]

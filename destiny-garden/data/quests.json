@@ -1,0 +1,12 @@
+[
+  { "id": "q01", "order": 1, "title": "정원에 처음 입장하기", "hint": "운명의 정원에 들어서 보세요", "event": "enter_garden", "reward": { "exp": 10, "coins": 10 } },
+  { "id": "q02", "order": 2, "title": "나의 캐릭터 만들기", "hint": "생년월일로 나의 캐릭터를 만들어요", "event": "create_character", "reward": { "exp": 20, "coins": 20 } },
+  { "id": "q03", "order": 3, "title": "운명의 서고 방문", "hint": "왼쪽의 서고로 걸어가 입장하세요", "event": "visit:library", "reward": { "exp": 15, "coins": 15 } },
+  { "id": "q04", "order": 4, "title": "나의 사주 확인", "hint": "서고에서 사주 원국을 펼쳐 보세요", "event": "view_saju", "reward": { "exp": 20, "coins": 20 } },
+  { "id": "q05", "order": 5, "title": "나의 운명 카드 확인", "hint": "서고에서 나의 운명 카드를 열어요", "event": "get_card", "reward": { "exp": 20, "coins": 20 } },
+  { "id": "q06", "order": 6, "title": "재물의 신전 방문", "hint": "정원 안쪽의 신전으로 가 보세요", "event": "visit:temple", "reward": { "exp": 15, "coins": 15 } },
+  { "id": "q07", "order": 7, "title": "재물운 알아보기", "hint": "신전에서 나의 재물운을 확인하세요", "event": "view_wealth", "reward": { "exp": 25, "coins": 25 } },
+  { "id": "q08", "order": 8, "title": "인연의 정자 방문", "hint": "오른쪽 정자로 가서 입장하세요", "event": "visit:pavilion", "reward": { "exp": 15, "coins": 15 } },
+  { "id": "q09", "order": 9, "title": "오늘의 타로 뽑기", "hint": "타로의 정원에서 카드를 한 장 뽑아요", "event": "draw_tarot", "reward": { "exp": 25, "coins": 25 } },
+  { "id": "q10", "order": 10, "title": "NPC와 첫 상담하기", "hint": "NPC를 눌러 질문권으로 상담해 보세요", "event": "first_consult", "reward": { "exp": 40, "coins": 50 } }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "library",
+    "map_id": "garden",
+    "name": "운명의 서고",
+    "subtitle": "나의 사주와 운명 카드",
+    "content": "saju",
+    "pos": {
+      "x": -7.6,
+      "z": -1.0
+    },
+    "door": {
+      "x": -4.0,
+      "z": 0.4
+    },
+    "radius": 3.6,
+    "quest_event": "visit:library",
+    "npc_id": "sage"
+  },
+  {
+    "id": "temple",
+    "map_id": "garden",
+    "name": "재물의 신전",
+    "subtitle": "재물운 · 사업운",
+    "content": "wealth",
+    "pos": {
+      "x": 0,
+      "z": -12.0
+    },
+    "door": {
+      "x": 0,
+      "z": -7.9
+    },
+    "radius": 4.0,
+    "quest_event": "visit:temple",
+    "npc_id": "merchant"
+  },
+  {
+    "id": "pavilion",
+    "map_id": "garden",
+    "name": "인연의 정자",
+    "subtitle": "궁합 · 관계 분석",
+    "content": "relationship",
+    "pos": {
+      "x": 7.8,
+      "z": -3.5
+    },
+    "door": {
+      "x": 4.9,
+      "z": -2.8
+    },
+    "radius": 3.4,
+    "quest_event": "visit:pavilion",
+    "npc_id": "guardian"
+  },
+  {
+    "id": "tarot",
+    "map_id": "garden",
+    "name": "타로의 정원",
+    "subtitle": "오늘의 타로 · 78장",
+    "content": "tarot",
+    "pos": {
+      "x": 9.2,
+      "z": 6.2
+    },
+    "door": {
+      "x": 6.1,
+      "z": 6.2
+    },
+    "radius": 3.0,
+    "quest_event": "visit:tarot",
+    "npc_id": null
+  }
+]

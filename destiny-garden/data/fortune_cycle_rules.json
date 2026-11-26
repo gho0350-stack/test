@@ -1,0 +1,222 @@
+[
+  {
+    "id": "daewoon_비견",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "비견"
+    },
+    "text": "현재 대운에서 비견의 기운이 들어옵니다. 자립과 경쟁의 흐름이 강해집니다. 동료·경쟁자가 늘 수 있습니다.",
+    "basis": "대운 천간 십성 = 비견",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_비견",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "비견"
+    },
+    "text": "올해 세운에서 비견의 기운이 들어옵니다. 자립과 경쟁의 흐름이 강해집니다. 동료·경쟁자가 늘 수 있습니다.",
+    "basis": "세운 천간 십성 = 비견",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_겁재",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "겁재"
+    },
+    "text": "현재 대운에서 겁재의 기운이 들어옵니다. 재물이 분산되기 쉬운 시기입니다. 큰 지출·보증을 점검하세요.",
+    "basis": "대운 천간 십성 = 겁재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_겁재",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "겁재"
+    },
+    "text": "올해 세운에서 겁재의 기운이 들어옵니다. 재물이 분산되기 쉬운 시기입니다. 큰 지출·보증을 점검하세요.",
+    "basis": "세운 천간 십성 = 겁재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_식신",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "식신"
+    },
+    "text": "현재 대운에서 식신의 기운이 들어옵니다. 표현과 결과물이 자연스럽게 쌓이는 시기입니다. 꾸준함이 보상받습니다.",
+    "basis": "대운 천간 십성 = 식신",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_식신",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "식신"
+    },
+    "text": "올해 세운에서 식신의 기운이 들어옵니다. 표현과 결과물이 자연스럽게 쌓이는 시기입니다. 꾸준함이 보상받습니다.",
+    "basis": "세운 천간 십성 = 식신",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_상관",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "상관"
+    },
+    "text": "현재 대운에서 상관의 기운이 들어옵니다. 변화와 표현 욕구가 커지는 시기입니다. 이직·창작의 동기가 생깁니다.",
+    "basis": "대운 천간 십성 = 상관",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_상관",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "상관"
+    },
+    "text": "올해 세운에서 상관의 기운이 들어옵니다. 변화와 표현 욕구가 커지는 시기입니다. 이직·창작의 동기가 생깁니다.",
+    "basis": "세운 천간 십성 = 상관",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_편재",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "편재"
+    },
+    "text": "현재 대운에서 편재의 기운이 들어옵니다. 돈의 움직임이 커지는 시기입니다. 기회와 함께 변동성도 커집니다.",
+    "basis": "대운 천간 십성 = 편재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_편재",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "편재"
+    },
+    "text": "올해 세운에서 편재의 기운이 들어옵니다. 돈의 움직임이 커지는 시기입니다. 기회와 함께 변동성도 커집니다.",
+    "basis": "세운 천간 십성 = 편재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_정재",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "정재"
+    },
+    "text": "현재 대운에서 정재의 기운이 들어옵니다. 수입이 안정되고 살림이 정돈되는 시기입니다.",
+    "basis": "대운 천간 십성 = 정재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_정재",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "정재"
+    },
+    "text": "올해 세운에서 정재의 기운이 들어옵니다. 수입이 안정되고 살림이 정돈되는 시기입니다.",
+    "basis": "세운 천간 십성 = 정재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_편관",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "편관"
+    },
+    "text": "현재 대운에서 편관의 기운이 들어옵니다. 책임과 압박이 커지는 시기입니다. 단단히 성장하지만 건강 관리가 필요합니다.",
+    "basis": "대운 천간 십성 = 편관",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_편관",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "편관"
+    },
+    "text": "올해 세운에서 편관의 기운이 들어옵니다. 책임과 압박이 커지는 시기입니다. 단단히 성장하지만 건강 관리가 필요합니다.",
+    "basis": "세운 천간 십성 = 편관",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_정관",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "정관"
+    },
+    "text": "현재 대운에서 정관의 기운이 들어옵니다. 인정·승진·책임이 따르는 시기입니다. 명예와 신뢰를 쌓기 좋습니다.",
+    "basis": "대운 천간 십성 = 정관",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_정관",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "정관"
+    },
+    "text": "올해 세운에서 정관의 기운이 들어옵니다. 인정·승진·책임이 따르는 시기입니다. 명예와 신뢰를 쌓기 좋습니다.",
+    "basis": "세운 천간 십성 = 정관",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_편인",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "편인"
+    },
+    "text": "현재 대운에서 편인의 기운이 들어옵니다. 생각이 깊어지고 새 분야에 눈을 뜨는 시기입니다. 고립감만 주의하세요.",
+    "basis": "대운 천간 십성 = 편인",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_편인",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "편인"
+    },
+    "text": "올해 세운에서 편인의 기운이 들어옵니다. 생각이 깊어지고 새 분야에 눈을 뜨는 시기입니다. 고립감만 주의하세요.",
+    "basis": "세운 천간 십성 = 편인",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "daewoon_정인",
+    "topic": "fortune",
+    "when": {
+      "daewoonGod": "정인"
+    },
+    "text": "현재 대운에서 정인의 기운이 들어옵니다. 배움과 귀인의 도움이 들어오는 시기입니다. 자격·공부에 투자하기 좋습니다.",
+    "basis": "대운 천간 십성 = 정인",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "seun_정인",
+    "topic": "fortune",
+    "when": {
+      "seunGod": "정인"
+    },
+    "text": "올해 세운에서 정인의 기운이 들어옵니다. 배움과 귀인의 도움이 들어오는 시기입니다. 자격·공부에 투자하기 좋습니다.",
+    "basis": "세운 천간 십성 = 정인",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  }
+]

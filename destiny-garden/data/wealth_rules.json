@@ -1,0 +1,786 @@
+[
+  {
+    "id": "wealth_1_has_비견",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "비견": 2
+      }
+    },
+    "text": "비견이 두 개 이상으로 강합니다. 내 힘으로 버는 자수성가형입니다. 동업·보증은 신중히 하세요.",
+    "basis": "십성 비견 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_2_one_비견",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "비견": 1
+      },
+      "godLte": {
+        "비견": 1
+      }
+    },
+    "text": "비견이 하나 자리 잡고 있습니다. 내 힘으로 버는 자수성가형입니다. 동업·보증은 신중히 하세요.",
+    "basis": "십성 비견 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_3_no_비견",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "비견": 0
+      }
+    },
+    "text": "비견이 드러나지 않아 '스스로 밀어붙이는 힘'은 노력으로 채워 가는 영역입니다. 대운·세운에서 비견이 들어올 때 기회가 됩니다.",
+    "basis": "십성 비견 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_4_has_겁재",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "겁재": 2
+      }
+    },
+    "text": "겁재이 두 개 이상으로 강합니다. 수입 기회는 많으나 지출·경쟁으로 새기 쉬운 구조입니다. 자동 저축이 보완책입니다.",
+    "basis": "십성 겁재 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_5_one_겁재",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "겁재": 1
+      },
+      "godLte": {
+        "겁재": 1
+      }
+    },
+    "text": "겁재이 하나 자리 잡고 있습니다. 수입 기회는 많으나 지출·경쟁으로 새기 쉬운 구조입니다. 자동 저축이 보완책입니다.",
+    "basis": "십성 겁재 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_6_no_겁재",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "겁재": 0
+      }
+    },
+    "text": "겁재이 드러나지 않아 '승부처에서의 추진력'은 노력으로 채워 가는 영역입니다. 대운·세운에서 겁재이 들어올 때 기회가 됩니다.",
+    "basis": "십성 겁재 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_7_has_식신",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "식신": 2
+      }
+    },
+    "text": "식신이 두 개 이상으로 강합니다. 재주와 꾸준함이 수입으로 이어집니다. 작게 시작해 오래가는 수익원이 어울립니다.",
+    "basis": "십성 식신 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_8_one_식신",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "식신": 1
+      },
+      "godLte": {
+        "식신": 1
+      }
+    },
+    "text": "식신이 하나 자리 잡고 있습니다. 재주와 꾸준함이 수입으로 이어집니다. 작게 시작해 오래가는 수익원이 어울립니다.",
+    "basis": "십성 식신 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_9_no_식신",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "식신": 0
+      }
+    },
+    "text": "식신이 드러나지 않아 '여유 있게 표현하고 즐기는 힘'은 노력으로 채워 가는 영역입니다. 대운·세운에서 식신이 들어올 때 기회가 됩니다.",
+    "basis": "십성 식신 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_10_has_상관",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "상관": 2
+      }
+    },
+    "text": "상관이 두 개 이상으로 강합니다. 아이디어·표현이 돈이 되는 유형입니다. 프리랜서·콘텐츠·기술 수익화에 유리합니다.",
+    "basis": "십성 상관 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_11_one_상관",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "상관": 1
+      },
+      "godLte": {
+        "상관": 1
+      }
+    },
+    "text": "상관이 하나 자리 잡고 있습니다. 아이디어·표현이 돈이 되는 유형입니다. 프리랜서·콘텐츠·기술 수익화에 유리합니다.",
+    "basis": "십성 상관 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_12_no_상관",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "상관": 0
+      }
+    },
+    "text": "상관이 드러나지 않아 '틀을 깨는 표현력'은 노력으로 채워 가는 영역입니다. 대운·세운에서 상관이 들어올 때 기회가 됩니다.",
+    "basis": "십성 상관 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_13_has_편재",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "편재": 2
+      }
+    },
+    "text": "편재이 두 개 이상으로 강합니다. 큰 돈과 유동 자산에 감각이 있습니다. 사업·투자 기회에 반응이 빠릅니다.",
+    "basis": "십성 편재 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_14_one_편재",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "편재": 1
+      },
+      "godLte": {
+        "편재": 1
+      }
+    },
+    "text": "편재이 하나 자리 잡고 있습니다. 큰 돈과 유동 자산에 감각이 있습니다. 사업·투자 기회에 반응이 빠릅니다.",
+    "basis": "십성 편재 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_15_no_편재",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "편재": 0
+      }
+    },
+    "text": "편재이 드러나지 않아 '큰 기회를 잡는 감각'은 노력으로 채워 가는 영역입니다. 대운·세운에서 편재이 들어올 때 기회가 됩니다.",
+    "basis": "십성 편재 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_16_has_정재",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "정재": 2
+      }
+    },
+    "text": "정재이 두 개 이상으로 강합니다. 성실하게 모으는 안정형입니다. 월급·정기 수익과 저축에서 힘이 납니다.",
+    "basis": "십성 정재 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_17_one_정재",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "정재": 1
+      },
+      "godLte": {
+        "정재": 1
+      }
+    },
+    "text": "정재이 하나 자리 잡고 있습니다. 성실하게 모으는 안정형입니다. 월급·정기 수익과 저축에서 힘이 납니다.",
+    "basis": "십성 정재 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_18_no_정재",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "정재": 0
+      }
+    },
+    "text": "정재이 드러나지 않아 '꾸준히 모으는 습관'은 노력으로 채워 가는 영역입니다. 대운·세운에서 정재이 들어올 때 기회가 됩니다.",
+    "basis": "십성 정재 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_19_has_편관",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "편관": 2
+      }
+    },
+    "text": "편관이 두 개 이상으로 강합니다. 책임과 압박 속에서 수입이 커지는 구조입니다. 무리한 확장은 경계하세요.",
+    "basis": "십성 편관 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_20_one_편관",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "편관": 1
+      },
+      "godLte": {
+        "편관": 1
+      }
+    },
+    "text": "편관이 하나 자리 잡고 있습니다. 책임과 압박 속에서 수입이 커지는 구조입니다. 무리한 확장은 경계하세요.",
+    "basis": "십성 편관 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_21_no_편관",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "편관": 0
+      }
+    },
+    "text": "편관이 드러나지 않아 '도전과 압박을 견디는 힘'은 노력으로 채워 가는 영역입니다. 대운·세운에서 편관이 들어올 때 기회가 됩니다.",
+    "basis": "십성 편관 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_22_has_정관",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "정관": 2
+      }
+    },
+    "text": "정관이 두 개 이상으로 강합니다. 조직·직함에서 오는 신뢰가 재물로 이어집니다. 안정적 기관·전문직에 유리합니다.",
+    "basis": "십성 정관 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_23_one_정관",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "정관": 1
+      },
+      "godLte": {
+        "정관": 1
+      }
+    },
+    "text": "정관이 하나 자리 잡고 있습니다. 조직·직함에서 오는 신뢰가 재물로 이어집니다. 안정적 기관·전문직에 유리합니다.",
+    "basis": "십성 정관 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_24_no_정관",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "정관": 0
+      }
+    },
+    "text": "정관이 드러나지 않아 '규율과 신뢰를 쌓는 힘'은 노력으로 채워 가는 영역입니다. 대운·세운에서 정관이 들어올 때 기회가 됩니다.",
+    "basis": "십성 정관 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_25_has_편인",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "편인": 2
+      }
+    },
+    "text": "편인이 두 개 이상으로 강합니다. 독특한 전문성이 수입이 되지만 시작이 느릴 수 있습니다. 틈새 분야를 공략하세요.",
+    "basis": "십성 편인 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_26_one_편인",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "편인": 1
+      },
+      "godLte": {
+        "편인": 1
+      }
+    },
+    "text": "편인이 하나 자리 잡고 있습니다. 독특한 전문성이 수입이 되지만 시작이 느릴 수 있습니다. 틈새 분야를 공략하세요.",
+    "basis": "십성 편인 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_27_no_편인",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "편인": 0
+      }
+    },
+    "text": "편인이 드러나지 않아 '직관적인 영감'은 노력으로 채워 가는 영역입니다. 대운·세운에서 편인이 들어올 때 기회가 됩니다.",
+    "basis": "십성 편인 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_28_has_정인",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "정인": 2
+      }
+    },
+    "text": "정인이 두 개 이상으로 강합니다. 학습·자격이 재물의 바탕입니다. 쌓은 자격과 신뢰가 수입을 보호합니다.",
+    "basis": "십성 정인 ≥ 2",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_29_one_정인",
+    "topic": "wealth",
+    "when": {
+      "godGte": {
+        "정인": 1
+      },
+      "godLte": {
+        "정인": 1
+      }
+    },
+    "text": "정인이 하나 자리 잡고 있습니다. 학습·자격이 재물의 바탕입니다. 쌓은 자격과 신뢰가 수입을 보호합니다.",
+    "basis": "십성 정인 = 1",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_30_no_정인",
+    "topic": "wealth",
+    "when": {
+      "godLte": {
+        "정인": 0
+      }
+    },
+    "text": "정인이 드러나지 않아 '배움과 보호받는 느낌'은 노력으로 채워 가는 영역입니다. 대운·세운에서 정인이 들어올 때 기회가 됩니다.",
+    "basis": "십성 정인 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_31_grp_비겁_strong",
+    "topic": "wealth",
+    "when": {
+      "groupGte": {
+        "비겁": 3
+      }
+    },
+    "text": "비겁 기운이 강합니다. 내 힘과 경쟁이 재물을 좌우합니다. 공유·동업 구조를 명확히 하세요.",
+    "basis": "비겁 ≥ 3",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_32_grp_비겁_none",
+    "topic": "wealth",
+    "when": {
+      "groupLte": {
+        "비겁": 0
+      }
+    },
+    "text": "비겁 기운이 없어 해당 영역은 후천적으로 보완해야 합니다.",
+    "basis": "비겁 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_33_grp_식상_strong",
+    "topic": "wealth",
+    "when": {
+      "groupGte": {
+        "식상": 3
+      }
+    },
+    "text": "식상 기운이 강합니다. 표현과 기술이 곧 수입원입니다. 재능을 상품화할수록 유리합니다.",
+    "basis": "식상 ≥ 3",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_34_grp_식상_none",
+    "topic": "wealth",
+    "when": {
+      "groupLte": {
+        "식상": 0
+      }
+    },
+    "text": "식상 기운이 없어 해당 영역은 후천적으로 보완해야 합니다.",
+    "basis": "식상 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_35_grp_재성_strong",
+    "topic": "wealth",
+    "when": {
+      "groupGte": {
+        "재성": 3
+      }
+    },
+    "text": "재성 기운이 강합니다. 재물에 대한 감각과 현실 감각이 뚜렷합니다. 돈의 흐름을 관리하는 습관이 큰 자산이 됩니다.",
+    "basis": "재성 ≥ 3",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_36_grp_재성_none",
+    "topic": "wealth",
+    "when": {
+      "groupLte": {
+        "재성": 0
+      }
+    },
+    "text": "재성 기운이 없어 해당 영역은 후천적으로 보완해야 합니다.",
+    "basis": "재성 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_37_grp_관성_strong",
+    "topic": "wealth",
+    "when": {
+      "groupGte": {
+        "관성": 3
+      }
+    },
+    "text": "관성 기운이 강합니다. 책임과 직책이 수입을 만듭니다. 안정적 조직과 전문직이 재물의 터전입니다.",
+    "basis": "관성 ≥ 3",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_38_grp_관성_none",
+    "topic": "wealth",
+    "when": {
+      "groupLte": {
+        "관성": 0
+      }
+    },
+    "text": "관성 기운이 없어 해당 영역은 후천적으로 보완해야 합니다.",
+    "basis": "관성 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_39_grp_인성_strong",
+    "topic": "wealth",
+    "when": {
+      "groupGte": {
+        "인성": 3
+      }
+    },
+    "text": "인성 기운이 강합니다. 학습과 자격, 귀인이 재물을 지켜 줍니다. 서두른 투자는 피하세요.",
+    "basis": "인성 ≥ 3",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_40_grp_인성_none",
+    "topic": "wealth",
+    "when": {
+      "groupLte": {
+        "인성": 0
+      }
+    },
+    "text": "인성 기운이 없어 해당 영역은 후천적으로 보완해야 합니다.",
+    "basis": "인성 = 0",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_41_strength_극신강",
+    "topic": "wealth",
+    "when": {
+      "strength": [
+        "극신강"
+      ]
+    },
+    "text": "일간이 극신강입니다. 자기 기운이 매우 강해 재물을 직접 움직이고 감당하는 힘이 있습니다. 베풀며 순환시킬 때 커집니다.",
+    "basis": "신강신약 = 극신강",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_42_strength_신강",
+    "topic": "wealth",
+    "when": {
+      "strength": [
+        "신강"
+      ]
+    },
+    "text": "일간이 신강입니다. 자기 기운이 충분해 재물을 직접 움직이고 감당하는 힘이 있습니다. 베풀며 순환시킬 때 커집니다.",
+    "basis": "신강신약 = 신강",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_43_strength_중화",
+    "topic": "wealth",
+    "when": {
+      "strength": [
+        "중화"
+      ]
+    },
+    "text": "일간이 중화입니다. 기운의 균형이 잡혀 무리하지 않아도 균형 있게 모을 수 있습니다.",
+    "basis": "신강신약 = 중화",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_44_strength_신약",
+    "topic": "wealth",
+    "when": {
+      "strength": [
+        "신약"
+      ]
+    },
+    "text": "일간이 신약입니다. 자기 기운이 다소 약해 큰 재물보다 안전한 구조·협력 속에서 지키는 편이 낫습니다.",
+    "basis": "신강신약 = 신약",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_45_strength_극신약",
+    "topic": "wealth",
+    "when": {
+      "strength": [
+        "극신약"
+      ]
+    },
+    "text": "일간이 극신약입니다. 자기 기운이 매우 약해 큰 재물보다 안전한 구조·협력 속에서 지키는 편이 낫습니다.",
+    "basis": "신강신약 = 극신약",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_46_dom_목",
+    "topic": "wealth",
+    "when": {
+      "dominant": [
+        "목"
+      ]
+    },
+    "text": "목 기운이 가장 두드러집니다. 교육·기획·콘텐츠·패션 분야의 기회가 재물과 잘 연결됩니다.",
+    "basis": "오행 최다 = 목",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_47_miss_목",
+    "topic": "wealth",
+    "when": {
+      "missing": [
+        "목"
+      ]
+    },
+    "text": "목 기운이 비어 있습니다. '새로운 시작과 성장의 감각'을 의식적으로 채우면 좋습니다. 아침 산책과 식물 가꾸기로 목 기운을 채우세요.",
+    "basis": "오행 결핍 = 목",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_48_dom_화",
+    "topic": "wealth",
+    "when": {
+      "dominant": [
+        "화"
+      ]
+    },
+    "text": "화 기운이 가장 두드러집니다. 방송·마케팅·IT·뷰티 분야의 기회가 재물과 잘 연결됩니다.",
+    "basis": "오행 최다 = 화",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_49_miss_화",
+    "topic": "wealth",
+    "when": {
+      "missing": [
+        "화"
+      ]
+    },
+    "text": "화 기운이 비어 있습니다. '표현력과 열정의 불씨'을 의식적으로 채우면 좋습니다. 사람들 앞에서 표현하는 기회를 의식적으로 늘려 보세요.",
+    "basis": "오행 결핍 = 화",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_50_dom_토",
+    "topic": "wealth",
+    "when": {
+      "dominant": [
+        "토"
+      ]
+    },
+    "text": "토 기운이 가장 두드러집니다. 부동산·중개·농업·상담 분야의 기회가 재물과 잘 연결됩니다.",
+    "basis": "오행 최다 = 토",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_51_miss_토",
+    "topic": "wealth",
+    "when": {
+      "missing": [
+        "토"
+      ]
+    },
+    "text": "토 기운이 비어 있습니다. '중심과 신뢰의 기반'을 의식적으로 채우면 좋습니다. 규칙적인 생활 리듬이 토 기운을 단단히 해 줍니다.",
+    "basis": "오행 결핍 = 토",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_52_dom_금",
+    "topic": "wealth",
+    "when": {
+      "dominant": [
+        "금"
+      ]
+    },
+    "text": "금 기운이 가장 두드러집니다. 금융·법률·공학·의료기기 분야의 기회가 재물과 잘 연결됩니다.",
+    "basis": "오행 최다 = 금",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_53_miss_금",
+    "topic": "wealth",
+    "when": {
+      "missing": [
+        "금"
+      ]
+    },
+    "text": "금 기운이 비어 있습니다. '결단과 정리하는 힘'을 의식적으로 채우면 좋습니다. 미루던 일을 하나씩 끊어 내는 정리가 금 기운을 살립니다.",
+    "basis": "오행 결핍 = 금",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_54_dom_수",
+    "topic": "wealth",
+    "when": {
+      "dominant": [
+        "수"
+      ]
+    },
+    "text": "수 기운이 가장 두드러집니다. 유통·무역·연구·물류 분야의 기회가 재물과 잘 연결됩니다.",
+    "basis": "오행 최다 = 수",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_55_miss_수",
+    "topic": "wealth",
+    "when": {
+      "missing": [
+        "수"
+      ]
+    },
+    "text": "수 기운이 비어 있습니다. '지혜와 유연한 흐름'을 의식적으로 채우면 좋습니다. 충분한 휴식과 물가에서의 시간이 수 기운을 채웁니다.",
+    "basis": "오행 결핍 = 수",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_56_rel_충",
+    "topic": "wealth",
+    "when": {
+      "relationHas": [
+        "충"
+      ]
+    },
+    "text": "충이 있어 재물의 변동·이동이 잦을 수 있습니다. 큰 결정은 분산해서 하세요.",
+    "basis": "원국에 충 존재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_57_rel_합",
+    "topic": "wealth",
+    "when": {
+      "relationHas": [
+        "합"
+      ]
+    },
+    "text": "합이 있어 협력과 연결을 통한 재물 기회가 열립니다.",
+    "basis": "원국에 합 존재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": "wealth_58_rel_형",
+    "topic": "wealth",
+    "when": {
+      "relationHas": [
+        "형"
+      ]
+    },
+    "text": "형이 있어 법·계약·문서 문제를 꼼꼼히 확인하세요.",
+    "basis": "원국에 형 존재",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  }
+]

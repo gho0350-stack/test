@@ -1,0 +1,10 @@
+[
+  { "id": "ticket_3", "kind": "ticket", "name": "질문권 3개", "price": 2900, "amount": 3, "desc": "NPC 상담 3회" },
+  { "id": "ticket_10", "kind": "ticket", "name": "질문권 10개", "price": 7900, "amount": 10, "desc": "NPC 상담 10회 (개당 790원)", "badge": "인기" },
+  { "id": "ticket_30", "kind": "ticket", "name": "질문권 30개", "price": 19900, "amount": 30, "desc": "NPC 상담 30회 (개당 663원)", "badge": "최저가" },
+  { "id": "report_wealth", "kind": "report", "report": "wealth", "name": "심층 재물운 리포트", "price": 3900, "desc": "재물 형성 성향 · 대운 흐름 · 올해 전략" },
+  { "id": "report_career", "kind": "report", "report": "career", "name": "심층 커리어운 리포트", "price": 3900, "desc": "적성 · 직무 방향 · 이직/성장 시기" },
+  { "id": "report_compat", "kind": "report", "report": "compat", "name": "배우자·궁합 심층 리포트", "price": 3900, "desc": "등록한 상대와의 두 사람 사주 비교", "needs_partner": true },
+  { "id": "report_pastlife", "kind": "report", "report": "pastlife", "name": "전생 스토리", "price": 2900, "desc": "창작 세계관의 나의 전생 이야기" },
+  { "id": "report_total", "kind": "report", "report": "total", "name": "종합 운명 리포트", "price": 7900, "desc": "사주 전체 · 대운 · 올해 · 조언" }
+]

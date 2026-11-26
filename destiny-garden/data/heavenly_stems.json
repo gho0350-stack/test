@@ -1,0 +1,122 @@
+[
+  {
+    "id": 0,
+    "name": "갑",
+    "hanja": "甲",
+    "element": "목",
+    "yin_yang": "양",
+    "image": "큰 나무",
+    "strength": "곧게 뻗는 리더십과 시작의 에너지",
+    "caution": "고집이 세 보일 수 있음",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 1,
+    "name": "을",
+    "hanja": "乙",
+    "element": "목",
+    "yin_yang": "음",
+    "image": "풀꽃과 덩굴",
+    "strength": "유연한 적응력과 섬세한 생존력",
+    "caution": "타인에게 기대려는 경향",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 2,
+    "name": "병",
+    "hanja": "丙",
+    "element": "화",
+    "yin_yang": "양",
+    "image": "태양",
+    "strength": "밝고 열정적이며 숨김없는 에너지",
+    "caution": "성급하게 달아오를 수 있음",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 3,
+    "name": "정",
+    "hanja": "丁",
+    "element": "화",
+    "yin_yang": "음",
+    "image": "등불",
+    "strength": "따뜻하고 집중력 있는 섬세함",
+    "caution": "감정 기복에 예민함",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 4,
+    "name": "무",
+    "hanja": "戊",
+    "element": "토",
+    "yin_yang": "양",
+    "image": "큰 산",
+    "strength": "믿음직하고 포용력 있는 중심",
+    "caution": "움직임이 느리고 완고할 수 있음",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 5,
+    "name": "기",
+    "hanja": "己",
+    "element": "토",
+    "yin_yang": "음",
+    "image": "논밭",
+    "strength": "실속 있고 돌봄에 능한 다재다능함",
+    "caution": "걱정을 오래 품는 경향",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 6,
+    "name": "경",
+    "hanja": "庚",
+    "element": "금",
+    "yin_yang": "양",
+    "image": "바위와 강철",
+    "strength": "결단력과 의리, 추진력",
+    "caution": "말과 행동이 날카로울 수 있음",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 7,
+    "name": "신",
+    "hanja": "辛",
+    "element": "금",
+    "yin_yang": "음",
+    "image": "보석",
+    "strength": "섬세한 미감과 완벽을 향한 집중",
+    "caution": "자존심과 예민함",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 8,
+    "name": "임",
+    "hanja": "壬",
+    "element": "수",
+    "yin_yang": "양",
+    "image": "큰 강과 바다",
+    "strength": "깊은 지혜와 자유로운 포용력",
+    "caution": "방향 없이 흘러가기 쉬움",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  },
+  {
+    "id": 9,
+    "name": "계",
+    "hanja": "癸",
+    "element": "수",
+    "yin_yang": "음",
+    "image": "이슬과 봄비",
+    "strength": "직관과 감수성, 스며드는 지혜",
+    "caution": "소극적으로 숨는 경향",
+    "source": "자체 작성 초안 (명리 일반 이론 기반, 전문가 검수 전)",
+    "review_status": "pending"
+  }
+]
