@@ -1,0 +1,17 @@
+name: gemini-models
+# 등록한 GEMINI_API_KEY 로 사용 가능한 모델 이름을 로그에 출력한다(키는 출력되지 않음). 수동 실행 전용.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python3 pipeline/list_gemini_models.py
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
