@@ -5,6 +5,7 @@
 이미 승인·대기 중인 (학교, 학년도, 범주)는 다시 검색하지 않는다(결측 중심). 같은 URL 은 한 번만 처리한다."""
 import csv, datetime, html, os, re, sys, urllib.parse, urllib.request
 import admissions_ai as ai
+import admissions_sites as sites
 import admissions_build as ab
 D = ab.D
 
@@ -20,6 +21,31 @@ def fetch_text(url):
     t = urllib.request.urlopen(req, timeout=30).read().decode("utf8", "ignore")
     t = re.sub(r"<script.*?</script>|<style.*?</style>", "", t, flags=re.S)
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", t))).strip()
+
+def school_homepages():
+    """NEIS 학교 목록(out/schools_all.json)에서 학교명 -> 홈페이지 주소."""
+    import json
+    p = os.path.join(ab.ROOT, "pipeline", "out", "schools_all.json")
+    return {x["SCHUL_NM"]: x.get("HMPG_ADRES") for x in json.load(open(p, encoding="utf8"))} if os.path.exists(p) else {}
+
+def collect_school_sites(schools, have, raw_rows, years, usage, extract=None, discover=sites.discover, max_schools=8, log=print):
+    """auto_policy=예 로 허용된 '학교 공식 홈페이지'에서 아직 값이 없는 학교의 후보를 모은다."""
+    homes = school_homepages(); added = []; stats = {"schools": 0, "pages": 0, "rows": 0, "rejected": 0}
+    todo = [s for s in schools if any(not have.get((s["id"], y)) for y in years) and homes.get(s["name"])][:max_schools]
+    for s in todo:
+        stats["schools"] += 1; log("학교 홈페이지 탐색:", s["name"], homes[s["name"]])
+        try: pages = discover(homes[s["name"]], log=log)
+        except Exception as e: log("  탐색 실패:", type(e).__name__); continue
+        for url, text in pages[:4]:                          # 학교당 AI 호출 상한
+            for y in sorted({int("20" + m.group(1)) for m in sites.YEAR.finditer(text)} & set(years)):
+                if have.get((s["id"], y)): continue
+                try:
+                    resp = (extract or ai.ask_ai)(ai.PROMPT.format(school=s["name"], year=y), text=text[:20000], usage=usage)
+                    ok, bad = ai.parse_rows(resp, text); stats["rejected"] += len(bad); stats["pages"] += 1
+                    for x in ok: added.append(ai.to_raw_row(x, s, y, "school_site", url, "텍스트", "school_site:" + urllib.parse.urlparse(url).netloc + urllib.parse.urlparse(url).path))
+                except Exception as e: log("  추출 실패:", url[:80], str(e)[:80])
+    existing = {r["record_id"] for r in raw_rows}; new = [r for r in added if r["record_id"] not in existing]
+    stats["rows"] = len(new); log("학교 홈페이지 수집 결과:", stats); return new, stats
 
 def in_season(today=None):
     """입시 시즌(12~4월)은 매주, 그 외는 월 1회(매월 첫 주)만 실행한다."""
@@ -61,6 +87,10 @@ def run(years=(2024, 2025, 2026), max_pages=30, log=print, search=None, extract=
                     for x in ok: added.append(ai.to_raw_row(x, school, plan["year"], src["source_id"], url, "텍스트", f"{src['source_id']}:{urllib.parse.urlparse(url).path}"))
                 except Exception as e: log("추출 실패:", url, str(e)[:100])
     existing = {r["record_id"] for r in raw}; new = [r for r in added if r["record_id"] not in existing]
+    if next((s for s in sources if s["source_id"] == "school_site" and s["auto_policy"] == "예"), None):
+        have_ok = {k: v for k, v in have.items() if v}
+        extra, st2 = collect_school_sites(schools, have_ok, raw, list(years), usage, extract=extract)
+        new += extra; stats["school_sites"] = st2
     if new: ab.wr(D("admissions_raw.csv"), raw + new, ab.RAW_F)
     if manual:
         old = ab.rd(D("admissions_manual_links.csv")); ab.wr(D("admissions_manual_links.csv"), old + manual, ["school_id", "school_name", "year", "title", "url", "source_id", "policy", "found_at"])
