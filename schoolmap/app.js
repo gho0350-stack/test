@@ -486,7 +486,7 @@
     view.innerHTML = `
       ${backLink('#/schools', '학교 목록')}
       <div class="s-head">
-        <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${zoneOf(s) ? esc(zoneOf(s).name) + ' · ' : ''}${esc(reg.tag)} · 의대 ${sd(s, 0)} · SKY ${sd(s, 1)} · 인서울 ${sd(s, 2)}${s.adm ? ` (${s.adm.year}학년도 ${s.adm.count_type || ''})` : ' (샘플)'}</p></div>
+        <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${zoneOf(s) ? esc(zoneOf(s).name) + ' · ' : ''}${esc(reg.tag)} · 의대 ${sd(s, 0)} · ${s.adm && s.adm.snu_count != null ? '서울대 ' + s.adm.snu_count + ' · ' : ''}SKY ${sd(s, 1)} · 인서울 ${sd(s, 2)}${s.adm ? ` (${s.adm.year}학년도 ${s.adm.count_type || ''})` : ' (샘플)'}</p></div>
         <a class="btn primary" href="#/community?region=${s.region}">${ic('chat')}${reg.gu} 커뮤니티</a>
       </div>
       <div class="m-layout">
@@ -527,7 +527,7 @@
     const a = s.adm; if (!a) return '<div class="srcrow"><span class="src sample">샘플</span><div><b>진학 실적</b> <small class="muted">아직 입력된 실제 실적이 없어요 (화면의 수치는 샘플). 공식 공시·학교 발표·별도 집계로 출처를 구분해 입력할 예정이에요.</small></div></div>';
     const ok = a.verified_status === '확인완료';
     return `<div class="srcrow"><span class="src ${ok ? 'real' : 'sample'}">${esc(a.source_type || '출처 미기재')}</span><div><b>진학 실적 ${a.year}학년도</b> <small class="muted">${esc(a.count_type || '')} · ${esc(a.student_scope || '')} · 중복합격 ${esc(a.duplicate_included || '')} · ${ok ? '검증 ' + esc(a.verified_at || '') : '미확인'}</small>
-      <div class="dchips">${[['의대', 0], ['SKY', 1], ['인서울', 2]].map(([l, k]) => `<span class="dchip"><b>${l}</b> ${sd(s, k)}</span>`).join('')}${a.graduate_count != null ? `<span class="dchip">졸업생 ${a.graduate_count}명</span>` : ''}</div>
+      <div class="dchips">${[['의대', 0], ['SKY', 1], ['인서울', 2]].map(([l, k]) => `<span class="dchip"><b>${l}</b> ${sd(s, k)}</span>`).join('')}${a.snu_count != null ? `<span class="dchip"><b>서울대</b> ${a.snu_count}</span>` : ''}${a.graduate_count != null ? `<span class="dchip">졸업생 ${a.graduate_count}명</span>` : ''}</div>
       <small class="muted">의대·SKY·인서울은 서로 겹치는 집계라 합산하지 않아요.${a.source_url ? ` <a href="${esc(a.source_url)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">원문</a>` : ''}</small></div></div>`;
   }
   function infraLine(s) {
