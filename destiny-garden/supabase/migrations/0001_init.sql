@@ -1,91 +1,111 @@
--- 운명의 정원 초기 스키마 (Supabase PostgreSQL). 컬렉션 이름은 src/lib/server/db.ts 와 1:1 대응.
--- 모든 사용자 데이터 테이블에 RLS 를 적용한다. 서버(service_role)만 결제·질문권·퀘스트 보상 테이블에 쓴다.
+-- 운명의 정원 스키마 (Supabase PostgreSQL). Supabase SQL Editor 에 전체를 붙여넣고 Run 하세요. 여러 번 실행해도 안전합니다.
+-- 접근 모델: 브라우저는 DB에 직접 접근하지 않고, 서버(service_role)만 읽고 씁니다. RLS 는 직접 접근 차단/본인 행 제한용 안전장치입니다.
+-- 컬럼 이름은 src/lib/server/db.ts 의 컬렉션과 1:1 대응합니다.
 
 create extension if not exists pgcrypto;
 
--- ───────── 회원/출생 정보 ─────────
-create table public.profiles (
+-- ───────── 사용자 데이터 ─────────
+create table if not exists public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   nickname text not null check (char_length(nickname) between 1 and 12),
   avatar_id smallint not null default 0 check (avatar_id between 0 and 2),
   exp integer not null default 0,
   created_at timestamptz not null default now()
 );
-create table public.birth_profiles (  -- 개인정보: 최소 수집
+create table if not exists public.birth_profiles (   -- 개인정보(최소 수집). 입력 원본은 data(jsonb)
   user_id uuid primary key references auth.users(id) on delete cascade,
-  calendar text not null check (calendar in ('solar','lunar')),
-  year smallint not null, month smallint not null, day smallint not null, is_leap_month boolean not null default false,
-  hour smallint, minute smallint, hour_unknown boolean not null default false,
-  gender text not null check (gender in ('female','male')),
-  region text, longitude_correction boolean not null default false, night_zi text not null default 'same_day',
+  data jsonb not null,
   created_at timestamptz not null default now()
 );
-create table public.saju_charts (     -- 게임 데이터와 분리된 사주 계산 원본 (결정론적 엔진 결과)
+create table if not exists public.saju_charts (      -- 게임 데이터와 분리된 사주 계산 원본(결정론적 엔진 결과)
   user_id uuid primary key references auth.users(id) on delete cascade,
   chart jsonb not null, engine text not null, created_at timestamptz not null default now()
 );
-create table public.destiny_cards (id int primary key, day_pillar text not null, name text not null, rarity text not null, data jsonb not null, review_status text not null default 'pending');
-create table public.user_destiny_cards (user_id uuid references auth.users(id) on delete cascade, card_id int references public.destiny_cards(id), acquired_at timestamptz not null default now(), primary key (user_id, card_id));
+create table if not exists public.avatars (user_id uuid primary key references auth.users(id) on delete cascade, body_type smallint not null default 0);
+create table if not exists public.user_positions (user_id uuid primary key references auth.users(id) on delete cascade, x real not null, z real not null, updated_at timestamptz not null default now());
+create table if not exists public.user_destiny_cards (user_id uuid references auth.users(id) on delete cascade, card_id int, acquired_at timestamptz not null default now(), primary key (user_id, card_id));
+create table if not exists public.quest_progress (user_id uuid references auth.users(id) on delete cascade, quest_id text, completed_at timestamptz not null default now(), primary key (user_id, quest_id));
+create table if not exists public.game_rewards (id text primary key, user_id uuid references auth.users(id) on delete cascade, quest_id text, exp int not null, coins int not null, created_at timestamptz not null default now());
+create table if not exists public.tarot_draws (id text primary key, user_id uuid references auth.users(id) on delete cascade, draw_date date not null, position smallint not null, card_id int not null, reversed boolean not null, created_at timestamptz not null default now(), unique (user_id, draw_date));
+create table if not exists public.relationships (id text primary key, user_id uuid references auth.users(id) on delete cascade, name text not null, relation text, birth jsonb not null, chart jsonb not null, created_at timestamptz not null default now());
+create table if not exists public.consultations (id text primary key, user_id uuid references auth.users(id) on delete cascade, npc_id text not null, topic text, created_at timestamptz not null default now(), unique (user_id, npc_id));
+create table if not exists public.consultation_messages (id text primary key, consultation_id text not null, user_id uuid references auth.users(id) on delete cascade, npc_id text not null, role text not null check (role in ('user','npc')), content jsonb not null, cost smallint not null default 0, created_at timestamptz not null default now());
+create table if not exists public.consultation_summaries (id text primary key, user_id uuid references auth.users(id) on delete cascade, npc_id text not null, topic text, summary text not null, created_at timestamptz not null default now());
+create table if not exists public.ai_usage_logs (id text primary key, user_id uuid references auth.users(id) on delete cascade, npc_id text, model text, ok boolean not null, ms int, tokens int, error text, created_at timestamptz not null default now());
+create table if not exists public.reports (id text primary key, user_id uuid references auth.users(id) on delete cascade, product_id text not null, partner_id text, content jsonb not null, source text, created_at timestamptz not null default now());
+create table if not exists public.consent_logs (id text primary key, user_id uuid references auth.users(id) on delete set null, kind text not null, version text not null, created_at timestamptz not null default now());
 
--- ───────── 게임 데이터 ─────────
-create table public.game_maps (id text primary key, name text not null, background text, size jsonb not null);
-create table public.game_buildings (id text primary key, map_id text references public.game_maps(id), name text not null, pos jsonb not null, door jsonb not null, content text not null, npc_id text);
-create table public.game_npcs (id text primary key, name text not null, topic text not null, style text not null, greeting text, suggested jsonb not null default '[]');
-create table public.avatars (user_id uuid primary key references auth.users(id) on delete cascade, body_type smallint not null default 0);
-create table public.avatar_items (id text primary key, name text not null, kind text not null, price integer not null default 0);
-create table public.user_inventory (user_id uuid references auth.users(id) on delete cascade, item_id text references public.avatar_items(id), acquired_at timestamptz not null default now(), primary key (user_id, item_id));
-create table public.user_positions (user_id uuid primary key references auth.users(id) on delete cascade, x real not null, z real not null, updated_at timestamptz not null default now());
-create table public.quests (id text primary key, sort_order int not null, title text not null, hint text, event text not null, reward_exp int not null default 0, reward_coins int not null default 0, active boolean not null default true);
-create table public.quest_progress (user_id uuid references auth.users(id) on delete cascade, quest_id text references public.quests(id), completed_at timestamptz not null default now(), primary key (user_id, quest_id));
-create table public.game_rewards (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, quest_id text, exp int not null, coins int not null, created_at timestamptz not null default now());
-create table public.tarot_cards (id int primary key, arcana text not null, name text not null, name_en text, suit text, upright text, reversed text, review_status text not null default 'pending');
-create table public.tarot_draws (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, draw_date date not null, position smallint not null, card_id int references public.tarot_cards(id), reversed boolean not null, created_at timestamptz not null default now(), unique (user_id, draw_date));
-create table public.relationships (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, name text not null, relation text, birth jsonb not null, chart jsonb not null, created_at timestamptz not null default now());
+-- ───────── 결제/질문권: 계정 삭제 후에도 전자상거래 기록 보관을 위해 user_id 는 set null ─────────
+create table if not exists public.credit_wallets (user_id uuid primary key references auth.users(id) on delete cascade, tickets integer not null default 0 check (tickets >= 0), coins integer not null default 0 check (coins >= 0));
+create table if not exists public.credit_ledger (id text primary key, user_id uuid references auth.users(id) on delete set null, delta integer not null, kind text not null, ref text, created_at timestamptz not null default now());
+create unique index if not exists credit_ledger_user_ref on public.credit_ledger (user_id, ref) where ref is not null;   -- 지급/환불 멱등성
+create table if not exists public.orders (id text primary key, user_id uuid references auth.users(id) on delete set null, product_id text not null, amount integer not null, partner_id text, status text not null check (status in ('pending','paid','refunded','failed')), created_at timestamptz not null default now());
+create table if not exists public.payments (id text primary key, order_id text not null references public.orders(id), user_id uuid references auth.users(id) on delete set null, payment_key text not null unique, amount integer not null, status text not null check (status in ('DONE','CANCELED')), provider text not null, raw jsonb, created_at timestamptz not null default now());
 
--- ───────── 상담 ─────────
-create table public.consultations (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, npc_id text references public.game_npcs(id), topic text, created_at timestamptz not null default now(), unique (user_id, npc_id));
-create table public.consultation_messages (id uuid primary key default gen_random_uuid(), consultation_id uuid references public.consultations(id) on delete cascade, user_id uuid references auth.users(id) on delete cascade, npc_id text, role text not null check (role in ('user','npc')), content jsonb not null, cost smallint not null default 0, created_at timestamptz not null default now());
-create table public.consultation_summaries (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, npc_id text, topic text, summary text not null, created_at timestamptz not null default now());
-create table public.ai_usage_logs (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, npc_id text, model text, ok boolean not null, ms int, tokens int, error text, created_at timestamptz not null default now());
+-- ───────── 관리자 편집용 카탈로그(현재 앱은 data/*.json 을 사용. 추후 관리자 화면에서 이 테이블로 이관) ─────────
+create table if not exists public.game_maps (id text primary key, data jsonb not null);
+create table if not exists public.game_buildings (id text primary key, data jsonb not null);
+create table if not exists public.game_npcs (id text primary key, data jsonb not null);
+create table if not exists public.quests (id text primary key, sort_order int not null default 0, active boolean not null default true, data jsonb not null);
+create table if not exists public.products (id text primary key, active boolean not null default true, data jsonb not null);
+create table if not exists public.destiny_cards (id int primary key, data jsonb not null, review_status text not null default 'pending');
+create table if not exists public.tarot_cards (id int primary key, data jsonb not null, review_status text not null default 'pending');
+create table if not exists public.avatar_items (id text primary key, data jsonb not null);
+create table if not exists public.user_inventory (user_id uuid references auth.users(id) on delete cascade, item_id text, acquired_at timestamptz not null default now(), primary key (user_id, item_id));
 
--- ───────── 상품/결제/질문권 ─────────
-create table public.products (id text primary key, kind text not null check (kind in ('ticket','report','item')), name text not null, price integer not null check (price >= 0), amount integer, active boolean not null default true);
-create table public.orders (id text primary key, user_id uuid not null references auth.users(id), product_id text not null references public.products(id), amount integer not null, partner_id uuid, status text not null check (status in ('pending','paid','refunded','failed')), created_at timestamptz not null default now());
-create table public.payments (id uuid primary key default gen_random_uuid(), order_id text not null references public.orders(id), user_id uuid not null references auth.users(id), payment_key text not null unique, amount integer not null, status text not null check (status in ('DONE','CANCELED')), provider text not null, raw jsonb, created_at timestamptz not null default now());
-create table public.credit_wallets (user_id uuid primary key references auth.users(id) on delete cascade, tickets integer not null default 0 check (tickets >= 0), coins integer not null default 0 check (coins >= 0));
-create table public.credit_ledger (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id), delta integer not null, kind text not null, ref text, created_at timestamptz not null default now(), unique (user_id, ref));  -- ref 유니크 = 지급/환불 멱등성
-create table public.reports (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id) on delete cascade, product_id text references public.products(id), partner_id uuid, content jsonb not null, source text, created_at timestamptz not null default now());
-create table public.consent_logs (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users(id), kind text not null, version text not null, created_at timestamptz not null default now());
-
--- ───────── RLS ─────────
+-- ───────── RLS: 모든 테이블 활성화. 정책은 본인 행 '읽기'만 허용(쓰기는 서버 service_role 전용) ─────────
 do $$
 declare t text;
 begin
-  -- 본인 행만 읽기/쓰기 가능한 테이블
-  foreach t in array array['profiles','birth_profiles','avatars','user_positions','relationships','consultations','consultation_messages','consultation_summaries','tarot_draws'] loop
+  foreach t in array array['profiles','birth_profiles','saju_charts','avatars','user_positions','user_destiny_cards','quest_progress','game_rewards','tarot_draws','relationships','consultations','consultation_messages','consultation_summaries','ai_usage_logs','reports','consent_logs','credit_wallets','credit_ledger','orders','payments','user_inventory'] loop
     execute format('alter table public.%I enable row level security', t);
-    execute format('create policy %I on public.%I for all using (user_id = auth.uid()) with check (user_id = auth.uid())', t || '_own', t);
+    execute format('drop policy if exists %I on public.%I', t || '_read_own', t);
+    execute format('create policy %I on public.%I for select to authenticated using (user_id = auth.uid())', t || '_read_own', t);
   end loop;
-  -- 본인 행 읽기만 가능 (쓰기는 서버 service_role 전용: 위변조 방지)
-  foreach t in array array['saju_charts','user_destiny_cards','quest_progress','game_rewards','user_inventory','orders','payments','credit_wallets','credit_ledger','reports','ai_usage_logs','consent_logs'] loop
+  foreach t in array array['game_maps','game_buildings','game_npcs','quests','products','destiny_cards','tarot_cards','avatar_items'] loop
     execute format('alter table public.%I enable row level security', t);
-    execute format('create policy %I on public.%I for select using (user_id = auth.uid())', t || '_read_own', t);
-  end loop;
-  -- 공개 카탈로그: 로그인 사용자 읽기 전용
-  foreach t in array array['destiny_cards','game_maps','game_buildings','game_npcs','avatar_items','quests','tarot_cards','products'] loop
-    execute format('alter table public.%I enable row level security', t);
-    execute format('create policy %I on public.%I for select using (auth.role() = ''authenticated'')', t || '_catalog', t);
+    execute format('drop policy if exists %I on public.%I', t || '_catalog', t);
+    execute format('create policy %I on public.%I for select to authenticated using (true)', t || '_catalog', t);
   end loop;
 end $$;
 
--- 질문권 차감은 반드시 원자적으로(서버 함수). 잔액 음수는 check 제약으로도 방지된다.
-create or replace function public.spend_tickets(p_user uuid, p_cost int, p_ref text) returns int
+-- ───────── 서버 전용 권한 ─────────
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;
+grant select on all tables in schema public to authenticated;
+
+-- ───────── 원자적 쓰기: 한 번의 호출 = 한 트랜잭션. 질문권 지갑은 낙관적 잠금(CAS)으로 이중 차감 방지 ─────────
+create or replace function public.dg_apply(p jsonb) returns void
 language plpgsql security definer set search_path = public as $$
-declare bal int;
+declare
+  allowed text[] := array['profiles','birth_profiles','saju_charts','avatars','user_positions','user_destiny_cards','quest_progress','game_rewards','tarot_draws','relationships','consultations','consultation_messages','consultation_summaries','ai_usage_logs','reports','consent_logs','credit_ledger','orders','payments'];
+  w jsonb := p->'wallet'; t text; rws jsonb; pk text[]; cols text; setl text; pkc text; cond text;
 begin
-  insert into credit_ledger(user_id, delta, kind, ref) values (p_user, -p_cost, 'consult_reserve', p_ref) on conflict (user_id, ref) do nothing;
-  update credit_wallets set tickets = tickets - p_cost where user_id = p_user and tickets >= p_cost returning tickets into bal;
-  if bal is null then raise exception 'INSUFFICIENT_TICKETS'; end if;
-  return bal;
+  if w is not null and w <> 'null'::jsonb then
+    if w->'old' is null or w->'old' = 'null'::jsonb then
+      insert into credit_wallets(user_id, tickets, coins) values ((w->'new'->>'user_id')::uuid, (w->'new'->>'tickets')::int, (w->'new'->>'coins')::int);
+    else
+      update credit_wallets set tickets = (w->'new'->>'tickets')::int, coins = (w->'new'->>'coins')::int
+       where user_id = (w->'new'->>'user_id')::uuid and tickets = (w->'old'->>'tickets')::int and coins = (w->'old'->>'coins')::int;
+      if not found then raise exception 'DG_CONFLICT'; end if;
+    end if;
+  end if;
+
+  for t, rws in select key, value from jsonb_each(coalesce(p->'deletes', '{}'::jsonb)) loop
+    if not (t = any(allowed)) then raise exception 'bad table %', t; end if;
+    select array_agg(a.attname::text order by a.attnum) into pk from pg_index i join pg_attribute a on a.attrelid = i.indrelid and a.attnum = any(i.indkey) where i.indrelid = ('public.' || quote_ident(t))::regclass and i.indisprimary;
+    select string_agg(format('x.%1$I = k.%1$I', c), ' and ') into cond from unnest(pk) c;
+    execute format('delete from public.%I x using jsonb_populate_recordset(null::public.%I, $1) k where %s', t, t, cond) using rws;
+  end loop;
+
+  for t, rws in select key, value from jsonb_each(coalesce(p->'upserts', '{}'::jsonb)) loop
+    if not (t = any(allowed)) then raise exception 'bad table %', t; end if;
+    select array_agg(a.attname::text order by a.attnum) into pk from pg_index i join pg_attribute a on a.attrelid = i.indrelid and a.attnum = any(i.indkey) where i.indrelid = ('public.' || quote_ident(t))::regclass and i.indisprimary;
+    select string_agg(quote_ident(column_name), ',' order by ordinal_position) into cols from information_schema.columns where table_schema = 'public' and table_name = t;
+    select string_agg(format('%1$I = excluded.%1$I', column_name), ',') into setl from information_schema.columns where table_schema = 'public' and table_name = t and column_name <> all(pk);
+    select string_agg(quote_ident(c), ',') into pkc from unnest(pk) c;
+    execute format('insert into public.%I (%s) select %s from jsonb_populate_recordset(null::public.%I, $1) on conflict (%s) do update set %s', t, cols, cols, t, pkc, coalesce(setl, pkc || ' = excluded.' || split_part(pkc, ',', 1))) using rws;
+  end loop;
 end $$;
-revoke all on function public.spend_tickets from public, anon, authenticated;
+revoke all on function public.dg_apply(jsonb) from public, anon, authenticated;
+grant execute on function public.dg_apply(jsonb) to service_role;

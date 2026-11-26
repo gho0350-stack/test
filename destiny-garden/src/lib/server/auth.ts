@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { tx, uid, now, type DB } from './db';
 import { C } from '../content';
 import { strictProd } from './env';
+import { useSupabase, sbCreateUser, sbLogin } from './supabase';
 
 const COOKIE = 'dg_session';
 function secret(): string {
@@ -39,20 +40,37 @@ export async function signup(email: string, password: string, consent: boolean) 
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, '이메일 형식이 올바르지 않습니다.');
   if (password.length < 8) throw new HttpError(400, '비밀번호는 8자 이상이어야 합니다.');
   if (!consent) throw new HttpError(400, '개인정보 수집·이용에 동의해야 가입할 수 있습니다.');
-  return tx((db) => {
-    if (Object.values(db.users).some((u) => u.email === email && !u.deleted_at)) throw new HttpError(409, '이미 가입된 이메일입니다.');
-    const id = uid('u_'), salt = crypto.randomBytes(16).toString('hex');
-    db.users[id] = { id, email, salt, pass_hash: hashPw(password, salt), created_at: now() };
-    db.credit_wallets[id] = { user_id: id, tickets: 0, coins: 0 };
+  let id: string;
+  if (useSupabase()) {
+    try { id = await sbCreateUser(email, password); } catch (e: any) { if (e?.code === 'EXISTS') throw new HttpError(409, '이미 가입된 이메일입니다.'); throw e; }
+  } else {
+    id = await tx(null, (db) => {
+      if (Object.values(db.users).some((u) => u.email === email && !u.deleted_at)) throw new HttpError(409, '이미 가입된 이메일입니다.');
+      const uid_ = uid('u_'), salt = crypto.randomBytes(16).toString('hex');
+      db.users[uid_] = { id: uid_, email, salt, pass_hash: hashPw(password, salt), created_at: now() };
+      return uid_;
+    });
+  }
+  // 환영 질문권 + 동의 기록 (멱등 ref)
+  await tx(id, (db) => {
+    db.credit_wallets[id] ??= { user_id: id, tickets: 0, coins: 0 };
     const welcome = C.costs.welcome_tickets;
-    if (welcome > 0) { db.credit_wallets[id].tickets = welcome; db.credit_ledger.push({ id: uid('l_'), user_id: id, delta: welcome, kind: 'signup_bonus', ref: `signup:${id}`, created_at: now() }); }
+    if (welcome > 0 && !db.credit_ledger.some((l) => l.ref === `signup:${id}`)) {
+      db.credit_wallets[id].tickets += welcome;
+      db.credit_ledger.push({ id: uid('l_'), user_id: id, delta: welcome, kind: 'signup_bonus', ref: `signup:${id}`, created_at: now() });
+    }
     db.consent_logs.push({ id: uid('c_'), user_id: id, kind: 'privacy_birth_data', version: '2026-11', created_at: now() });
-    return id;
   });
+  return id;
 }
 export async function login(email: string, password: string) {
   email = email.trim().toLowerCase();
-  return tx((db) => {
+  if (useSupabase()) {
+    const id = await sbLogin(email, password);
+    if (!id) throw new HttpError(401, '이메일 또는 비밀번호가 올바르지 않습니다.');
+    return id;
+  }
+  return tx(null, (db) => {
     const u = Object.values(db.users).find((x) => x.email === email && !x.deleted_at);
     if (!u || hashPw(password, u.salt) !== u.pass_hash) throw new HttpError(401, '이메일 또는 비밀번호가 올바르지 않습니다.');
     return u.id;
@@ -63,7 +81,8 @@ export class HttpError extends Error { constructor(public status: number, messag
 export async function requireUser(): Promise<string> {
   const id = await currentUserId();
   if (!id) throw new HttpError(401, '로그인이 필요합니다.');
-  const ok = await tx((db: DB) => !!db.users[id] && !db.users[id].deleted_at);
+  if (useSupabase()) return id; // 서명된 쿠키 + 이후 데이터 로드 시 사용자 존재 확인(USER_MISSING → 401)
+  const ok = await tx(null, (db: DB) => !!db.users[id] && !db.users[id].deleted_at);
   if (!ok) throw new HttpError(401, '로그인이 필요합니다.');
   return id;
 }

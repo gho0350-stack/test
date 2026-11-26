@@ -1,6 +1,7 @@
 import { C } from '../content';
 import { tx, read, uid, now, kstDate, type DB } from './db';
 import { HttpError } from './auth';
+import { useSupabase, sbDeleteUser } from './supabase';
 import { calcSaju, validateBirth, type BirthInput, type SajuChart } from '../saju/engine';
 import { destinyCardOf, dayPillarInfo, matchRules, cycleGods, pastLifeOf } from '../rules';
 import { compareCharts } from '../compat';
@@ -44,7 +45,7 @@ function applyEvent(db: DB, userId: string, event: string) {
 }
 export async function gameEvent(userId: string, event: string) {
   if (!CLIENT_EVENTS.has(event)) throw new HttpError(400, '허용되지 않은 이벤트입니다.');
-  return tx((db) => {
+  return tx(userId, (db) => {
     if (!db.birth_profiles[userId] && event !== 'enter_garden') throw new HttpError(409, '캐릭터를 먼저 만들어 주세요.');
     return applyEvent(db, userId, event);
   });
@@ -79,7 +80,7 @@ export function buildState(db: DB, userId: string) {
     config: { aiMode: aiMode(), payMode: payMode(), costs: C.costs, today },
   };
 }
-export const getState = (userId: string) => read((db) => buildState(db, userId));
+export const getState = (userId: string) => read(userId, (db) => buildState(db, userId));
 
 // ───────── 캐릭터 생성 ─────────
 export async function createCharacter(userId: string, b: any) {
@@ -89,7 +90,7 @@ export async function createCharacter(userId: string, b: any) {
   if (![0, 1, 2].includes(avatar)) throw new HttpError(400, '캐릭터 외형을 선택해 주세요.');
   const input = parseBirth(b);
   const chart = calcSaju(input);
-  return tx((db) => {
+  return tx(userId, (db) => {
     db.profiles[userId] = { user_id: userId, nickname, avatar_id: avatar, exp: db.profiles[userId]?.exp ?? 0, created_at: db.profiles[userId]?.created_at ?? now() };
     db.avatars[userId] = { user_id: userId, body_type: avatar };
     db.birth_profiles[userId] = { user_id: userId, ...input, hour: input.hour ?? null, minute: input.minute ?? null, hour_unknown: input.hour == null, created_at: now() };
@@ -113,7 +114,7 @@ export function parseBirth(b: any): BirthInput {
 }
 export async function previewChart(b: any) { return calcSaju(parseBirth(b)); }
 
-export const savePosition = (userId: string, x: number, z: number) => tx((db) => {
+export const savePosition = (userId: string, x: number, z: number) => tx(userId, (db) => {
   if (!Number.isFinite(x) || !Number.isFinite(z) || Math.abs(x) > 60 || Math.abs(z) > 60) throw new HttpError(400, '좌표가 올바르지 않습니다.');
   db.user_positions[userId] = { user_id: userId, x, z, updated_at: now() };
 });
@@ -124,21 +125,21 @@ export async function addRelationship(userId: string, b: any) {
   if (!name || name.length > 12) throw new HttpError(400, '이름은 1~12자로 입력해 주세요.');
   const input = parseBirth({ ...b, gender: b.gender });
   const chart = calcSaju(input);
-  return tx((db) => {
+  return tx(userId, (db) => {
     if (db.relationships.filter((r) => r.user_id === userId).length >= 5) throw new HttpError(400, '인물은 최대 5명까지 등록할 수 있어요.');
     const r = { id: uid('rel_'), user_id: userId, name, relation: String(b.relation || '지인').slice(0, 8), birth: { ...input }, chart, created_at: now() };
     db.relationships.push(r);
     return buildState(db, userId);
   });
 }
-export const removeRelationship = (userId: string, id: string) => tx((db) => {
+export const removeRelationship = (userId: string, id: string) => tx(userId, (db) => {
   db.relationships = db.relationships.filter((r) => !(r.id === id && r.user_id === userId));
   return buildState(db, userId);
 });
 
 // ───────── 인사이트(무료 요약) ─────────
 export async function insight(userId: string, topic: 'wealth' | 'career') {
-  return read((db) => {
+  return read(userId, (db) => {
     const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
     if (!chart) throw new HttpError(409, '캐릭터를 먼저 만들어 주세요.');
     const y = YEAR();
@@ -148,7 +149,7 @@ export async function insight(userId: string, topic: 'wealth' | 'career') {
 
 // ───────── 타로 ─────────
 export async function tarotInfo(userId: string) {
-  return read((db) => {
+  return read(userId, (db) => {
     const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
     const today = kstDate();
     const draw = db.tarot_draws.find((d) => d.user_id === userId && d.draw_date === today);
@@ -159,7 +160,7 @@ export async function tarotInfo(userId: string) {
 }
 export async function tarotPick(userId: string, position: number) {
   if (!Number.isInteger(position) || position < 0 || position > 77) throw new HttpError(400, '카드 위치가 올바르지 않습니다.');
-  return tx((db) => {
+  return tx(userId, (db) => {
     const today = kstDate();
     const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
     let d = db.tarot_draws.find((x) => x.user_id === userId && x.draw_date === today);
@@ -176,13 +177,13 @@ export async function tarotPick(userId: string, position: number) {
 
 // ───────── NPC 상담 ─────────
 export async function consultHistory(userId: string, npcId: string) {
-  return read((db) => ({
+  return read(userId, (db) => ({
     messages: db.consultation_messages.filter((m) => m.user_id === userId && m.npc_id === npcId).slice(-30).map((m) => ({ id: m.id, role: m.role, content: m.content, cost: m.cost, at: m.created_at })),
     summaries: db.consultation_summaries.filter((s) => s.user_id === userId && s.npc_id === npcId).slice(-5).map((s) => s.summary),
   }));
 }
 export async function consultOverview(userId: string) {
-  return read((db) => C.npcs.map((n) => ({ id: n.id, count: db.consultation_messages.filter((m) => m.user_id === userId && m.npc_id === n.id && m.role === 'user').length })));
+  return read(userId, (db) => C.npcs.map((n) => ({ id: n.id, count: db.consultation_messages.filter((m) => m.user_id === userId && m.npc_id === n.id && m.role === 'user').length })));
 }
 
 export async function consult(userId: string, b: any) {
@@ -195,7 +196,7 @@ export async function consult(userId: string, b: any) {
   const topic = detectTopic(question, npc as any);
 
   // 1) 질문권 선차감(예약) + 컨텍스트 로드
-  const pre = await tx((db) => {
+  const pre = await tx(userId, (db) => {
     const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
     if (!chart) throw new HttpError(409, '캐릭터를 먼저 만들어 주세요.');
     let partner = null;
@@ -216,7 +217,7 @@ export async function consult(userId: string, b: any) {
   try {
     const r = await answerQuestion({ npc: npc as any, question, topic, chart: pre.chart, partner: pre.partner, prevSummaries: pre.prev, deep });
     // 3) 성공: 저장 + 퀘스트
-    return await tx((db) => {
+    return await tx(userId, (db) => {
       db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'user', content: { text: question, deep, partnerId: b.partnerId ?? null }, cost, created_at: now() });
       db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'npc', content: { ...r.answer, source: r.source, topic }, cost: 0, created_at: now() });
       db.consultation_summaries.push({ id: uid('s_'), user_id: userId, npc_id: npc.id, topic, summary: String(r.answer.summary).slice(0, 240), created_at: now() });
@@ -226,7 +227,7 @@ export async function consult(userId: string, b: any) {
     });
   } catch (e: any) {
     // 실패: 질문권 복구 (멱등)
-    await tx((db) => {
+    await tx(userId, (db) => {
       ledger(db, userId, cost, 'consult_refund', `refund:${pre.requestId}`);
       db.ai_usage_logs.push({ id: uid('a_'), user_id: userId, npc_id: npc.id, model: model(), ok: false, ms: 0, tokens: null, error: String(e?.message ?? e).slice(0, 300), created_at: now() });
     });
@@ -241,7 +242,7 @@ export function shopConfig() { return { mode: payMode(), clientKey: tossClientKe
 export async function createOrder(userId: string, productId: string, partnerId?: string | null) {
   const p = C.products.find((x) => x.id === productId);
   if (!p) throw new HttpError(404, '상품을 찾을 수 없습니다.');
-  return tx((db) => {
+  return tx(userId, (db) => {
     if ((p as any).needs_partner) {
       if (!partnerId || !db.relationships.some((r) => r.id === partnerId && r.user_id === userId)) throw new HttpError(400, '궁합 리포트는 상대를 먼저 등록하고 선택해야 해요.');
       if (db.orders.some((o) => o.user_id === userId && o.status === 'paid' && o.product_id === p.id && o.partner_id === partnerId)) throw new HttpError(409, '이미 구매한 리포트입니다.');
@@ -257,7 +258,7 @@ export async function confirmOrder(userId: string, b: { paymentKey: string; orde
   if (pending.has(key)) throw new HttpError(409, '결제 승인 처리 중입니다.');
   pending.add(key);
   try {
-    const pre = await read((db) => {
+    const pre = await read(userId, (db) => {
       const o = db.orders.find((x) => x.id === b.orderId && x.user_id === userId);
       if (!o) throw new HttpError(404, '주문을 찾을 수 없습니다.');
       return { ...o, paidPayment: db.payments.find((p) => p.order_id === o.id && p.status === 'DONE') };
@@ -266,7 +267,7 @@ export async function confirmOrder(userId: string, b: { paymentKey: string; orde
     if (pre.status !== 'pending') throw new HttpError(409, '결제할 수 없는 주문 상태입니다.');
     if (Number(b.amount) !== pre.amount) throw new HttpError(400, '결제 금액이 주문 금액과 다릅니다.');
     const conf = await confirmPayment({ paymentKey: String(b.paymentKey), orderId: pre.id, amount: pre.amount });
-    return await tx((db) => {
+    return await tx(userId, (db) => {
       const o = db.orders.find((x) => x.id === pre.id)!;
       if (o.status === 'paid') return { already: true, state: buildState(db, userId) };
       const p = C.products.find((x) => x.id === o.product_id)!;
@@ -279,11 +280,11 @@ export async function confirmOrder(userId: string, b: { paymentKey: string; orde
 }
 
 export async function failOrder(userId: string, orderId: string) {
-  await tx((db) => { const o = db.orders.find((x) => x.id === orderId && x.user_id === userId); if (o && o.status === 'pending') o.status = 'failed'; });
+  await tx(userId, (db) => { const o = db.orders.find((x) => x.id === orderId && x.user_id === userId); if (o && o.status === 'pending') o.status = 'failed'; });
 }
 
 export async function orderHistory(userId: string) {
-  return read((db) => db.orders.filter((o) => o.user_id === userId).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 30).map((o) => {
+  return read(userId, (db) => db.orders.filter((o) => o.user_id === userId).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 30).map((o) => {
     const p = C.products.find((x) => x.id === o.product_id)!;
     const reportUsed = p.kind === 'report' && db.reports.some((r) => r.user_id === userId && r.product_id === p.id && (r.partner_id ?? null) === (o.partner_id ?? null));
     return { id: o.id, name: p.name, amount: o.amount, status: o.status, at: o.created_at, refundable: o.status === 'paid' && !reportUsed };
@@ -291,7 +292,7 @@ export async function orderHistory(userId: string) {
 }
 
 export async function refundOrder(userId: string, orderId: string) {
-  const info = await read((db) => {
+  const info = await read(userId, (db) => {
     const o = db.orders.find((x) => x.id === orderId && x.user_id === userId);
     if (!o || o.status !== 'paid') throw new HttpError(400, '환불할 수 있는 주문이 아닙니다.');
     const p = C.products.find((x) => x.id === o.product_id)!;
@@ -302,7 +303,7 @@ export async function refundOrder(userId: string, orderId: string) {
     return { p, pay: { ...pay } };
   });
   await cancelPayment(info.pay.payment_key, '사용자 환불 요청', info.pay.provider);
-  return tx((db) => {
+  return tx(userId, (db) => {
     const o = db.orders.find((x) => x.id === orderId)!;
     if (o.status === 'refunded') return buildState(db, userId);
     o.status = 'refunded';
@@ -316,7 +317,7 @@ export async function refundOrder(userId: string, orderId: string) {
 export async function getReport(userId: string, kind: string, partnerId?: string | null) {
   const product = C.products.find((p) => (p as any).report === kind);
   if (!product) throw new HttpError(404, '리포트를 찾을 수 없습니다.');
-  const pre = await read((db) => {
+  const pre = await read(userId, (db) => {
     const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
     if (!chart) throw new HttpError(409, '캐릭터를 먼저 만들어 주세요.');
     const owned = db.orders.some((o) => o.user_id === userId && o.status === 'paid' && o.product_id === product.id && ((product as any).needs_partner ? o.partner_id === partnerId : true));
@@ -329,12 +330,16 @@ export async function getReport(userId: string, kind: string, partnerId?: string
   });
   if (pre.cached) return pre.cached;
   const content = await makeReport(kind, pre.chart, pre.partner).catch(() => { throw new HttpError(502, '리포트를 생성하지 못했어요. 잠시 후 다시 시도해 주세요. (구매는 유지됩니다)'); });
-  await tx((db) => { db.reports.push({ id: uid('rp_'), user_id: userId, product_id: product.id, partner_id: partnerId ?? null, content, source: content.source, created_at: now() }); });
+  await tx(userId, (db) => { db.reports.push({ id: uid('rp_'), user_id: userId, product_id: product.id, partner_id: partnerId ?? null, content, source: content.source, created_at: now() }); });
   return content;
 }
 
 // ───────── 계정 ─────────
-export const deleteAccount = (userId: string) => tx((db) => {
+export async function deleteAccount(userId: string) {
+  await deleteAccountData(userId);
+  if (useSupabase()) await sbDeleteUser(userId);
+}
+const deleteAccountData = (userId: string) => tx(userId, (db) => {
   const strip = <T extends { user_id: string }>(a: T[]) => a.filter((x) => x.user_id !== userId);
   for (const k of ['profiles', 'birth_profiles', 'saju_charts', 'user_destiny_cards', 'avatars', 'user_positions', 'quest_progress', 'credit_wallets'] as const) delete (db as any)[k][userId];
   db.game_rewards = strip(db.game_rewards); db.tarot_draws = strip(db.tarot_draws); db.relationships = strip(db.relationships);

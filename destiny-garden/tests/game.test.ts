@@ -8,6 +8,9 @@ import * as G from '../src/lib/server/game';
 import { C } from '../src/lib/content';
 import { tx } from '../src/lib/server/db';
 
+const RUN = Date.now().toString(36);
+const em = (n: string) => `${n}.${RUN}@test.kr`;
+const SB = !!process.env.SUPABASE_URL;
 const birth = { year: 1995, month: 4, day: 17, calendar: 'solar', hour: 14, minute: 30, gender: 'female', region: '서울' };
 let uid = '';
 test('데이터 규모', () => {
@@ -19,9 +22,9 @@ test('데이터 규모', () => {
 });
 
 test('가입 → 환영 질문권 2개, 캐릭터 생성 → 퀘스트/코인/운명카드', async () => {
-  uid = await signup('a@test.kr', 'password123', true);
-  await assert.rejects(() => signup('a@test.kr', 'password123', true), /이미 가입/);
-  await assert.rejects(() => signup('b@test.kr', 'password123', false), /동의/);
+  uid = await signup(em('a'), 'password123', true);
+  await assert.rejects(() => signup(em('a'), 'password123', true), /이미 가입/);
+  await assert.rejects(() => signup(em('b'), 'password123', false), /동의/);
   let s = await G.getState(uid);
   assert.equal(s.wallet.tickets, 2);
   await assert.rejects(() => G.createCharacter(uid, { nickname: '', avatar: 0, ...birth }), /닉네임/);
@@ -56,7 +59,7 @@ test('NPC 상담: 질문권 차감·기록·요약·퀘스트, 이어 질문 시
 });
 
 test('AI 실패 시 질문권 복구', async () => {
-  const u = await signup('c@test.kr', 'password123', true);
+  const u = await signup(em('c'), 'password123', true);
   await G.createCharacter(u, { nickname: '바다', avatar: 0, ...birth });
   process.env.OPENAI_API_KEY = 'sk-test'; process.env.OPENAI_BASE_URL = 'http://127.0.0.1:1/v1/responses';
   await assert.rejects(() => G.consult(u, { npcId: 'sage', question: '내 사주 전체가 궁금해요' }), /차감되지 않았/);
@@ -85,7 +88,7 @@ test('결제: 주문→승인→질문권 지급, 중복 승인 무시, 금액 �
   assert.equal(c2.already, true);
   assert.equal((await G.getState(uid)).wallet.tickets, 10);
   // 다른 사용자의 주문 접근 불가
-  const other = await signup('d@test.kr', 'password123', true);
+  const other = await signup(em('d'), 'password123', true);
   await assert.rejects(() => G.confirmOrder(other, { paymentKey: 'mock_2', orderId: o.orderId, amount: 7900 }), /주문을 찾을 수 없/);
 });
 
@@ -122,7 +125,8 @@ test('리포트: 미구매 열람 거부 → 구매 후 열람/캐시, 열람 �
 
 test('계정 삭제: 개인 데이터 제거', async () => {
   await G.deleteAccount(uid);
-  const left = await tx((db) => ({ chart: !!db.saju_charts[uid], msgs: db.consultation_messages.filter((m) => m.user_id === uid).length, rel: db.relationships.filter((r) => r.user_id === uid).length, email: db.users[uid].email }));
+  if (SB) { await assert.rejects(() => G.getState(uid), /USER_MISSING/); return; }
+  const left = await tx(null, (db) => ({ chart: !!db.saju_charts[uid], msgs: db.consultation_messages.filter((m) => m.user_id === uid).length, rel: db.relationships.filter((r) => r.user_id === uid).length, email: db.users[uid].email }));
   assert.deepEqual([left.chart, left.msgs, left.rel], [false, 0, 0]);
   assert.match(left.email, /deleted/);
 });
@@ -142,7 +146,7 @@ test('OpenAI Responses API 연동: 요청 형식·구조화 출력 파싱·질�
   const port = (srv.address() as any).port;
   process.env.OPENAI_API_KEY = 'sk-mock'; process.env.OPENAI_BASE_URL = `http://127.0.0.1:${port}/v1/responses`; process.env.OPENAI_MODEL = 'model-from-env';
   try {
-    const u = await signup('e@test.kr', 'password123', true);
+    const u = await signup(em('e'), 'password123', true);
     await G.createCharacter(u, { nickname: '구름', avatar: 2, ...birth });
     const r = await G.consult(u, { npcId: 'merchant', question: '나는 사업가로 성공할 수 있을까?' });
     assert.equal(r.answer.core, '핵심 답변'); assert.equal(r.answer.source, 'openai'); assert.equal(r.state.wallet.tickets, 1);
@@ -151,7 +155,7 @@ test('OpenAI Responses API 연동: 요청 형식·구조화 출력 파싱·질�
     const payload = JSON.parse(seen.body.input);
     assert.equal(payload.saju.day_pillar, '무인'); assert.equal(payload.topic, 'wealth'); assert.ok(payload.rules.length > 0);
     assert.match(seen.body.instructions, /사주 계산은 절대 직접 하지 마세요/); assert.match(seen.body.instructions, /현실적이고 분석적인/);
-    const log = await tx((db) => db.ai_usage_logs.filter((l) => l.user_id === u));
+    const log = await tx(u, (db) => db.ai_usage_logs.filter((l) => l.user_id === u));
     assert.equal(log[0].tokens, 321); assert.equal(log[0].ok, true);
   } finally { srv.close(); delete process.env.OPENAI_API_KEY; delete process.env.OPENAI_BASE_URL; delete process.env.OPENAI_MODEL; }
 });

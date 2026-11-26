@@ -6,6 +6,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { useSupabase, sbTx } from './supabase';
 
 export interface DB {
   users: Record<string, { id: string; email: string; pass_hash: string; salt: string; created_at: string; deleted_at?: string }>;
@@ -59,8 +60,8 @@ function persist(db: DB) {
   fs.renameSync(tmp, file());
 }
 
-/** 모든 쓰기는 직렬화된다. fn 이 throw 하면 변경은 저장되지 않는다(트랜잭션 롤백). */
-export function tx<T>(fn: (db: DB) => T | Promise<T>): Promise<T> {
+/** 파일 드라이버: 모든 쓰기는 직렬화된다. fn 이 throw 하면 변경은 저장되지 않는다(롤백). */
+function fileTx<T>(fn: (db: DB) => T | Promise<T>): Promise<T> {
   const s = g.__dg;
   const run = s.queue.then(async () => {
     const db = load();
@@ -77,7 +78,17 @@ export function tx<T>(fn: (db: DB) => T | Promise<T>): Promise<T> {
   s.queue = run.catch(() => undefined);
   return run;
 }
-export const read = <T>(fn: (db: DB) => T): Promise<T> => tx((db) => fn(db));
+
+/**
+ * 사용자 범위 트랜잭션. scope = 대상 사용자 ID (Supabase 모드는 이 사용자의 행만 읽고 변경분만 원자적으로 반영).
+ * SUPABASE_URL + SUPABASE_SECRET_KEY 가 있으면 Supabase, 없으면 로컬 JSON 파일.
+ */
+export function tx<T>(scope: string | null, fn: (db: DB) => T | Promise<T>): Promise<T> {
+  return useSupabase() ? sbTx(scope, fn) : fileTx(fn);
+}
+export function read<T>(scope: string | null, fn: (db: DB) => T): Promise<T> {
+  return useSupabase() ? sbTx(scope, fn, true) : fileTx(fn);
+}
 
 export const uid = (p = '') => p + crypto.randomUUID().replace(/-/g, '').slice(0, 20);
 export const now = () => new Date().toISOString();
