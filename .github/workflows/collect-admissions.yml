@@ -43,8 +43,8 @@ jobs:
         run: |
           git config user.name "eodisalji-bot"
           git config user.email "eodisalji-bot@users.noreply.github.com"
-          git add data/admissions_raw.csv data/admissions_review.csv data/admissions_manual_links.csv pipeline/out/api_usage.json pipeline/out/admissions_review.md pipeline/out/admissions_review.html 2>/dev/null || true
-          git diff --cached --quiet || (git commit -m "chore: 진학 실적 후보 갱신(검토 대기)" && git pull --rebase origin "$GITHUB_REF_NAME" && git push)
+          git add data/admissions_raw.csv data/admissions_review.csv data/admissions_manual_links.csv data/admissions_seed_urls.csv pipeline/out/api_usage.json pipeline/out/admissions_review.md pipeline/out/admissions_review.html 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: 진학 실적 후보 갱신(검토 대기)" && git pull --rebase --autostash origin "$GITHUB_REF_NAME" && git push)
       - name: 실패 표시
         if: steps.collect.outcome == 'failure'
         run: echo "수집 단계가 실패했습니다. collect 단계 로그를 확인하세요."; exit 1

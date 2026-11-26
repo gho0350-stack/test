@@ -25,7 +25,11 @@ def in_season(today=None):
     """입시 시즌(12~4월)은 매주, 그 외는 월 1회(매월 첫 주)만 실행한다."""
     t = today or datetime.date.today(); return t.month in (12, 1, 2, 3, 4) or t.day <= 7
 
-def run(years=(2024, 2025, 2026), max_pages=30, log=print, search=ai.naver_search, extract=None, fetch=fetch_text, force=False):
+def seed_results(school_id, year):
+    """검색 API 없이 쓰는 후보 링크 목록(data/admissions_seed_urls.csv: school_id,year,title,url). 사람이나 개발 도우미가 찾은 링크를 넣는다."""
+    return [{"title": r.get("title") or f"{r['school_id']} {r['year']} 대입 실적 합격", "link": r["url"], "desc": "합격 진학 입시 대입 실적"} for r in ab.rd(D("admissions_seed_urls.csv")) if r["school_id"] == school_id and str(r["year"]) == str(year)]
+
+def run(years=(2024, 2025, 2026), max_pages=30, log=print, search=None, extract=None, fetch=fetch_text, force=False):
     if not force and not in_season(): log("시즌 외 주기(월 1회)에 해당하지 않아 건너뜁니다"); return {}
     sources = ab.rd(D("admission_sources.csv")); raw = ab.rd(D("admissions_raw.csv")); usage = ai.Usage()
     schools = [{"id": r["school_id"], "name": r["school_name"]} for r in ab.rd(D("school_admission.csv"))]
@@ -36,13 +40,16 @@ def run(years=(2024, 2025, 2026), max_pages=30, log=print, search=ai.naver_searc
     manual, added, pages = [], [], 0; stats = {"queries": 0, "auto_pages": 0, "manual_links": 0, "rows": 0, "rejected": 0}
     for plan in ai.plan_queries(schools, list(years), have):
         school = next(s for s in schools if s["id"] == plan["school_id"])
-        for q in plan["queries"][:3]:
-            try: items = search(q, usage=usage)
-            except Exception as e: log("검색 중단:", str(e)[:100]); items = []
-            stats["queries"] += 1
+        batches = [(q, None) for q in plan["queries"][:3]] if search else [("seed", seed_results(plan["school_id"], plan["year"]))]
+        for q, pre in batches:
+            if pre is None:
+                try: items = search(q, usage=usage)
+                except Exception as e: log("검색 중단:", str(e)[:100]); items = []
+                stats["queries"] += 1
+            else: items = pre
             for it in items:
                 url = it["link"]
-                if url in seen_urls or not re.search(r"합격|진학|입시|대입|실적", it["title"] + it["desc"]) or school["name"][:2] not in it["title"] + it["desc"]: continue
+                if url in seen_urls or not re.search(r"합격|진학|입시|대입|실적", it["title"] + it["desc"]) or (pre is None and school["name"][:2] not in it["title"] + it["desc"]): continue
                 seen_urls.add(url); src = policy_of(url, sources)
                 if not src or src["auto_policy"] != "예":   # 이용 조건이 불명확하거나 금지된 출처: 링크만 남겨 관리자 확인
                     manual.append({"school_id": school["id"], "school_name": school["name"], "year": plan["year"], "title": it["title"], "url": url, "source_id": src["source_id"] if src else "unknown", "policy": src["auto_policy"] if src else "미분류", "found_at": datetime.date.today().isoformat()}); stats["manual_links"] += 1; continue
@@ -60,7 +67,7 @@ def run(years=(2024, 2025, 2026), max_pages=30, log=print, search=ai.naver_searc
     usage.save(); stats["rows"] = len(new); log("수집 결과:", stats); return stats
 
 if __name__ == "__main__":
-    if not (os.environ.get("NAVER_CLIENT_ID") and os.environ.get("NAVER_CLIENT_SECRET")): print("NAVER_CLIENT_ID/NAVER_CLIENT_SECRET 이 없어 건너뜁니다"); sys.exit(0)
+    use_search = bool(os.environ.get("NAVER_CLIENT_ID") and os.environ.get("NAVER_CLIENT_SECRET"))   # 검색 API 는 선택. 없으면 seed 링크 목록만 처리한다
     prov = os.environ.get("AI_PROVIDER", "gemini"); key = {"gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}.get(prov)
     if not key or not os.environ.get(key): print(f"{key} 가 없어 AI 추출을 건너뜁니다(검색 링크만 관리자 확인 목록에 올리려면 키 없이도 가능하도록 이후 확장)"); sys.exit(0)
-    run(force=os.environ.get("FORCE") == "1"); ab.main()   # 새 후보를 검증·검토 목록/HTML 로 반영
+    run(force=os.environ.get("FORCE") == "1", search=ai.naver_search if use_search else None); ab.main()   # 새 후보를 검증·검토 목록/HTML 로 반영
