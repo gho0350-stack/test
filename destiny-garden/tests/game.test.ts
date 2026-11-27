@@ -189,3 +189,10 @@ test('동시 요청: 질문권 2장으로 4건 동시 상담 → 정확히 2건�
   const h = await G.consultHistory(u, 'sage');
   assert.equal(h.messages.filter((m) => m.role === 'user').length, 2);
 });
+
+test('카드 메타(클라이언트)와 생성 정의(서버) 카테고리 일치, 모든 오브젝트 카드가 정의됨', async () => {
+  const { CARD_CATEGORY } = await import('../src/lib/cards-meta');
+  for (const d of CARD_DEFS) assert.equal(CARD_CATEGORY[d.key], d.category, d.key);
+  assert.equal(Object.keys(CARD_CATEGORY).length, CARD_DEFS.length);
+  for (const o of objects as any[]) if (o.kind === 'card') assert.ok(CARD_CATEGORY[o.card], `${o.id} → ${o.card}`);
+});
