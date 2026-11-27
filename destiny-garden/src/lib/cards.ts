@@ -31,21 +31,14 @@ const DEFS: Def[] = [
       body: `당신은 ‘${s.image}’의 기운을 타고났습니다.\n${dp.summary}\n주의할 점: ${s.caution}.`, basis: [`일간 ${c.dayMaster.stem}`, `일주 ${dp.name}`] }; } },
   { key: 'essence_element', category: 'essence', icon: '🌿', gen: (c) => {
     const e: any = elements.find((x) => x.id === c.elements.dominant)!; const w: any = elements.find((x) => x.id === c.elements.weakest)!;
-    return { name: `${c.elements.dominant}(${ELEMENT_HANJA[c.elements.dominant]})의 기운`, subtitle: `가장 강한 오행 · ${e.attr}`, keywords: e.attr.split('·'),
+    return { name: `오행의 균형 : ${c.elements.dominant}(${ELEMENT_HANJA[c.elements.dominant]})${['목', '금'].includes(c.elements.dominant) ? '이' : '가'} 이끄는 정원`, subtitle: `가장 강한 오행 · ${e.attr}`, keywords: e.attr.split('·'),
       body: `당신의 사주에서는 ${c.elements.dominant} 기운이 가장 두드러집니다. 정원에서는 ‘${e.garden}’이 이 기운을 닮았어요.\n반대로 ${c.elements.weakest} 기운은 상대적으로 약해 '${w.lack}'을 의식적으로 채우면 균형이 좋아집니다. ${w.tip}`, basis: [`오행 분포 ${Object.entries(c.elements.withHidden).map(([k, v]) => k + v).join(' ')}`] }; } },
-  { key: 'trait_tengod', category: 'essence', icon: '✨', gen: (c) => {
-    const g = topGroup(c); const top = ranked(c)[0]; const t: any = godInfo(top);
-    return { name: `성향 : ${GROUP_TYPE[g]}`, subtitle: `${g} 기운이 가장 강해요`, keywords: String(t.keywords).split('·'),
-      body: `십성 중 ${g}(${Object.entries(c.tenGods).filter(([k]) => godInfo(k).group === g).map(([k, v]) => `${k}${v}`).join(' ')})이 가장 두텁습니다.\n${t.talent}을(를) 바탕으로 움직이는 편이고, 일간은 ${c.strength.level}입니다.`, basis: [`${g} ${c.tenGodGroups[g]}개`, `신강신약 ${c.strength.level}`] }; } },
   { key: 'talent_main', category: 'talent', icon: '📕', gen: (c) => {
     const t: any = godInfo(ranked(c)[0]); return { name: `타고난 재능 : ${t.id}`, subtitle: String(t.keywords), keywords: String(t.keywords).split('·'), body: `${t.talent}이(가) 당신의 가장 큰 재능입니다.\n일에서는 ${t.career}`, basis: [`십성 ${t.id} ${c.tenGods[t.id as TenGod]}개`] }; } },
-  { key: 'talent_second', category: 'talent', icon: '📚', gen: (c) => {
-    const t: any = godInfo(ranked(c)[1]); return { name: `또 하나의 재능 : ${t.id}`, subtitle: String(t.keywords), keywords: String(t.keywords).split('·'), body: `${t.talent}도 당신 안에 있어요.\n관계에서는 ${t.relationship}`, basis: [`십성 ${t.id} ${c.tenGods[t.id as TenGod]}개`] }; } },
   { key: 'hidden_story', category: 'essence', icon: '✉️', gen: (c) => {
     const dp = dayPillarInfo(c.pillars.day.name); const hid = c.pillars.day.hidden.map((h) => `${h.stem}(${h.tenGod})`).join(' · ');
-    return { name: '나에게 숨겨진 이야기', subtitle: `일지 ${c.pillars.day.branchName} 속 지장간 ${hid}`, keywords: ['숨은 마음', '그림자', '성장'],
+    return { name: '나의 내면', subtitle: `일지 ${c.pillars.day.branchName} 속 지장간 ${hid}`, keywords: ['숨은 마음', '그림자', '성장'],
       body: `겉으로 드러나는 모습 아래에는 ${hid}의 기운이 숨어 있습니다.\n${dp.shadow}\n이 이야기를 알고 나면 스스로를 조금 더 너그럽게 볼 수 있어요.`, basis: [`일지 지장간 ${hid}`] }; } },
-
   { key: 'wealth_style', category: 'wealth', icon: '🔒', gen: (c, x) => { const r = rules(c, 'wealth', 3, x);
     return { name: '재물 형성 성향', subtitle: `재성 ${c.tenGodGroups.재성} · 식상 ${c.tenGodGroups.식상}`, keywords: ['재물을 만드는 방식', '강점'], body: r.map((x) => x.text).join('\n'), basis: r.map((x) => x.basis) }; } },
   { key: 'wealth_income', category: 'wealth', icon: '🧰', gen: (c) => {
@@ -60,17 +53,12 @@ const DEFS: Def[] = [
     const exp = c.tenGods.정관 + c.tenGods.정인 + c.tenGods.편인 + c.tenGods.식신; const isBiz = biz >= exp; const r = rules(c, 'career', 2, x);
     return { name: isBiz ? '사업가형' : '전문가형', subtitle: isBiz ? '사람과 기회를 움직이는 유형' : '실력과 신뢰를 쌓는 유형', keywords: isBiz ? ['확장', '기회 포착', '실행'] : ['전문성', '신뢰', '깊이'],
       body: `${isBiz ? '변화를 만들고 사람과 돈의 흐름을 움직일 때 힘이 납니다.' : '한 분야에서 실력과 자격을 쌓아 인정받을 때 힘이 납니다.'}\n${r.map((q) => q.text).join('\n')}`, basis: [`사업 점수 ${biz} / 전문가 점수 ${exp}`] }; } },
-  { key: 'wealth_key', category: 'wealth', icon: '🗝️', gen: (c, x) => { const cg = cycleGods(c, Number(x.today.slice(0, 4)));
-    return { name: '황금 열쇠', subtitle: '재물 카드 3장을 모은 증표', keywords: ['해금', '심층 재물운'], body: `세 장의 재물 카드를 모아 황금 열쇠를 얻었어요.\n올해 세운은 ${cg.seun.name}(${cg.seunGod}). 이 열쇠로 현자의 집에서 재물에 대해 더 깊이 물어볼 수 있습니다. 심층 재물운 리포트는 재물의 방의 상점에서 열람할 수 있어요.`, basis: [`세운 ${cg.seun.name}`] }; } },
-
   { key: 'love_type', category: 'love', icon: '📮', gen: (c, x) => { const r = rules(c, 'relationship', 3, x); const dp = dayPillarInfo(c.pillars.day.name);
     return { name: '나에게 들어오는 인연의 유형', subtitle: dp.love_hint, keywords: ['인연', '끌림'], body: `${dp.love_hint}\n${r.map((q) => q.text).join('\n')}`, basis: r.map((q) => q.basis) }; } },
   { key: 'love_mirror', category: 'love', icon: '🪞', gen: (c, x) => { const r = rules(c, 'relationship', 8, x).filter((q) => q.id.includes('strength_') || q.id.includes('rel_') || q.id.includes('grp_')).slice(0, 2);
     return { name: '관계 속의 나', subtitle: `일간 ${c.strength.level}`, keywords: ['나의 모습', '관계 패턴'], body: `거울에 비친 나는 ${c.strength.level.includes('강') ? '주도적으로 이끄는' : c.strength.level === '중화' ? '균형을 맞추는' : '상대를 살피는'} 사람입니다.\n${r.map((q) => q.text).join('\n')}`, basis: r.map((q) => q.basis) }; } },
   { key: 'love_thread', category: 'love', icon: '🧵', gen: (c) => { const e: any = elements.find((x) => x.id === c.dayMaster.element)!;
     return { name: '붉은 실 · 인연 카드', subtitle: e.love, keywords: ['인연의 실', c.dayMaster.element + ' 기운'], body: `당신은 ${e.love}입니다.\n일지 ${c.pillars.day.branchName}(${c.pillars.day.tenGodBranch})은 가까운 관계에서의 모습을 비춥니다. 소중한 사람을 정자의 의자에 앉혀 두 사람의 실이 어떻게 얽히는지 볼 수 있어요.`, basis: [`일지 ${c.pillars.day.branchName}(${c.pillars.day.tenGodBranch})`] }; } },
-  { key: 'love_secret', category: 'love', icon: '🚪', gen: (c) => ({ name: '비밀 정자의 약속', subtitle: '인연 카드 3장을 모은 증표', keywords: ['비밀', '약속'], body: `${c.dayMaster.stem}${c.dayMaster.element}의 당신에게 인연은 ‘천천히 깊어지는 것’입니다. 마음이 궁금한 사람이 있다면 현자의 집에서 그 사람을 선택해 물어보세요.`, basis: ['인연 카드 3장'] }) },
-
   { key: 'flow_daewoon', category: 'flow', icon: '⏳', gen: (c, x) => { const y = Number(x.today.slice(0, 4)); const cg = cycleGods(c, y); const d = cg.daewoon; const rl = matchRules(c, 'fortune', y, 6).filter((r) => r.id.startsWith('daewoon_'));
     const next = d ? c.daewoon.list[c.daewoon.list.indexOf(d) + 1] : c.daewoon.list[0];
     return { name: d ? `대운 : ${d.ganzhi}` : '대운 시작 전', subtitle: d ? `${d.startAge}세~ (${d.startYear}~${d.endYear}) · ${d.tenGodStem}` : `첫 대운은 ${c.daewoon.list[0].startAge}세 무렵 시작`, keywords: ['10년의 흐름', c.daewoon.forward ? '순행' : '역행'],
@@ -86,6 +74,10 @@ const DEFS: Def[] = [
     return { name: `오늘의 운명 : ${tg}의 날`, subtitle: `${x.today} · 오늘의 일진 ${dp.name}일`, keywords: String(t.keywords).split('·'), body: `오늘의 일진은 ${dp.name}, 당신의 일간 ${c.dayMaster.stem}에게는 ${tg}의 기운입니다.\n${t.talent}이(가) 평소보다 도드라질 수 있는 날이에요. ${t.career}`, basis: [`오늘 일진 ${dp.name}`, `일간 대비 ${tg}`] }; } },
   { key: 'past_life', category: 'past', icon: '📖', gen: (c) => { const p = pastLifeOf(c);
     return { name: `전생의 기록 : ${p.era}의 ${p.title}`, subtitle: '창작 이야기', keywords: [p.title, p.era, p.element + ' 기운'], body: `${p.story}\n${p.carryover}\n\n※ ${p.disclaimer}`, basis: ['일간 오행과 월지로 매핑한 창작 데이터'] }; } },
+  { key: 'wealth_career', category: 'wealth', icon: '🗺️', gen: (c, x) => { const r = rules(c, 'career', 3, x); const e: any = elements.find((q) => q.id === c.elements.dominant)!;
+    return { name: '커리어 방향', subtitle: `${c.elements.dominant} 기운 · ${GROUP_TYPE[topGroup(c)]}`, keywords: String(e.job).split('·').slice(0, 3), body: `지도가 가리키는 방향은 ${e.job} 쪽입니다.\n${r.map((q) => q.text).join('\n')}`, basis: r.map((q) => q.basis) }; } },
+  { key: 'love_map', category: 'love', icon: '🌳', gen: (c) => { const g = topGroup(c); const MAP: Record<string, string> = { 비겁: '대등한 친구 같은 관계에서 힘이 나는 유형', 식상: '표현하고 나누며 가까워지는 유형', 재성: '현실적으로 챙기며 믿음을 쌓는 유형', 관성: '서로를 존중하며 책임지는 유형', 인성: '이해와 돌봄을 주고받는 유형' };
+    return { name: `나의 관계 지도 : ${g}형`, subtitle: MAP[g], keywords: [g, c.pillars.day.tenGodBranch, c.strength.level], body: `인연의 나무에 가지가 뻗어 있습니다. 당신은 ${MAP[g]}입니다.\n일지 ${c.pillars.day.branchName}(${c.pillars.day.tenGodBranch})은 가까운 관계에서 드러나는 모습이에요. 새 인연을 등록할 때마다 이 나무에 가지가 늘어납니다.`, basis: [`${g} ${c.tenGodGroups[g]}개`, `일지 ${c.pillars.day.tenGodBranch}`] }; } },
 ];
 
 export const CARD_DEFS = DEFS;

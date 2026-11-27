@@ -158,10 +158,14 @@ a { color: inherit; }
 .tarot-mini { position: absolute; right: 10px; bottom: calc(150px + env(safe-area-inset-bottom)); width: 104px; background: linear-gradient(180deg, #fffaf0, #f7ead0); border: 2px solid #c9a96a; border-radius: 14px; padding: 6px; text-align: center; color: var(--ink); font-weight: 800; font-size: 12.5px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); }
 .tarot-mini .mc { margin-top: 4px; aspect-ratio: 0.68; border-radius: 8px; background: linear-gradient(160deg, #5b2fa8, #2a1650); border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 30px; }
 .tarot-mini .dotn { position: absolute; top: -5px; right: -5px; background: #ff4d6a; color: #fff; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; line-height: 18px; }
-.hud-bottom { position: absolute; left: 0; right: 0; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; justify-content: center; pointer-events: none; }
-.dock { display: flex; gap: 8px; pointer-events: none; padding-left: 90px; }
-.dock button { pointer-events: auto; width: 64px; height: 70px; border-radius: 20px; border: 1.5px solid rgba(245, 196, 81, 0.5); background: var(--glass); color: #fff; font-weight: 800; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; backdrop-filter: blur(6px); position: relative; }
-.dock button span { font-size: 26px; line-height: 1; }
+.hud-bottom { position: absolute; left: 0; right: 0; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; justify-content: flex-end; pointer-events: none; }
+.dock { display: flex; gap: 4px; pointer-events: none; margin-left: 124px; margin-right: 6px; }
+.room-bar { position: absolute; top: calc(66px + env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; pointer-events: none; }
+.room-bar > * { pointer-events: auto; }
+.room-bar .rn { background: var(--glass); border: 1.5px solid rgba(245, 196, 81, 0.6); color: #ffe9a8; font-weight: 900; padding: 6px 16px; border-radius: 999px; backdrop-filter: blur(6px); }
+.room-bar .btn { background: var(--glass); color: #fff; border-color: rgba(255,255,255,.4); }
+.dock button { pointer-events: auto; width: 48px; height: 64px; font-size: 10.5px; padding: 0; border-radius: 20px; border: 1.5px solid rgba(245, 196, 81, 0.5); background: var(--glass); color: #fff; font-weight: 800; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; backdrop-filter: blur(6px); position: relative; }
+.dock button span { font-size: 22px; line-height: 1; }
 .dock .dot { position: absolute; top: 6px; right: 8px; width: 10px; height: 10px; background: #ff4d6a; border-radius: 50%; }
 .joy { position: absolute; left: 14px; bottom: calc(18px + env(safe-area-inset-bottom)); width: 112px; height: 112px; border-radius: 50%; background: rgba(255, 255, 255, 0.14); border: 2px solid rgba(255, 255, 255, 0.35); touch-action: none; pointer-events: auto; z-index: 3; backdrop-filter: blur(3px); }
 .joy i { position: absolute; width: 50px; height: 50px; border-radius: 50%; left: 31px; top: 31px; background: radial-gradient(circle at 35% 30%, #fff, #c9c0e0); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4); }
@@ -179,9 +183,10 @@ a { color: inherit; }
 
 /* 3D 라벨 */
 .world-label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; background: linear-gradient(180deg, rgba(55, 36, 40, 0.92), rgba(28, 20, 40, 0.92)); color: #ffe9a8; font-weight: 800; font-size: 15px; border: 2px solid #d6a84a; padding: 6px 14px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); position: relative; }
-.world-label small { display: none; }
+.world-label small { font-size: 11px; opacity: 0.85; margin-left: 4px; background: #ffffff22; border-radius: 8px; padding: 0 6px; }
 .npc-bubble { white-space: nowrap; font-size: 11.5px; font-weight: 800; background: rgba(255, 255, 255, 0.95); color: var(--purple-d); border: 0; border-radius: 999px; padding: 5px 12px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4); position: relative; }
 .qmark { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #3a2400; width: 22px; height: 22px; border-radius: 50%; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; animation: hop 1s infinite; box-shadow: 0 0 10px #ffd86b; }
 @keyframes hop { 50% { transform: translate(-50%, -6px); } }
 .pay-mock { text-align: center; } .pay-mock .amt { font-size: 28px; font-weight: 900; color: var(--purple-d); margin: 6px 0; }
-@media (max-width: 380px) { .dock button { width: 56px; height: 64px; } .dock { padding-left: 82px; gap: 6px; } .joy { width: 98px; height: 98px; } .joy i { left: 24px; top: 24px; } }
+@media (max-width: 500px) { .quest-card ul { display: none; } }
+@media (max-width: 380px) { .dock button { width: 44px; height: 60px; font-size: 10px; } .dock { margin-left: 108px; gap: 3px; } .joy { width: 98px; height: 98px; } .joy i { left: 24px; top: 24px; } }

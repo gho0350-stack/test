@@ -1,8 +1,92 @@
 [
-  { "id": "library", "map_id": "garden", "name": "운명의 서고", "subtitle": "서랍을 열어 나의 본질을 발견해요", "content": "room", "pos": { "x": -7.6, "z": -1 }, "door": { "x": -4.0, "z": 0.4 }, "radius": 3.6, "quest_event": "visit:library", "npc_id": null },
-  { "id": "wealth", "map_id": "garden", "name": "재물의 방", "subtitle": "금고와 장부에서 재물 성향을 찾아요", "content": "room", "pos": { "x": 0, "z": -12 }, "door": { "x": 0, "z": -7.9 }, "radius": 4.0, "quest_event": "visit:wealth", "npc_id": "merchant" },
-  { "id": "pavilion", "map_id": "garden", "name": "인연의 정자", "subtitle": "편지함과 거울에서 인연을 발견해요", "content": "room", "pos": { "x": 7.8, "z": -3.5 }, "door": { "x": 4.9, "z": -2.8 }, "radius": 3.4, "quest_event": "visit:pavilion", "npc_id": "guardian" },
-  { "id": "time", "map_id": "garden", "name": "시간의 방", "subtitle": "대운·세운과 전생의 기록", "content": "room", "pos": { "x": -8.5, "z": -10 }, "door": { "x": -5.2, "z": -8.4 }, "radius": 3.0, "quest_event": "visit:time", "npc_id": "guide" },
-  { "id": "sagehouse", "map_id": "garden", "name": "현자의 집", "subtitle": "모은 카드를 들고 현자에게 물어보세요", "content": "sage", "pos": { "x": 8.2, "z": -11 }, "door": { "x": 6.0, "z": -8.4 }, "radius": 3.0, "quest_event": "visit:sagehouse", "npc_id": "sage" },
-  { "id": "tarot", "map_id": "garden", "name": "타로의 정원", "subtitle": "오늘의 타로 · 매일 1장", "content": "tarot", "pos": { "x": 9.2, "z": 6.2 }, "door": { "x": 6.1, "z": 6.2 }, "radius": 3.0, "quest_event": "visit:tarot", "npc_id": null }
+  {
+    "id": "library",
+    "map_id": "garden",
+    "name": "운명의 서고",
+    "subtitle": "서랍을 열어 나의 본질을 발견해요",
+    "content": "room",
+    "pos": {
+      "x": -7.6,
+      "z": -1
+    },
+    "door": {
+      "x": -4.0,
+      "z": 0.4
+    },
+    "radius": 3.6,
+    "quest_event": "visit:library",
+    "npc_id": null
+  },
+  {
+    "id": "wealth",
+    "map_id": "garden",
+    "name": "재물의 방",
+    "subtitle": "금고와 장부에서 재물 성향을 찾아요",
+    "content": "room",
+    "pos": {
+      "x": 0,
+      "z": -12
+    },
+    "door": {
+      "x": 0,
+      "z": -7.9
+    },
+    "radius": 4.0,
+    "quest_event": "visit:wealth",
+    "npc_id": null
+  },
+  {
+    "id": "pavilion",
+    "map_id": "garden",
+    "name": "인연의 정자",
+    "subtitle": "편지함과 거울에서 인연을 발견해요",
+    "content": "room",
+    "pos": {
+      "x": 7.8,
+      "z": -3.5
+    },
+    "door": {
+      "x": 4.9,
+      "z": -2.8
+    },
+    "radius": 3.4,
+    "quest_event": "visit:pavilion",
+    "npc_id": null
+  },
+  {
+    "id": "time",
+    "map_id": "garden",
+    "name": "시간의 방",
+    "subtitle": "대운·세운과 전생의 기록",
+    "content": "room",
+    "pos": {
+      "x": -8.5,
+      "z": -10
+    },
+    "door": {
+      "x": -5.2,
+      "z": -8.4
+    },
+    "radius": 3.0,
+    "quest_event": "visit:time",
+    "npc_id": null
+  },
+  {
+    "id": "tarot",
+    "map_id": "garden",
+    "name": "타로의 정원",
+    "subtitle": "오늘의 타로 · 매일 1장",
+    "content": "tarot",
+    "pos": {
+      "x": 9.2,
+      "z": 6.2
+    },
+    "door": {
+      "x": 6.1,
+      "z": 6.2
+    },
+    "radius": 3.0,
+    "quest_event": "visit:tarot",
+    "npc_id": null
+  }
 ]

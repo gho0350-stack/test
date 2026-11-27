@@ -6,7 +6,7 @@ import './setup-env';
 import { signup } from '../src/lib/server/auth';
 import * as G from '../src/lib/server/game';
 import { C } from '../src/lib/content';
-import objects from '../data/explore_objects.json';
+import rooms from '../data/rooms.json';
 import { CARD_DEFS } from '../src/lib/cards';
 import { tx } from '../src/lib/server/db';
 import { sb } from '../src/lib/server/supabase';
@@ -14,13 +14,14 @@ import { sb } from '../src/lib/server/supabase';
 const RUN = Date.now().toString(36);
 const em = (n: string) => `${n}.${RUN}@test.kr`;
 const SB = !!process.env.SUPABASE_URL;
+const unlock = async (u: string, room: string) => { for (const o of (rooms.find((r) => r.id === room)!.objects as any[]).filter((x) => x.required)) await G.exploreObject(u, o.id); };
 const birth = { year: 1995, month: 4, day: 17, calendar: 'solar', hour: 14, minute: 30, gender: 'female', region: '서울' };
 let uid = '';
 test('데이터 규모', () => {
   const total = Object.values(C.rules).reduce((a, r) => a + r.length, 0);
   assert.ok(total >= 100, `rules ${total}`);
   assert.equal(C.tarotCards.length, 78); assert.equal(C.dayPillars.length, 60); assert.equal(C.destinyCards.length, 60);
-  assert.equal(C.pastLives.length, 30); assert.equal(C.heavenlyStems.length, 10); assert.equal(C.earthlyBranches.length, 12); assert.equal(C.quests.length, 10); assert.ok(objects.length >= 20); assert.ok(CARD_DEFS.length >= 20);
+  assert.equal(C.pastLives.length, 30); assert.equal(C.heavenlyStems.length, 10); assert.equal(C.earthlyBranches.length, 12); assert.equal(C.quests.length, 10); assert.equal(rooms.length, 4); assert.ok(CARD_DEFS.length >= 18);
   for (const f of [...C.dayPillars, ...C.tarotCards, ...Object.values(C.rules).flat()]) { assert.ok(f.source); assert.equal(f.review_status, 'pending'); }
 });
 
@@ -33,64 +34,67 @@ test('가입 → 환영 질문권 2개, 캐릭터 생성 → 퀘스트/코인/�
   await assert.rejects(() => G.createCharacter(uid, { nickname: '', avatar: 0, ...birth }), /닉네임/);
   const r = await G.createCharacter(uid, { nickname: '하늘', avatar: 1, ...birth });
   assert.equal(r.state.chart!.pillars.day.name, '무인');
-  assert.equal(r.state.wallet.coins, 20);
+  assert.equal(r.state.profile!.exp, 20); assert.equal(r.state.wallet.coins, 0);
   assert.equal(r.state.card!.day_pillar, '무인');
   assert.ok(r.ev.completed.some((q: any) => q.id === 'q02'));
 });
 
-test('탐험: 서랍 열기 → 개인화 카드·퀘스트, 중복 없음, 잠금 해제 조건', async () => {
+test('탐험: 방 오브젝트 → 개인화 카드, 중복 지급 없음, 방 완료 → 현자 해금·퀘스트', async () => {
   const r = await G.exploreObject(uid, 'drawer1');
   assert.equal(r.isNew, true); assert.match(r.card.name, /무토/); assert.equal(r.card.category, 'essence');
-  assert.ok(r.ev.completed.some((q: any) => q.id === 'q03'));
+  const exp0 = r.state.profile!.exp;
   const again = await G.exploreObject(uid, 'drawer1');
-  assert.equal(again.isNew, false); assert.equal(again.state.cards.length, 1);
-  await assert.rejects(() => G.exploreObject(uid, 'goldkey'), /아직 열 수 없/);
-  await assert.rejects(() => G.exploreObject(uid, 'sealedbook'), /아직 열 수 없/);
+  assert.equal(again.isNew, false); assert.equal(again.state.profile!.exp, exp0); assert.equal(again.state.cards.length, 1); // 경험치·카드 중복 없음
   await assert.rejects(() => G.exploreObject(uid, 'scroll'), /카드를 얻는/);
   await assert.rejects(() => G.exploreObject(uid, 'nope'), /찾을 수 없/);
-  await G.exploreObject(uid, 'drawer2'); const r3 = await G.exploreObject(uid, 'drawer3');
-  assert.ok(r3.ev.completed.some((q: any) => q.id === 'q04')); // 카드 3장
-  for (const o of ['safe', 'chest', 'ledger']) await G.exploreObject(uid, o);
-  const key = await G.exploreObject(uid, 'goldkey'); assert.equal(key.card.name, '황금 열쇠');
+  await assert.rejects(() => G.consult(uid, { npcId: 'sage', question: '아직 잠겨 있나요?' }), /상담할 수 없/); // 해금 전 차단
+  await G.exploreObject(uid, 'bookshelf'); await G.exploreObject(uid, 'mirror1');
+  const last = await G.exploreObject(uid, 'letter');
+  assert.equal(last.unlockedSage, 'sage'); assert.ok(last.ev.completed.some((q: any) => q.id === 'q03'));
+  const lib = last.state.rooms.find((x: any) => x.id === 'library')!; assert.deepEqual([lib.got, lib.required, lib.sageUnlocked], [4, 4, true]);
+  assert.equal(last.state.sages.find((x: any) => x.id === 'sage')!.freeRemaining, 1);
+  // 재물의 방: 5장 모아야 해금, 4장까지는 잠김
+  for (const o of ['safe', 'chest', 'ledger', 'scale']) await G.exploreObject(uid, o);
+  await assert.rejects(() => G.consult(uid, { npcId: 'merchant', question: '아직 잠겨 있나요?' }), /상담할 수 없/);
+  const m = await G.exploreObject(uid, 'map'); assert.equal(m.unlockedSage, 'merchant'); assert.ok(m.ev.completed.some((q: any) => q.id === 'q04'));
   const w = await G.exploreObject(uid, 'candle'); assert.match(w.card.key, /^flow_today:\d{4}-/);
-  const st = await G.getState(uid); assert.ok(st.cards.length >= 8);
   await assert.rejects(() => G.gameEvent(uid, 'first_consult'), /허용되지/);
   await assert.rejects(() => G.gameEvent(uid, 'open:drawer1'), /허용되지/);
 });
 
-test('NPC 상담: 질문권 차감·기록·요약·퀘스트, 이어 질문 시 이전 요약 참조', async () => {
+test('현자 상담: 첫 상담 무료 → 이후 질문권 차감, 카드 반영·새 카드·힌트·요약 기억', async () => {
   const r = await G.consult(uid, { npcId: 'merchant', question: '나는 사업가로 성공할 수 있을까?', cardKeys: ['wealth_style', 'essence_day', 'not_owned'] });
-  assert.equal(r.state.wallet.tickets, 1);
-  assert.deepEqual(r.answer.usedCards, ['재물 형성 성향', '나의 본질 : 무토(戊土)'].filter((n) => r.answer.usedCards.includes(n)));
-  assert.ok(r.answer.usedCards.length === 2 && r.answer.core.includes('카드'));
-  assert.ok(r.newCard && r.newCard.category === 'consult' && /숨겨진 재능/.test(r.newCard.name));
-  assert.ok(r.answer.next_hint);
-  assert.ok(r.state.cards.some((c: any) => c.source === 'consult'));
+  assert.equal(r.free, true); assert.equal(r.cost, 0); assert.equal(r.state.wallet.tickets, 2); // 첫 상담 무료
   assert.equal(r.answer.topic, 'wealth');
+  assert.ok(r.answer.usedCards.length === 2 && r.answer.core.includes('카드'));
   assert.ok(r.answer.core.length > 10 && r.answer.basis.length >= 2 && r.answer.follow_ups.length === 3);
-  assert.ok(r.ev.completed.some((q: any) => q.id === 'q09'));
+  assert.ok(r.newCard && r.newCard.category === 'consult' && /숨겨진 재능/.test(r.newCard.name));
+  assert.ok(r.answer.next_hint); assert.ok(r.ev.completed.some((q: any) => q.id === 'q08'));
+  assert.equal(r.state.sages.find((x: any) => x.id === 'merchant')!.freeRemaining, 0);
   const r2 = await G.consult(uid, { npcId: 'merchant', question: '올해 재물운은 어떤가요?' });
-  assert.match(r2.answer.detail, /이전 상담 기억/);
+  assert.equal(r2.free, false); assert.equal(r2.state.wallet.tickets, 1); assert.match(r2.answer.detail, /이전 상담 기억/);
   const h = await G.consultHistory(uid, 'merchant');
   assert.equal(h.messages.length, 4); assert.equal(h.summaries.length, 2);
+  await G.consult(uid, { npcId: 'merchant', question: '세 번째 질문입니다' });
   await assert.rejects(() => G.consult(uid, { npcId: 'merchant', question: '또 질문' }), /질문권이 부족/);
   assert.equal((await G.getState(uid)).wallet.tickets, 0);
 });
 
-test('AI 실패 시 질문권 복구', async () => {
+test('AI 실패 시 질문권·무료 상담 복구', async () => {
   const u = await signup(em('c'), 'password123', true);
-  await G.createCharacter(u, { nickname: '바다', avatar: 0, ...birth });
+  await G.createCharacter(u, { nickname: '바다', avatar: 0, ...birth }); await unlock(u, 'library');
   process.env.OPENAI_API_KEY = 'sk-test'; process.env.OPENAI_BASE_URL = 'http://127.0.0.1:1/v1/responses';
   await assert.rejects(() => G.consult(u, { npcId: 'sage', question: '내 사주 전체가 궁금해요' }), /차감되지 않았/);
   delete process.env.OPENAI_API_KEY; delete process.env.OPENAI_BASE_URL;
-  assert.equal((await G.getState(u)).wallet.tickets, 2);
+  const st = await G.getState(u);
+  assert.equal(st.wallet.tickets, 2); assert.equal(st.sages.find((x: any) => x.id === 'sage')!.freeRemaining, 1);
 });
 
 test('타로: 하루 1회, 새로고침해도 동일, 퀘스트 지급', async () => {
   const a = await G.tarotPick(uid, 10);
   const b = await G.tarotPick(uid, 40);
   assert.equal(a.draw.cardId, b.draw.cardId);
-  assert.ok(a.ev.completed.some((q: any) => q.id === 'q08'));
+  assert.ok(a.ev.completed.some((q: any) => q.id === 'q07'));
   const info = await G.tarotInfo(uid);
   assert.equal(info.history.length, 1);
   await assert.rejects(() => G.tarotPick(uid, 99), /위치/);
@@ -167,9 +171,9 @@ test('OpenAI Responses API 연동: 요청 형식·구조화 출력 파싱·질�
   process.env.OPENAI_API_KEY = 'sk-mock'; process.env.OPENAI_BASE_URL = `http://127.0.0.1:${port}/v1/responses`; process.env.OPENAI_MODEL = 'model-from-env';
   try {
     const u = await signup(em('e'), 'password123', true);
-    await G.createCharacter(u, { nickname: '구름', avatar: 2, ...birth });
+    await G.createCharacter(u, { nickname: '구름', avatar: 2, ...birth }); await unlock(u, 'wealth');
     const r = await G.consult(u, { npcId: 'merchant', question: '나는 사업가로 성공할 수 있을까?' });
-    assert.equal(r.answer.core, '핵심 답변'); assert.equal(r.answer.source, 'openai'); assert.equal(r.state.wallet.tickets, 1);
+    assert.equal(r.answer.core, '핵심 답변'); assert.equal(r.answer.source, 'openai'); assert.equal(r.state.wallet.tickets, 2); assert.equal(r.free, true);
     assert.equal(seen.auth, 'Bearer sk-mock'); assert.equal(seen.body.model, 'model-from-env');
     assert.equal(seen.body.text.format.type, 'json_schema'); assert.equal(seen.body.text.format.strict, true);
     const payload = JSON.parse(seen.body.input);
@@ -180,19 +184,35 @@ test('OpenAI Responses API 연동: 요청 형식·구조화 출력 파싱·질�
   } finally { srv.close(); delete process.env.OPENAI_API_KEY; delete process.env.OPENAI_BASE_URL; delete process.env.OPENAI_MODEL; }
 });
 
-test('동시 요청: 질문권 2장으로 4건 동시 상담 → 정확히 2건만 성공(이중 차감/초과 사용 없음)', async () => {
+test('동시 요청: 무료 1회 + 질문권 2장으로 4건 동시 상담 → 정확히 3건만 성공(이중 차감/초과 사용 없음)', async () => {
   const u = await signup(em('f'), 'password123', true);
-  await G.createCharacter(u, { nickname: '동시', avatar: 0, ...birth });
+  await G.createCharacter(u, { nickname: '동시', avatar: 0, ...birth }); await unlock(u, 'library');
   const rs = await Promise.allSettled([1, 2, 3, 4].map((i) => G.consult(u, { npcId: 'sage', question: `동시 질문 번호 ${i} 입니다` })));
-  assert.equal(rs.filter((r) => r.status === 'fulfilled').length, 2);
+  assert.equal(rs.filter((r) => r.status === 'fulfilled').length, 3);
   assert.equal((await G.getState(u)).wallet.tickets, 0);
   const h = await G.consultHistory(u, 'sage');
-  assert.equal(h.messages.filter((m) => m.role === 'user').length, 2);
+  assert.equal(h.messages.filter((m) => m.role === 'user').length, 3);
 });
 
 test('카드 메타(클라이언트)와 생성 정의(서버) 카테고리 일치, 모든 오브젝트 카드가 정의됨', async () => {
   const { CARD_CATEGORY } = await import('../src/lib/cards-meta');
   for (const d of CARD_DEFS) assert.equal(CARD_CATEGORY[d.key], d.category, d.key);
   assert.equal(Object.keys(CARD_CATEGORY).length, CARD_DEFS.length);
-  for (const o of objects as any[]) if (o.kind === 'card') assert.ok(CARD_CATEGORY[o.card], `${o.id} → ${o.card}`);
+  for (const r of rooms) for (const o of r.objects as any[]) if (o.card) assert.ok(CARD_CATEGORY[o.card], `${o.id} → ${o.card}`);
+  for (const r of rooms) assert.ok((r.objects as any[]).filter((o) => o.required).length >= 3);
+});
+
+test('방 데이터 무결성: 현자/오브젝트/위치/보상 카드', () => {
+  const sages = new Set(C.npcs.map((n) => n.id));
+  for (const r of rooms as any[]) {
+    assert.ok(sages.has(r.sage.id), `${r.id} sage`);
+    const ids = new Set<string>();
+    for (const o of r.objects) {
+      assert.ok(!ids.has(o.id), `중복 오브젝트 ${o.id}`); ids.add(o.id);
+      assert.ok(Math.abs(o.pos.x) < r.size.w / 2 && Math.abs(o.pos.z) < r.size.d / 2, `${o.id} 위치가 방 밖`);
+      assert.ok(o.kind === 'panel' || o.card, `${o.id} 보상 카드 없음`);
+    }
+    // 현자와 오브젝트가 겹치지 않음(충돌 반경 고려)
+    for (const o of r.objects) assert.ok(Math.hypot(o.pos.x - r.sage.pos.x, o.pos.z - r.sage.pos.z) > 1.5, `${o.id} 가 현자와 겹침`);
+  }
 });

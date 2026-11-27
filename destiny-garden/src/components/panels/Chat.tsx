@@ -26,11 +26,12 @@ export function NpcChat({ id, partnerId: initialPartner, cardKeys }: { id: strin
   useEffect(() => { api(`/api/consult?npcId=${id}`).then((j) => { setMsgs(j.messages); setMem(j.summaries); }).catch(() => {}); }, [id]);
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [msgs.length, busy]);
 
-  const cost = deep ? costs.deep : costs.normal;
+  const freeLeft = (st.sages.find((s) => s.id === id)?.freeRemaining ?? 0) > 0 && !deep;
+  const cost = freeLeft ? 0 : deep ? costs.deep : costs.normal;
   const last = [...msgs].reverse().find((m) => m.role === 'npc');
   async function ask(text: string) {
     const question = text.trim(); if (!question || busy) return;
-    if (st.wallet.tickets < cost) { setErr(`질문권이 부족해요 (필요 ${cost}개 / 보유 ${st.wallet.tickets}개)`); return; }
+    if (!freeLeft && st.wallet.tickets < cost) { setErr(`질문권이 부족해요 (필요 ${cost}개 / 보유 ${st.wallet.tickets}개)`); return; }
     setErr(''); setBusy(true); setQ('');
     const tmp: Msg = { id: 'tmp', role: 'user', content: { text: question, deep }, cost };
     setMsgs((m) => [...m, tmp]);
@@ -54,7 +55,7 @@ export function NpcChat({ id, partnerId: initialPartner, cardKeys }: { id: strin
         {err && <div className="err" role="alert">{err}</div>}
         <form className="line" onSubmit={(e) => { e.preventDefault(); ask(q); }}>
           <input className="inp" value={q} maxLength={300} onChange={(e) => setQ(e.target.value)} placeholder="무엇이 궁금하신가요?" aria-label="질문 입력" />
-          <button className="btn sm" disabled={busy || !q.trim()} style={{ padding: '12px 16px' }}>질문 ({cost})</button>
+          <button className="btn sm" disabled={busy || !q.trim()} style={{ padding: '12px 16px' }}>{freeLeft ? '질문 (무료)' : `질문 (${cost})`}</button>
         </form>
       </div>}>
       <div className="npc-head"><NpcPortrait id={id} size={72} /><div className="bubble" style={{ margin: 0, flex: 1 }}>{npc.greeting}</div></div>
@@ -71,7 +72,7 @@ export function NpcChat({ id, partnerId: initialPartner, cardKeys }: { id: strin
             {(m.content as Ans).source === 'offline' && <div className="note" style={{ marginTop: 10 }}>개발·테스트 모드: AI 연결 없이 규칙 DB로 만든 답변이에요. (운영에서는 OpenAI 해석이 적용됩니다)</div>}
           </div>)}
       {busy && <div className="bubble"><span className="typing"><i /><i /><i /></span> {npc.name}이(가) 사주를 살피는 중…</div>}
-      {!busy && <><div className="sec-title">{last ? '이어서 물어볼까요?' : '추천 질문'} <span className="muted">(질문권 {costs.normal}장)</span></div>
+      {!busy && <><div className="sec-title">{last ? '이어서 물어볼까요?' : '추천 질문'} <span className="muted">({freeLeft ? '첫 상담 무료' : `질문권 ${costs.normal}장`})</span></div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>{follow.map((f) => <button key={f} className="chip" onClick={() => ask(f)}>💬 {f}</button>)}</div></>}
       {newCard && <CardModal card={newCard} onClose={() => setNewCard(null)} />}
       <div ref={end} />

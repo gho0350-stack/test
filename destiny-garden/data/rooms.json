@@ -1,0 +1,374 @@
+[
+ {
+  "id": "library",
+  "name": "운명의 서고",
+  "theme": {
+   "floor": "#6b4a2e",
+   "wall": "#7a5a44",
+   "accent": "#f5c451",
+   "light": "#ffd9a0"
+  },
+  "size": {
+   "w": 12,
+   "d": 9
+  },
+  "sage": {
+   "id": "sage",
+   "pos": {
+    "x": -3.8,
+    "z": -2.2
+   }
+  },
+  "quest": {
+   "title": "서고의 비밀",
+   "goal": "서랍·책장·거울·편지에서 운명 카드 4장을 찾으세요"
+  },
+  "objects": [
+   {
+    "id": "drawer1",
+    "type": "drawer",
+    "name": "서랍장",
+    "action": "서랍 열기",
+    "pos": {
+     "x": 3.8,
+     "z": -3.5
+    },
+    "rot": 0,
+    "required": true,
+    "card": "essence_day"
+   },
+   {
+    "id": "bookshelf",
+    "type": "bookshelf",
+    "name": "오래된 책장",
+    "action": "책 꺼내기",
+    "pos": {
+     "x": -0.4,
+     "z": -3.8
+    },
+    "rot": 0,
+    "required": true,
+    "card": "talent_main"
+   },
+   {
+    "id": "mirror1",
+    "type": "mirror",
+    "name": "신비로운 거울",
+    "action": "거울 들여다보기",
+    "pos": {
+     "x": -5.5,
+     "z": 0.3
+    },
+    "rot": 1.57,
+    "required": true,
+    "card": "hidden_story"
+   },
+   {
+    "id": "letter",
+    "type": "letter",
+    "name": "책상 위 편지",
+    "action": "편지 펼치기",
+    "pos": {
+     "x": 1.2,
+     "z": -0.8
+    },
+    "rot": 0,
+    "required": true,
+    "card": "essence_element"
+   },
+   {
+    "id": "scroll",
+    "type": "scroll",
+    "name": "사주 두루마리",
+    "action": "두루마리 펼치기",
+    "pos": {
+     "x": 4.6,
+     "z": 1.6
+    },
+    "rot": 0,
+    "required": false,
+    "kind": "panel",
+    "panel": "chart"
+   }
+  ]
+ },
+ {
+  "id": "wealth",
+  "name": "재물의 방",
+  "theme": {
+   "floor": "#5a3a22",
+   "wall": "#6a4030",
+   "accent": "#ffd36b",
+   "light": "#ffcf7a"
+  },
+  "size": {
+   "w": 12,
+   "d": 9
+  },
+  "sage": {
+   "id": "merchant",
+   "pos": {
+    "x": -4.4,
+    "z": 0.8
+   }
+  },
+  "quest": {
+   "title": "재물의 비밀",
+   "goal": "금고·보물상자·장부·저울·지도에서 카드 5장을 찾으세요"
+  },
+  "objects": [
+   {
+    "id": "safe",
+    "type": "safe",
+    "name": "작은 금고",
+    "action": "금고 문 열기",
+    "pos": {
+     "x": -4.2,
+     "z": -3.4
+    },
+    "rot": 0,
+    "required": true,
+    "card": "wealth_style"
+   },
+   {
+    "id": "chest",
+    "type": "chest",
+    "name": "보물상자",
+    "action": "뚜껑 열기",
+    "pos": {
+     "x": 3.9,
+     "z": -3.0
+    },
+    "rot": 0,
+    "required": true,
+    "card": "wealth_income"
+   },
+   {
+    "id": "ledger",
+    "type": "ledger",
+    "name": "오래된 장부",
+    "action": "장부 펼치기",
+    "pos": {
+     "x": 0.3,
+     "z": -0.9
+    },
+    "rot": 0,
+    "required": true,
+    "card": "wealth_manage"
+   },
+   {
+    "id": "scale",
+    "type": "scale",
+    "name": "황금 저울",
+    "action": "저울 조사하기",
+    "pos": {
+     "x": 4.9,
+     "z": 0.9
+    },
+    "rot": 0,
+    "required": true,
+    "card": "wealth_type"
+   },
+   {
+    "id": "map",
+    "type": "map",
+    "name": "벽에 걸린 지도",
+    "action": "지도 살펴보기",
+    "pos": {
+     "x": -1.4,
+     "z": -3.9
+    },
+    "rot": 0,
+    "required": true,
+    "card": "wealth_career"
+   }
+  ]
+ },
+ {
+  "id": "pavilion",
+  "name": "인연의 정자",
+  "theme": {
+   "floor": "#8a6a52",
+   "wall": "#a8402f",
+   "accent": "#ffc2de",
+   "light": "#ffd0e3"
+  },
+  "size": {
+   "w": 12,
+   "d": 9
+  },
+  "sage": {
+   "id": "guardian",
+   "pos": {
+    "x": -3.2,
+    "z": 1.6
+   }
+  },
+  "quest": {
+   "title": "인연의 비밀",
+   "goal": "편지함·거울·인연의 나무에서 카드 3장을 찾으세요",
+   "bonus": "붉은 실과 두 개의 의자에서 소중한 사람과의 관계 카드를 받을 수 있어요"
+  },
+  "objects": [
+   {
+    "id": "mailbox",
+    "type": "mailbox",
+    "name": "편지함",
+    "action": "편지 꺼내기",
+    "pos": {
+     "x": -4.0,
+     "z": -3.2
+    },
+    "rot": 0,
+    "required": true,
+    "card": "love_type"
+   },
+   {
+    "id": "mirror2",
+    "type": "mirror",
+    "name": "거울",
+    "action": "거울 조사하기",
+    "pos": {
+     "x": 4.2,
+     "z": -3.8
+    },
+    "rot": 0,
+    "required": true,
+    "card": "love_mirror"
+   },
+   {
+    "id": "lovetree",
+    "type": "tree",
+    "name": "인연의 나무",
+    "action": "가지 살펴보기",
+    "pos": {
+     "x": 0.2,
+     "z": -3.4
+    },
+    "rot": 0,
+    "required": true,
+    "card": "love_map"
+   },
+   {
+    "id": "redthread",
+    "type": "thread",
+    "name": "붉은 실",
+    "action": "실 연결하기",
+    "pos": {
+     "x": 4.8,
+     "z": 0.6
+    },
+    "rot": 0,
+    "required": false,
+    "card": "love_thread"
+   },
+   {
+    "id": "chairs",
+    "type": "chairs",
+    "name": "두 개의 의자",
+    "action": "자리에 앉기",
+    "pos": {
+     "x": 1.0,
+     "z": 0.6
+    },
+    "rot": 0,
+    "required": false,
+    "kind": "panel",
+    "panel": "partners"
+   }
+  ]
+ },
+ {
+  "id": "time",
+  "name": "시간의 방",
+  "theme": {
+   "floor": "#2a2a5a",
+   "wall": "#3b3f78",
+   "accent": "#cfa9ff",
+   "light": "#b8a6ff"
+  },
+  "size": {
+   "w": 12,
+   "d": 9
+  },
+  "sage": {
+   "id": "guide",
+   "pos": {
+    "x": -4.4,
+    "z": 0.6
+   }
+  },
+  "quest": {
+   "title": "시간의 비밀",
+   "goal": "모래시계·시계·천문 지도·봉인된 책에서 카드 4장을 찾으세요"
+  },
+  "objects": [
+   {
+    "id": "hourglass",
+    "type": "hourglass",
+    "name": "모래시계",
+    "action": "뒤집기",
+    "pos": {
+     "x": -3.6,
+     "z": -3.2
+    },
+    "rot": 0,
+    "required": true,
+    "card": "flow_daewoon"
+   },
+   {
+    "id": "clock",
+    "type": "clock",
+    "name": "오래된 시계",
+    "action": "시곗바늘 돌리기",
+    "pos": {
+     "x": 3.8,
+     "z": -3.6
+    },
+    "rot": 0,
+    "required": true,
+    "card": "flow_seun"
+   },
+   {
+    "id": "starmap",
+    "type": "starmap",
+    "name": "천문 지도",
+    "action": "별자리 조사하기",
+    "pos": {
+     "x": 0.2,
+     "z": -1.0
+    },
+    "rot": 0,
+    "required": true,
+    "card": "flow_wolun"
+   },
+   {
+    "id": "sealedbook",
+    "type": "sealedbook",
+    "name": "봉인된 책",
+    "action": "책 펼치기",
+    "pos": {
+     "x": 4.8,
+     "z": 0.8
+    },
+    "rot": 0,
+    "required": true,
+    "card": "past_life"
+   },
+   {
+    "id": "candle",
+    "type": "candle",
+    "name": "촛불",
+    "action": "촛불 밝히기",
+    "pos": {
+     "x": -0.8,
+     "z": -3.8
+    },
+    "rot": 0,
+    "required": false,
+    "card": "flow_today",
+    "daily": true
+   }
+  ]
+ }
+]

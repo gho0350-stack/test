@@ -10,6 +10,8 @@ import { useSupabase, sbTx } from './supabase';
 
 export interface UserCard { user_id: string; card_key: string; category: string; name: string; source: 'explore' | 'consult'; data: { subtitle: string; keywords: string[]; body: string; basis: string[]; [k: string]: any }; acquired_at: string }
 
+export interface SageUnlock { user_id: string; sage_id: string; unlocked_at: string; free_remaining: number }
+
 export interface DB {
   users: Record<string, { id: string; email: string; pass_hash: string; salt: string; created_at: string; deleted_at?: string }>;
   profiles: Record<string, { user_id: string; nickname: string; avatar_id: number; exp: number; created_at: string }>;
@@ -19,6 +21,7 @@ export interface DB {
   avatars: Record<string, { user_id: string; body_type: number }>;
   user_positions: Record<string, { user_id: string; x: number; z: number; updated_at: string }>;
   user_cards: Record<string, UserCard[]>;
+  user_sage_unlocks: Record<string, SageUnlock[]>;
   quest_progress: Record<string, Record<string, { completed_at: string }>>;
   game_rewards: { id: string; user_id: string; quest_id: string; exp: number; coins: number; created_at: string }[];
   credit_wallets: Record<string, { user_id: string; tickets: number; coins: number }>;
@@ -36,7 +39,7 @@ export interface DB {
 }
 
 const empty = (): DB => ({
-  users: {}, profiles: {}, birth_profiles: {}, saju_charts: {}, user_destiny_cards: {}, avatars: {}, user_positions: {}, user_cards: {}, quest_progress: {},
+  users: {}, profiles: {}, birth_profiles: {}, saju_charts: {}, user_destiny_cards: {}, avatars: {}, user_positions: {}, user_cards: {}, user_sage_unlocks: {}, quest_progress: {},
   game_rewards: [], credit_wallets: {}, credit_ledger: [], tarot_draws: [], relationships: [], consultations: [], consultation_messages: [],
   consultation_summaries: [], orders: [], payments: [], reports: [], ai_usage_logs: [], consent_logs: [],
 });

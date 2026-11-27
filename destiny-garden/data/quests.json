@@ -1,12 +1,112 @@
 [
-  { "id": "q01", "order": 1, "title": "정원에 처음 입장하기", "hint": "운명의 정원에 들어서 보세요", "event": "enter_garden", "reward": { "exp": 10, "coins": 10 } },
-  { "id": "q02", "order": 2, "title": "나의 캐릭터 만들기", "hint": "생년월일로 나의 캐릭터를 만들어요", "event": "create_character", "reward": { "exp": 20, "coins": 20 } },
-  { "id": "q03", "order": 3, "title": "운명의 첫 번째 서랍", "hint": "서고에서 첫 번째 서랍을 열어 보세요", "event": "open:drawer1", "reward": { "exp": 20, "coins": 20 } },
-  { "id": "q04", "order": 4, "title": "카드 3장 모으기", "hint": "서랍과 책장에서 카드를 발견해 보세요", "event": "cards:3", "reward": { "exp": 25, "coins": 25 } },
-  { "id": "q05", "order": 5, "title": "재물의 방 금고 열기", "hint": "재물의 방에서 작은 금고를 열어요", "event": "open:safe", "reward": { "exp": 20, "coins": 20 } },
-  { "id": "q06", "order": 6, "title": "인연의 편지함", "hint": "인연의 정자에서 편지함을 열어요", "event": "open:mailbox", "reward": { "exp": 20, "coins": 20 } },
-  { "id": "q07", "order": 7, "title": "시간의 모래시계", "hint": "시간의 방에서 모래시계를 뒤집어요", "event": "open:hourglass", "reward": { "exp": 20, "coins": 20 } },
-  { "id": "q08", "order": 8, "title": "오늘의 타로 뽑기", "hint": "타로의 정원에서 카드를 한 장 뽑아요", "event": "draw_tarot", "reward": { "exp": 25, "coins": 25 } },
-  { "id": "q09", "order": 9, "title": "현자와 첫 상담하기", "hint": "현자의 집에서 카드를 들고 질문해 보세요", "event": "first_consult", "reward": { "exp": 40, "coins": 50 } },
-  { "id": "q10", "order": 10, "title": "카드 10장 모으기", "hint": "도감을 채워 나의 운명을 수집해요", "event": "cards:10", "reward": { "exp": 50, "coins": 60 } }
+  {
+    "id": "q01",
+    "order": 1,
+    "title": "정원에 처음 입장하기",
+    "hint": "운명의 정원에 들어서 보세요",
+    "event": "enter_garden",
+    "reward": {
+      "exp": 10,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q02",
+    "order": 2,
+    "title": "나의 캐릭터 만들기",
+    "hint": "생년월일로 나의 캐릭터를 만들어요",
+    "event": "create_character",
+    "reward": {
+      "exp": 20,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q03",
+    "order": 3,
+    "title": "서고의 비밀",
+    "hint": "운명의 서고에서 카드 4장을 모두 찾으세요",
+    "event": "room:library",
+    "reward": {
+      "exp": 40,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q04",
+    "order": 4,
+    "title": "재물의 비밀",
+    "hint": "재물의 방에서 카드 5장을 모두 찾으세요",
+    "event": "room:wealth",
+    "reward": {
+      "exp": 50,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q05",
+    "order": 5,
+    "title": "인연의 비밀",
+    "hint": "인연의 정자에서 카드 3장을 모두 찾으세요",
+    "event": "room:pavilion",
+    "reward": {
+      "exp": 40,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q06",
+    "order": 6,
+    "title": "시간의 비밀",
+    "hint": "시간의 방에서 카드 4장을 모두 찾으세요",
+    "event": "room:time",
+    "reward": {
+      "exp": 40,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q07",
+    "order": 7,
+    "title": "오늘의 타로 뽑기",
+    "hint": "정원의 타로 텐트에서 카드를 한 장 뽑아요",
+    "event": "draw_tarot",
+    "reward": {
+      "exp": 20,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q08",
+    "order": 8,
+    "title": "현자와 첫 상담하기",
+    "hint": "해금된 현자에게 첫 상담(무료)을 받아 보세요",
+    "event": "first_consult",
+    "reward": {
+      "exp": 40,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q09",
+    "order": 9,
+    "title": "카드 10장 모으기",
+    "hint": "도감을 채워 나의 운명을 수집해요",
+    "event": "cards:10",
+    "reward": {
+      "exp": 40,
+      "coins": 0
+    }
+  },
+  {
+    "id": "q10",
+    "order": 10,
+    "title": "운명의 기록자",
+    "hint": "모든 공간의 카드를 모아 도감을 완성해 가요",
+    "event": "cards:18",
+    "reward": {
+      "exp": 60,
+      "coins": 0
+    }
+  }
 ]

@@ -26,7 +26,7 @@ export async function sb(path: string, init: { method?: string; body?: any; head
 // ───────── 테이블 정의 ─────────
 const PK: Record<string, string[]> = {
   profiles: ['user_id'], birth_profiles: ['user_id'], saju_charts: ['user_id'], avatars: ['user_id'], user_positions: ['user_id'],
-  user_destiny_cards: ['user_id', 'card_id'], user_cards: ['user_id', 'card_key'], quest_progress: ['user_id', 'quest_id'], game_rewards: ['id'], tarot_draws: ['id'], relationships: ['id'],
+  user_destiny_cards: ['user_id', 'card_id'], user_cards: ['user_id', 'card_key'], user_sage_unlocks: ['user_id', 'sage_id'], quest_progress: ['user_id', 'quest_id'], game_rewards: ['id'], tarot_draws: ['id'], relationships: ['id'],
   consultations: ['id'], consultation_messages: ['id'], consultation_summaries: ['id'], ai_usage_logs: ['id'], reports: ['id'], consent_logs: ['id'],
   credit_ledger: ['id'], orders: ['id'], payments: ['id'],
 };
@@ -44,6 +44,7 @@ function flatten(db: DB, uid: string): Record<string, any[]> {
   o.birth_profiles = db.birth_profiles[uid] ? [{ user_id: uid, data: (({ user_id, created_at, ...rest }) => rest)(db.birth_profiles[uid]), created_at: db.birth_profiles[uid].created_at }] : [];
   o.user_destiny_cards = db.user_destiny_cards[uid] ?? [];
   o.user_cards = db.user_cards[uid] ?? [];
+  o.user_sage_unlocks = db.user_sage_unlocks[uid] ?? [];
   o.quest_progress = Object.entries(db.quest_progress[uid] ?? {}).map(([quest_id, v]) => ({ user_id: uid, quest_id, completed_at: v.completed_at }));
   for (const t of ['game_rewards', 'tarot_draws', 'relationships', 'consultations', 'consultation_messages', 'consultation_summaries', 'ai_usage_logs', 'reports', 'consent_logs', 'credit_ledger', 'orders', 'payments'] as const) o[t] = (db as any)[t];
   return o;
@@ -61,6 +62,7 @@ function inflate(uid: string, rows: Record<string, any[]>, email: string): DB {
     birth_profiles: bp ? { [uid]: { user_id: uid, ...bp.data, created_at: bp.created_at } } : {},
     user_destiny_cards: { [uid]: rows.user_destiny_cards ?? [] },
     user_cards: { [uid]: rows.user_cards ?? [] },
+    user_sage_unlocks: { [uid]: rows.user_sage_unlocks ?? [] },
     quest_progress: { [uid]: qp },
     game_rewards: rows.game_rewards ?? [], tarot_draws: rows.tarot_draws ?? [], relationships: rows.relationships ?? [], consultations: rows.consultations ?? [],
     consultation_messages: rows.consultation_messages ?? [], consultation_summaries: rows.consultation_summaries ?? [], orders: rows.orders ?? [], payments: rows.payments ?? [],
@@ -74,7 +76,7 @@ async function loadUser(uid: string): Promise<{ db: DB; email: string }> {
     sb(`/auth/v1/admin/users/${uid}`).catch((e) => { if (e instanceof SbError && (e.status === 404 || e.status === 400)) return null; throw e; }),
     sb(`/rest/v1/credit_wallets?user_id=eq.${uid}&select=*`),
     // user_cards 마이그레이션(0002) 적용 전에도 기존 기능이 동작하도록 테이블 없음(404)은 빈 목록으로 처리
-    ...tables.map((t) => sb(`/rest/v1/${t}?user_id=eq.${uid}&select=*${LIMITS[t] ? `&order=created_at.desc&limit=${LIMITS[t]}` : ''}`).catch((e) => { if (t === 'user_cards' && e instanceof SbError && e.status === 404) return []; throw e; })),
+    ...tables.map((t) => sb(`/rest/v1/${t}?user_id=eq.${uid}&select=*${LIMITS[t] ? `&order=created_at.desc&limit=${LIMITS[t]}` : ''}`).catch((e) => { if ((t === 'user_cards' || t === 'user_sage_unlocks') && e instanceof SbError && e.status === 404) return []; throw e; })),
   ]);
   if (!user?.id) { const e: any = new Error('USER_MISSING'); e.code = 'USER_MISSING'; throw e; }
   const rows: Record<string, any[]> = { credit_wallets: wallet };

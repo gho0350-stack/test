@@ -9,34 +9,23 @@ import { ProductAction } from './Buildings';
 
 const close = () => useGame.getState().open(null);
 
-// ───────── 퀘스트 ─────────
+// ───────── 퀘스트 (공간별) ─────────
 export function Quests() {
   const st = useGame((s) => s.state)!;
   const done = st.quests.filter((q) => q.done).length;
   return (
     <Sheet title="퀘스트" sub={`${done} / ${st.quests.length} 완료`} onClose={close}>
-      {st.quests.map((q) => <div key={q.id} className={'q-item' + (q.done ? ' done' : '')}><div className="ck">{q.done ? '✓' : ''}</div><div><div className="tt">{q.title}</div><div className="hh">{q.hint}</div></div><div className="rw">🪙{q.reward.coins} ✦{q.reward.exp}</div></div>)}
-      <p className="muted">게임 코인과 경험치는 퀘스트 보상이에요. 질문권(유료 재화)과는 별도로 관리돼요.</p>
-    </Sheet>
-  );
-}
-
-// ───────── 가방 ─────────
-export function Bag() {
-  const st = useGame((s) => s.state)!;
-  const reports = st.entitlements.filter((e) => (products.find((p) => p.id === e.productId) as any)?.kind === 'report');
-  return (
-    <Sheet title="가방" onClose={close}>
-      <div className="grid2">
-        <div className="card"><div className="lbl">🎫 질문권</div><b style={{ fontSize: 24 }}>{st.wallet.tickets}</b><div><button className="btn sm" style={{ marginTop: 6 }} onClick={() => useGame.getState().open({ type: 'shop' })}>충전하기</button></div></div>
-        <div className="card"><div className="lbl">🪙 게임 코인</div><b style={{ fontSize: 24 }}>{st.wallet.coins}</b><div className="muted">퀘스트로 모을 수 있어요</div></div>
-      </div>
-      <div className="sec-title">보유 카드</div>
-      <div className="card" style={{ display: 'flex', gap: 10, alignItems: 'center' }}><div style={{ fontSize: 34 }}>🎴</div><div><b>수집한 카드 {st.cards.length}장</b><div className="muted">최근: {st.cards[st.cards.length - 1]?.name ?? '아직 없어요'}</div></div><button className="btn sm line" style={{ marginLeft: 'auto' }} onClick={() => useGame.getState().open({ type: 'codex' })}>도감</button></div>
-      {st.todayTarot && <div className="card">🃏 오늘의 타로: <b>{st.todayTarot.name}</b> ({st.todayTarot.reversed ? '역' : '정'})</div>}
-      <div className="sec-title">구매한 리포트</div>
-      {reports.length === 0 ? <div className="muted">아직 구매한 리포트가 없어요.</div> : reports.map((e) => { const p: any = products.find((x) => x.id === e.productId); const rel = st.relationships.find((r) => r.id === e.partnerId); return <div className="prod" key={e.orderId}><div className="ic">📜</div><div><div className="nm">{p.name}{rel ? ` · ${rel.name}` : ''}</div></div><button className="btn sm gold" style={{ marginLeft: 'auto' }} onClick={() => useGame.getState().open({ type: 'report', kind: p.report, partnerId: e.partnerId })}>열람</button></div>; })}
-      <p className="muted">의상·아이템은 2차 업데이트에서 만나요.</p>
+      <div className="sec-title" style={{ marginTop: 0 }}>공간별 탐험</div>
+      {st.rooms.map((r) => (
+        <div key={r.id} className="q-item" style={{ display: 'block' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div className="tt">{r.name}</div><div className="rw">{r.got}/{r.required}{r.sageUnlocked ? ' · 상담 해금' : ''}</div></div>
+          <div className="bar" style={{ margin: '8px 0 6px' }}><i style={{ width: `${(r.got / r.required) * 100}%`, background: 'linear-gradient(90deg,#8a5fe0,#f5c451)' }} /></div>
+          <button className="btn sm line" onClick={() => { useGame.getState().open(null); useGame.getState().goTo('building', r.id); }}>{useGame.getState().room === r.id ? '이 방에서 탐험 중' : '이 방으로 가기'}</button>
+        </div>
+      ))}
+      <div className="sec-title">퀘스트</div>
+      {st.quests.map((q) => <div key={q.id} className={'q-item' + (q.done ? ' done' : '')}><div className="ck">{q.done ? '✓' : ''}</div><div><div className="tt">{q.title}</div><div className="hh">{q.hint}</div></div><div className="rw">✦ {q.reward.exp}EXP</div></div>)}
+      <p className="muted">경험치는 카드를 발견하거나 퀘스트를 완료하면 쌓여요. 레벨과 칭호는 탐험 성취를 나타내며 사주의 우열과는 무관해요.</p>
     </Sheet>
   );
 }
@@ -151,15 +140,5 @@ export function Settings() {
       <button className="btn block" style={{ background: '#d9534f' }} disabled={busy} onClick={async () => { if (!confirm('계정과 출생 정보·상담 기록이 모두 삭제돼요. 계속할까요?')) return; setBusy(true); await api('/api/account', { method: 'DELETE' }); useGame.setState({ state: null, panel: null }); router.push('/'); }}>계정 및 개인정보 삭제</button>
     </Sheet>
   );
-}
-export function Notifications() {
-  const st = useGame((s) => s.state)!;
-  const next = st.quests.find((q) => !q.done);
-  const items: { ic: string; t: string; a?: () => void }[] = [];
-  if (!st.todayTarot) items.push({ ic: '🃏', t: '오늘의 타로를 아직 뽑지 않았어요', a: () => useGame.getState().open({ type: 'tarot' }) });
-  if (next) items.push({ ic: '📜', t: `다음 퀘스트: ${next.title}`, a: () => useGame.getState().open({ type: 'quests' }) });
-  if (st.wallet.tickets === 0) items.push({ ic: '🎫', t: '질문권이 없어요. 충전하고 NPC와 대화해 보세요', a: () => useGame.getState().open({ type: 'shop' }) });
-  if (items.length === 0) items.push({ ic: '✨', t: '새 알림이 없어요. 오늘도 정원을 거닐어 볼까요?' });
-  return <Sheet title="알림" onClose={close}>{items.map((i, k) => <button key={k} className="prod" style={{ width: '100%', border: 0, textAlign: 'left' }} onClick={i.a}><div className="ic">{i.ic}</div><div className="nm" style={{ fontSize: 14 }}>{i.t}</div></button>)}</Sheet>;
 }
 void ProductAction;

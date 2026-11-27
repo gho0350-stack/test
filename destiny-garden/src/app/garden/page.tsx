@@ -13,6 +13,7 @@ export default function GardenPage() {
   const { state, loaded, load } = useGame();
   useEffect(() => { load(); (window as any).__dg = useGame; }, [load]); // E2E/디버그용 스토어 핸들
   useEffect(() => { if (loaded && (!state || !state.profile)) router.replace(state ? '/create' : '/'); }, [loaded, state, router]);
+  useEffect(() => { const p = state?.position; if (p && !useGame.getState().room && useGame.getState().player.z === 9 && useGame.getState().player.x === 0) useGame.setState({ player: { x: p.x, z: p.z } }); }, [state?.position]);
   if (!loaded || !state?.profile) return <div className="loading"><div className="spin" />정원으로 들어가는 중…</div>;
   return (
     <div className="game" data-testid="garden">

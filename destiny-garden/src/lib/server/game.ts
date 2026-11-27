@@ -8,13 +8,12 @@ import { compareCharts } from '../compat';
 import { monthGanzhiList, yearGanzhi } from '../saju/engine';
 import { spreadOrder, isReversed, interpretDraw } from '../tarot';
 import { CARD_DEFS, generateCard, categoryOfKey, type CardContent } from '../cards';
-import objects from '@data/explore_objects.json';
-import buildings from '@data/game_buildings.json';
+import rooms from '@data/rooms.json';
 import type { UserCard } from './db';
 import { answerQuestion, detectTopic, makeReport, aiMode, model } from './ai';
 import { confirmPayment, cancelPayment, payMode, tossClientKey } from './payments';
 
-const TITLES = ['탐험가', '정원지기', '별 읽는 이', '달빛 산책자', '운명의 벗', '정원의 현자'];
+const TITLES = ['정원의 방문자', '운명의 탐험가', '별빛 수집가', '인연의 기록자', '운명의 기록자'];
 export const levelOf = (exp: number) => { const lv = 1 + Math.floor(exp / 100); return { level: lv, title: TITLES[Math.min(TITLES.length - 1, lv - 1)], into: exp % 100, next: 100 }; };
 const YEAR = () => Number(kstDate().slice(0, 4));
 
@@ -79,6 +78,8 @@ export function buildState(db: DB, userId: string) {
     wallet: { tickets: w.tickets, coins: w.coins },
     quests: C.quests.map((q) => ({ ...q, done: !!done[q.id], completedAt: done[q.id]?.completed_at ?? null })),
     cards: (db.user_cards[userId] ?? []).map((c) => ({ key: c.card_key, category: c.category, name: c.name, source: c.source, at: c.acquired_at, ...c.data })),
+    rooms: roomProgress(db.user_cards[userId] ?? [], db.user_sage_unlocks[userId] ?? []),
+    sages: (db.user_sage_unlocks[userId] ?? []).map((u) => ({ id: u.sage_id, freeRemaining: u.free_remaining })),
     position: db.user_positions[userId] ?? null,
     todayTarot: draw ? { ...interpretDraw(draw.card_id, draw.reversed, chart), position: draw.position } : null,
     relationships: db.relationships.filter((r) => r.user_id === userId).map((r) => ({ id: r.id, name: r.name, relation: r.relation, birth: r.birth, dayPillar: r.chart.pillars.day.name, compat: chart ? compareCharts(chart, r.chart) : null })),
@@ -216,9 +217,13 @@ export async function consult(userId: string, b: any) {
     let cons = db.consultations.find((c) => c.user_id === userId && c.npc_id === npc.id);
     if (!cons) { cons = { id: uid('cs_'), user_id: userId, npc_id: npc.id, topic, created_at: now() }; db.consultations.push(cons); }
     const requestId = uid('rq_');
-    ledger(db, userId, -cost, 'consult_reserve', `reserve:${requestId}`);
+    // 현자 상담은 방의 카드를 모두 찾아 해금한 뒤에만 가능. 각 현자의 첫 상담은 무료(실패 시 복구)
+    const unl = (db.user_sage_unlocks[userId] ?? []).find((u) => u.sage_id === npc.id);
+    if (!unl) throw new HttpError(403, '아직 이 현자와 상담할 수 없어요. 먼저 방의 운명 카드를 모두 찾아보세요.');
+    const useFree = unl.free_remaining > 0 && !deep;
+    if (useFree) unl.free_remaining -= 1; else ledger(db, userId, -cost, 'consult_reserve', `reserve:${requestId}`);
     const prev = db.consultation_summaries.filter((s) => s.user_id === userId && (s.topic === topic || s.npc_id === npc.id)).slice(-3).map((s) => s.summary).reverse();
-    return { chart, partner, consultationId: cons.id, requestId, prev, cards };
+    return { chart, partner, consultationId: cons.id, requestId, prev, cards, useFree };
   });
 
   // 2) AI 호출 (트랜잭션 밖)
@@ -226,7 +231,7 @@ export async function consult(userId: string, b: any) {
     const r = await answerQuestion({ npc: npc as any, question, topic, chart: pre.chart, partner: pre.partner, prevSummaries: pre.prev, deep, cards: pre.cards });
     // 3) 성공: 저장 + 퀘스트
     return await tx(userId, (db) => {
-      db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'user', content: { text: question, deep, partnerId: b.partnerId ?? null }, cost, created_at: now() });
+      db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'user', content: { text: question, deep, partnerId: b.partnerId ?? null, free: pre.useFree }, cost: pre.useFree ? 0 : cost, created_at: now() });
       const mid = uid('m_');
       const nc = r.answer.new_card;
       let newCard: any = null;
@@ -242,54 +247,72 @@ export async function consult(userId: string, b: any) {
       db.ai_usage_logs.push({ id: uid('a_'), user_id: userId, npc_id: npc.id, model: r.model, ok: true, ms: r.ms, tokens: r.tokens, error: null, created_at: now() });
       const ev1 = applyEvent(db, userId, 'first_consult');
       const ev2 = newCard ? applyEvent(db, userId, 'cards') : { completed: [], levelUp: null };
-      return { answer: { ...r.answer, source: r.source, topic, usedCards: pre.cards.map((c) => c.name), newCard }, cost, newCard, ev: { completed: [...ev1.completed, ...ev2.completed], levelUp: ev1.levelUp ?? ev2.levelUp }, state: buildState(db, userId) };
+      return { answer: { ...r.answer, source: r.source, topic, usedCards: pre.cards.map((c) => c.name), newCard }, cost: pre.useFree ? 0 : cost, free: pre.useFree, newCard, ev: { completed: [...ev1.completed, ...ev2.completed], levelUp: ev1.levelUp ?? ev2.levelUp }, state: buildState(db, userId) };
     });
   } catch (e: any) {
     // 실패: 질문권 복구 (멱등)
     await tx(userId, (db) => {
-      ledger(db, userId, cost, 'consult_refund', `refund:${pre.requestId}`);
+      if (pre.useFree) { const u = (db.user_sage_unlocks[userId] ?? []).find((x) => x.sage_id === npc.id); if (u) u.free_remaining += 1; }
+      else ledger(db, userId, cost, 'consult_refund', `refund:${pre.requestId}`);
       db.ai_usage_logs.push({ id: uid('a_'), user_id: userId, npc_id: npc.id, model: model(), ok: false, ms: 0, tokens: null, error: String(e?.message ?? e).slice(0, 300), created_at: now() });
     });
     throw new HttpError(502, 'AI 답변을 만들지 못했어요. 질문권은 차감되지 않았습니다. 잠시 후 다시 시도해 주세요.');
   }
 }
 
-// ───────── 탐험: 오브젝트 열기 → 개인화 카드 ─────────
-type Obj = (typeof objects)[number];
-const isUnlocked = (o: any, owned: { category: string }[]) => !o.unlock || ('category' in o.unlock ? owned.filter((c) => c.category === o.unlock.category).length >= o.unlock.count : owned.length >= o.unlock.total);
-const ROOM_BY_TOPIC: Record<string, string> = { wealth: 'wealth', career: 'library', general: 'library', relationship: 'pavilion', pastlife: 'time' };
-/** 상담 후 다음 탐험을 이어 주는 힌트(현자 → 정원) */
+// ───────── 탐험: 방 안의 오브젝트 조사 → 개인화 카드 ─────────
+type RoomDef = (typeof rooms)[number];
+const OBJECTS = rooms.flatMap((r) => r.objects.map((o: any) => ({ ...o, room: r.id })));
+const CARD_EXP = 10;
+const required = (r: RoomDef) => r.objects.filter((o: any) => o.required) as any[];
+const hasCard = (owned: { card_key: string }[], key: string) => owned.some((c) => c.card_key === key || c.card_key.startsWith(key + ':'));
+export function roomProgress(owned: { card_key: string }[], unlocks: { sage_id: string }[]) {
+  return rooms.map((r) => { const req = required(r); const done = req.filter((o) => hasCard(owned, o.card)).length;
+    return { id: r.id, name: r.name, required: req.length, got: done, complete: done === req.length, sageId: r.sage.id, sageUnlocked: unlocks.some((u) => u.sage_id === r.sage.id),
+      objects: (r.objects as any[]).map((o) => ({ id: o.id, required: !!o.required, done: o.card ? (o.daily ? false : hasCard(owned, o.card)) : false })) }; });
+}
+/** 상담 후 다음 탐험을 이어 주는 힌트 */
+const ROOM_BY_TOPIC: Record<string, string> = { wealth: 'wealth', career: 'wealth', general: 'library', relationship: 'pavilion', pastlife: 'time' };
 function nextHint(owned: UserCard[], topic: string): string | null {
-  const have = new Set(owned.map((c) => c.card_key.split(':')[0]));
-  const open = (o: any) => o.kind === 'card' && !o.daily && !have.has(o.card) && isUnlocked(o, owned);
-  const o: any = objects.find((x) => x.building === ROOM_BY_TOPIC[topic] && open(x)) ?? objects.find(open);
-  if (!o) return null;
-  return `${buildings.find((b) => b.id === o.building)?.name}의 ‘${o.name}’을(를) 열어 보세요. ${o.hint}.`;
+  const open = (o: any) => o.kind !== 'panel' && o.card && !o.daily && !hasCard(owned, o.card);
+  const o: any = OBJECTS.find((x) => x.room === ROOM_BY_TOPIC[topic] && open(x)) ?? OBJECTS.find(open);
+  return o ? `${rooms.find((r) => r.id === o.room)?.name}의 ‘${o.name}’을(를) 조사해 보세요.` : null;
 }
 
 export async function exploreObject(userId: string, objectId: string, partnerId?: string | null) {
-  const obj: Obj | undefined = objects.find((o) => o.id === objectId);
+  const obj: any = OBJECTS.find((o) => o.id === objectId);
   if (!obj) throw new HttpError(404, '오브젝트를 찾을 수 없습니다.');
+  const room = rooms.find((r) => r.id === obj.room)!;
   const today = kstDate();
   return tx(userId, (db) => {
     const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
     if (!chart) throw new HttpError(409, '캐릭터를 먼저 만들어 주세요.');
     const owned = (db.user_cards[userId] ??= []);
-    if (obj.kind !== 'card' && !(obj.id === 'chairs' && partnerId)) throw new HttpError(400, '카드를 얻는 오브젝트가 아닙니다.');
-    if (!isUnlocked(obj, owned)) throw new HttpError(403, `아직 열 수 없어요. ${obj.hint}`);
-    let key = (obj as any).card as string, partner = null as null | { id: string; name: string; chart: SajuChart };
+    if (obj.kind === 'panel' && !(obj.id === 'chairs' && partnerId)) throw new HttpError(400, '카드를 얻는 오브젝트가 아닙니다.');
+    let key = obj.card as string, partner = null as null | { id: string; name: string; chart: SajuChart };
     if (obj.id === 'chairs') {
       const r = db.relationships.find((x) => x.id === partnerId && x.user_id === userId);
       if (!r) throw new HttpError(404, '선택한 인물을 찾을 수 없습니다.');
       key = `love_pair:${r.id}`; partner = { id: r.id, name: r.name, chart: r.chart as SajuChart };
-    } else if ((obj as any).daily) key = `${key}:${today}`;
+    } else if (obj.daily) key = `${key}:${today}`;
+    const view = (row: { card_key: string; category: string; name: string; source: string; acquired_at: string; data: any }) => ({ key: row.card_key, category: row.category, name: row.name, source: row.source, at: row.acquired_at, ...row.data });
+    const unlockOf = () => (db.user_sage_unlocks[userId] ?? []).find((u) => u.sage_id === room.sage.id);
     const exist = owned.find((c) => c.card_key === key);
-    if (exist) return { isNew: false, card: { key, category: exist.category, name: exist.name, source: exist.source, at: exist.acquired_at, ...exist.data }, ev: { completed: [], levelUp: null as number | null }, state: buildState(db, userId) };
+    if (exist) return { isNew: false, card: view(exist), ev: { completed: [], levelUp: null as number | null }, unlockedSage: null as string | null, state: buildState(db, userId) };
     const c: CardContent = generateCard(key, chart, { today, partner });
-    const row: UserCard = { user_id: userId, card_key: key, category: categoryOfKey(key), name: c.name, source: 'explore', acquired_at: now(), data: { subtitle: c.subtitle, keywords: c.keywords, body: c.body, basis: c.basis, object: obj.id } };
+    const row: UserCard = { user_id: userId, card_key: key, category: categoryOfKey(key), name: c.name, source: 'explore', acquired_at: now(), data: { subtitle: c.subtitle, keywords: c.keywords, body: c.body, basis: c.basis, object: obj.id, room: room.id } };
     owned.push(row);
-    const e1 = applyEvent(db, userId, `open:${obj.id}`), e2 = applyEvent(db, userId, 'cards');
-    return { isNew: true, card: { key, category: row.category, name: row.name, source: 'explore', at: row.acquired_at, ...row.data }, ev: { completed: [...e1.completed, ...e2.completed], levelUp: e1.levelUp ?? e2.levelUp }, state: buildState(db, userId) };
+    const prof = db.profiles[userId]; const before = levelOf(prof?.exp ?? 0).level; if (prof) prof.exp += CARD_EXP;
+    const evs = [applyEvent(db, userId, `open:${obj.id}`), applyEvent(db, userId, 'cards')];
+    // 방 완료 → 현자 상담 해금 (서버에서만 판정, 한 번 해금되면 다시 잠기지 않음)
+    let unlockedSage: string | null = null;
+    const done = required(room).every((o) => hasCard(owned, o.card));
+    if (done && !unlockOf()) {
+      (db.user_sage_unlocks[userId] ??= []).push({ user_id: userId, sage_id: room.sage.id, unlocked_at: now(), free_remaining: 1 });
+      unlockedSage = room.sage.id; evs.push(applyEvent(db, userId, `room:${room.id}`));
+    }
+    const after = levelOf(prof?.exp ?? 0).level;
+    return { isNew: true, card: view(row), ev: { completed: evs.flatMap((e) => e.completed), levelUp: after > before ? after : (evs.find((e) => e.levelUp)?.levelUp ?? null) }, unlockedSage, state: buildState(db, userId) };
   });
 }
 
@@ -399,7 +422,7 @@ export async function deleteAccount(userId: string) {
 }
 const deleteAccountData = (userId: string) => tx(userId, (db) => {
   const strip = <T extends { user_id: string }>(a: T[]) => a.filter((x) => x.user_id !== userId);
-  for (const k of ['profiles', 'birth_profiles', 'saju_charts', 'user_destiny_cards', 'user_cards', 'avatars', 'user_positions', 'quest_progress', 'credit_wallets'] as const) delete (db as any)[k][userId];
+  for (const k of ['profiles', 'birth_profiles', 'saju_charts', 'user_destiny_cards', 'user_cards', 'user_sage_unlocks', 'avatars', 'user_positions', 'quest_progress', 'credit_wallets'] as const) delete (db as any)[k][userId];
   db.game_rewards = strip(db.game_rewards); db.tarot_draws = strip(db.tarot_draws); db.relationships = strip(db.relationships);
   const csIds = new Set(db.consultations.filter((c) => c.user_id === userId).map((c) => c.id));
   db.consultations = strip(db.consultations); db.consultation_messages = db.consultation_messages.filter((m) => !csIds.has(m.consultation_id)); db.consultation_summaries = strip(db.consultation_summaries);

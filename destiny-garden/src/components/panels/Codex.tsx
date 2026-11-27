@@ -4,18 +4,21 @@ import { Sheet } from '../ui/kit';
 import { CardFace, type CardData } from './CardView';
 import { useGame } from '@/lib/client/store';
 import { CATEGORIES, CARD_CATEGORY } from '@/lib/cards-meta';
-import objects from '@data/explore_objects.json';
-import buildings from '@data/game_buildings.json';
+import { ROOMS } from '@/lib/game/world';
+import { api } from '@/lib/client/api';
+import { useEffect } from 'react';
 
 const close = () => useGame.getState().open(null);
-type Tab = 'essence' | 'talent' | 'wealth' | 'love' | 'flow' | 'past' | 'consult' | 'chronicle';
+type Tab = 'essence' | 'talent' | 'wealth' | 'love' | 'flow' | 'past' | 'tarot' | 'consult' | 'chronicle';
 
 export function Codex({ focus }: { focus?: string }) {
   const st = useGame((s) => s.state)!;
   const [tab, setTab] = useState<Tab>('essence');
   const [sel, setSel] = useState<CardData | null>(focus ? ((st.cards.find((c) => c.key === focus) as any) ?? null) : null);
   const owned = (k: string) => st.cards.find((c) => c.key === k || c.key.startsWith(k + ':'));
-  const where = (key: string) => { const o: any = objects.find((x: any) => x.card === key); return o ? `${buildings.find((b) => b.id === o.building)?.name} · ${o.name}` : ''; };
+  const where = (key: string) => { for (const r of ROOMS) { const o: any = (r.objects as any[]).find((x) => x.card === key); if (o) return `${r.name} · ${o.name}`; } return ''; };
+  const [tarot, setTarot] = useState<any[] | null>(null);
+  useEffect(() => { if (tab === 'tarot' && !tarot) api('/api/tarot').then((j) => setTarot(j.history)).catch(() => setTarot([])); }, [tab, tarot]);
 
   if (sel) return (
     <Sheet title={sel.name} sub={CATEGORIES.find((c) => c.id === sel.category)?.name} onClose={() => setSel(null)}>
@@ -27,11 +30,15 @@ export function Codex({ focus }: { focus?: string }) {
   const extra = st.cards.filter((c) => (tab === 'love' && c.key.startsWith('love_pair:')) || (tab === 'consult' && c.category === 'consult'));
   const chron = [...st.cards].sort((a, b) => a.at.localeCompare(b.at));
   const progress = (t: string) => { const all = Object.keys(CARD_CATEGORY).filter((k) => CARD_CATEGORY[k] === t); return `${all.filter((k) => owned(k)).length}/${all.length}`; };
+  const total = Object.keys(CARD_CATEGORY).length, got = Object.keys(CARD_CATEGORY).filter((k) => owned(k)).length;
 
   return (
-    <Sheet title="운명 도감" sub={`수집한 카드 ${st.cards.length}장`} onClose={close}
-      tabs={<div className="tabs">{CATEGORIES.map((c) => <button key={c.id} data-tab={c.id} className={tab === c.id ? 'on' : ''} onClick={() => setTab(c.id as Tab)}>{c.icon} {c.name}{c.id !== 'consult' && <small> {progress(c.id)}</small>}</button>)}<button data-tab="chronicle" className={tab === 'chronicle' ? 'on' : ''} onClick={() => setTab('chronicle')}>📜 운명 연대기</button></div>}>
-      {tab === 'chronicle' ? (
+    <Sheet title="운명 도감" sub={`나의 운명도감 · ${got} / ${total} 발견`} onClose={close}
+      tabs={<div className="tabs">{CATEGORIES.map((c) => <button key={c.id} data-tab={c.id} className={tab === c.id ? 'on' : ''} onClick={() => setTab(c.id as Tab)}>{c.icon} {c.name}{c.id !== 'consult' && c.id !== 'tarot' && <small> {progress(c.id)}</small>}</button>)}<button data-tab="chronicle" className={tab === 'chronicle' ? 'on' : ''} onClick={() => setTab('chronicle')}>📜 운명 연대기</button></div>}>
+      {tab === 'tarot' ? (
+        !tarot ? <div className="spin" style={{ margin: '20px auto' }} /> : tarot.length === 0 ? <div className="muted">아직 뽑은 타로가 없어요. 정원의 타로 텐트에서 하루 한 장 뽑을 수 있어요.</div> :
+        <ul className="bul">{tarot.map((h: any, i: number) => <li key={i}><b>{h.date}</b> · {h.name} ({h.reversed ? '역' : '정'}) <span className="muted">{h.keywords}</span></li>)}</ul>
+      ) : tab === 'chronicle' ? (
         chron.length === 0 ? <div className="muted">아직 수집한 카드가 없어요. 정원의 서랍을 열어 보세요.</div> :
         <div style={{ borderLeft: '3px solid #d8c9f5', paddingLeft: 14 }}>{chron.map((c) => (
           <button key={c.key} className="prod" style={{ width: '100%', border: 0, textAlign: 'left', position: 'relative' }} onClick={() => setSel(c as any)}>

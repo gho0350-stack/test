@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Character } from './Character';
 import { useGame } from '@/lib/client/store';
 import { AVATARS, BUILDINGS, NPCS, OBSTACLES, RADIUS, nearest, resolve, interactWith } from '@/lib/game/world';
-import objects from '@data/explore_objects.json';
+import { Interior } from './Interior3D';
 
 // ───────── 공용 ─────────
 let glowTex: THREE.Texture | null = null;
@@ -160,20 +160,18 @@ const BUILD_PRESET: Record<string, { rot: number; Comp: () => React.JSX.Element;
   pavilion: { rot: -Math.PI / 2, Comp: Pavilion, labelY: 6.8, icon: '♡' },
   tarot: { rot: -Math.PI / 2, Comp: TarotTent, labelY: 4.6, icon: '🃏' },
   time: { rot: 0.6, Comp: TimeRoom, labelY: 7.9, icon: '⏳' },
-  sagehouse: { rot: -0.5, Comp: SageHouse, labelY: 5.6, icon: '🧙' },
 };
 
 function Buildings() {
   const interact = useInteract();
-  const cards = useGame((s) => s.state?.cards);
+  const rooms = useGame((s) => s.state?.rooms);
   return <>{BUILDINGS.map((b) => {
-    const p = BUILD_PRESET[b.id];
-    // 아직 열어 보지 않은(잠금 해제된) 오브젝트가 있으면 ! 표시
-    const have = new Set((cards ?? []).map((c) => c.key.split(':')[0]));
-    const todo = b.content === 'room' && objects.some((o: any) => o.building === b.id && o.kind === 'card' && !o.daily && !have.has(o.card) && (!o.unlock || ('category' in o.unlock ? (cards ?? []).filter((c) => c.category === o.unlock.category).length >= o.unlock.count : (cards ?? []).length >= o.unlock.total)));
+    const p = BUILD_PRESET[b.id]; if (!p) return null;
+    const pr = rooms?.find((r) => r.id === b.id);
+    const todo = !!pr && !pr.complete;
     return <group key={b.id} position={[b.pos.x, 0, b.pos.z]}>
       <Hover onClick={() => interact('building', b.id)}><group rotation-y={p.rot}><p.Comp /></group></Hover>
-      <Label y={p.labelY} icon={p.icon} text={b.name} quest={!!todo} onClick={() => interact('building', b.id)} />
+      <Label y={p.labelY} icon={p.icon} text={b.name} sub={pr ? `${pr.got}/${pr.required}` : undefined} quest={todo} onClick={() => interact('building', b.id)} />
     </group>;
   })}</>;
 }
@@ -256,29 +254,13 @@ function useInteract() {
   return (kind: 'building' | 'npc', id: string) => { const g = useGame.getState(); interactWith(kind, id, { player: g.player, open: g.open, set: (st) => useGame.setState(st) }); };
 }
 
-function Npcs() {
-  const interact = useInteract();
-  const quests = useGame((s) => s.state?.quests);
-  const firstConsult = quests?.find((q) => q.event === 'first_consult');
-  return <>{NPCS.map((n) => {
-    const style = (n.id === 'sage' ? 'sage' : n.id) as any;
-    const face = Math.atan2(0 - n.pos.x, 8 - n.pos.z);
-    return <group key={n.id} position={[n.pos.x, 0, n.pos.z]} rotation-y={face}>
-      <Hover onClick={() => interact('npc', n.id)}><Character look={{ skin: '#f6d6bb', hair: '#3a2a20', robe: n.color, trim: n.accent, style, scale: 1 }} /><mesh position={[0, 1.2, 0]} visible={false}><cylinderGeometry args={[0.7, 0.7, 2.6, 6]} /></mesh></Hover>
-      <Html position={[0, 3.0, 0]} center zIndexRange={[7, 0]}>
-        <button className="npc-bubble" onClick={() => interact('npc', n.id)}>💬 {n.name}</button>
-      </Html>
-    </group>;
-  })}</>;
-}
-
 // ───────── 플레이어 ─────────
 function Player() {
   const st = useGame((s) => s.state);
   const look = AVATARS[st?.profile?.avatar ?? 0];
   const group = useRef<THREE.Group>(null);
   const walk = useRef(0);
-  const pos = useRef(new THREE.Vector3(st?.position?.x ?? 0, 0, st?.position?.z ?? 9));
+  const pos = useRef(new THREE.Vector3(useGame.getState().player.x, 0, useGame.getState().player.z));
   const yaw = useRef(Math.PI);
   const keys = useRef(new Set<string>());
   const { camera, size } = useThree();
@@ -290,7 +272,7 @@ function Player() {
     const [x, z] = resolve(pos.current.x, pos.current.z); pos.current.set(x, 0, z); useGame.setState({ player: { x, z } });
     const typing = () => { const a = document.activeElement as HTMLElement | null; return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); };
     const dn = (e: KeyboardEvent) => { if (typing()) return; const k = e.key.toLowerCase(); if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys.current.add(k); e.preventDefault(); }
-      if ((k === 'e' || k === 'enter') && useGame.getState().near && !useGame.getState().panel) { const n = useGame.getState().near!; useGame.getState().open({ type: n.kind, id: n.id } as any); } };
+      if ((k === 'e' || k === 'enter') && useGame.getState().near && !useGame.getState().panel) { const n = useGame.getState().near!; useGame.getState().open({ type: 'building', id: n.id }); } };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener('keydown', dn); window.addEventListener('keyup', up);
     return () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); };
@@ -334,7 +316,7 @@ function Player() {
     if (tick.current > 0.1) {
       tick.current = 0;
       const n = nearest(pos.current.x, pos.current.z); const key = n ? n.kind + n.id : '';
-      if (key !== lastNear.current) { lastNear.current = key; useGame.setState({ near: n ? { kind: n.kind, id: n.id, label: n.label } : null }); }
+      if (key !== lastNear.current) { lastNear.current = key; useGame.setState({ near: n ? { kind: 'building', id: n.id, label: n.label } : null }); }
       useGame.setState({ player: { x: pos.current.x, z: pos.current.z } });
     }
     if (ring.current) { const t = g.target; ring.current.visible = !!t; if (t) { ring.current.position.set(t.x, 0.06, t.z); const s = 1 + Math.sin(performance.now() / 200) * 0.12; ring.current.scale.set(s, s, 1); } }
@@ -346,16 +328,21 @@ function Player() {
 }
 
 export default function Garden3D() {
+  const room = useGame((s) => s.room);
   return (
     <Canvas dpr={[1, 1.5]} camera={{ fov: 50, position: [0, 9, 20], near: 0.5, far: 160 }} gl={{ antialias: true, powerPreference: 'high-performance' }} style={{ touchAction: 'none' }}>
-      <color attach="background" args={['#1b1140']} />
-      <fog attach="fog" args={['#2b1a5c', 26, 66]} />
-      <ambientLight intensity={1.15} color="#b8a6ff" />
-      <hemisphereLight args={['#c9b8ff', '#3a2b5a', 0.8]} />
-      <directionalLight position={[-14, 22, 10]} intensity={1.4} color="#ffe6c4" />
-      <directionalLight position={[10, 8, -8]} intensity={0.5} color="#8a7cff" />
-      <Stars radius={90} depth={40} count={1400} factor={5} fade speed={0.6} />
-      <Moon /><Ground /><PathStones /><Pond /><BlossomTrees /><Lanterns /><Buildings /><Npcs /><Player /><Petals />
+      {room ? <Interior key={room} id={room} /> : (
+        <>
+          <color attach="background" args={['#1b1140']} />
+          <fog attach="fog" args={['#2b1a5c', 26, 66]} />
+          <ambientLight intensity={1.15} color="#b8a6ff" />
+          <hemisphereLight args={['#c9b8ff', '#3a2b5a', 0.8]} />
+          <directionalLight position={[-14, 22, 10]} intensity={1.4} color="#ffe6c4" />
+          <directionalLight position={[10, 8, -8]} intensity={0.5} color="#8a7cff" />
+          <Stars radius={90} depth={40} count={1400} factor={5} fade speed={0.6} />
+          <Moon /><Ground /><PathStones /><Pond /><BlossomTrees /><Lanterns /><Buildings /><Player /><Petals />
+        </>
+      )}
     </Canvas>
   );
 }
