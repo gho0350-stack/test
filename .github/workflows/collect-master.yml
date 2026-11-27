@@ -42,7 +42,8 @@ jobs:
       - name: 앱 데이터 재생성·커밋 (병합된 최신 코드 기준)
         run: |
           python3 pipeline/build_master_data.py
-          git add schoolmap/master-data.js schoolmap/master-detail 2>/dev/null || true
+          python3 pipeline/data_health.py
+          git add schoolmap/master-data.js schoolmap/master-detail pipeline/out/data_health.json pipeline/out/data_health.md 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "chore: 앱 마스터 데이터 갱신" && git pull --rebase --autostash -X theirs origin "$GITHUB_REF_NAME" && git push)
       - name: 수집 단계 실패 여부 표시
         if: steps.collect.outcome == 'failure'

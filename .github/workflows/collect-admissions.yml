@@ -42,9 +42,10 @@ jobs:
           FORCE: ${{ inputs.force && '1' || '0' }}
       - name: 변경된 데이터 커밋
         run: |
+          python3 pipeline/data_health.py || true
           git config user.name "eodisalji-bot"
           git config user.email "eodisalji-bot@users.noreply.github.com"
-          git add data/admissions_raw.csv data/admissions_review.csv data/admissions_manual_links.csv data/admissions_seed_urls.csv pipeline/out/api_usage.json pipeline/out/admissions_review.md pipeline/out/admissions_review.html 2>/dev/null || true
+          git add data/admissions_raw.csv data/admissions_review.csv data/admissions_manual_links.csv data/admissions_seed_urls.csv pipeline/out/api_usage.json pipeline/out/admissions_review.md pipeline/out/admissions_review.html pipeline/out/data_health.json pipeline/out/data_health.md 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "chore: 진학 실적 후보 갱신(검토 대기)" && git pull --rebase --autostash origin "$GITHUB_REF_NAME" && git push)
       - name: 실패 표시
         if: steps.collect.outcome == 'failure'

@@ -453,3 +453,5 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .chip:disabled { opacity: .5; cursor: not-allowed; }
 
 .cov { margin: 0 var(--gx) 10px; padding: 9px 12px; border-radius: 10px; background: var(--accent-soft, #e8f1ec); color: var(--ink); font-size: 12.5px; line-height: 1.5; } .cov.s3 { background: #f1efe9; } .cov b { font-weight: 800; }
+
+.warnline { color: #a4361e; font-weight: 600; }

@@ -76,6 +76,7 @@ def do_schools_all():
     import collect_schools_all as c
     print("== NEIS 서울 전체 학교"); rows = c.collect(os.environ["NEIS_KEY"]); dump("out/schools_all.json", rows); print(len(rows), "개교")
 
+SCHEMA = 2   # 2: 단지 통계에 실제 평균(mean)·최근 거래(lastp, lastd)·전용면적별 분포(areas) 추가
 GU_ORDER = ["강남구", "서초구", "송파구", "양천구", "노원구", "강동구", "성동구", "광진구", "동작구", "관악구", "종로구", "중구", "용산구",
             "강서구", "영등포구", "구로구", "금천구", "성북구", "강북구", "도봉구", "동대문구", "중랑구", "마포구", "서대문구", "은평구"]
 
@@ -92,7 +93,7 @@ def do_master():
     today = datetime.date.today(); done, todo = [], []
     for gu in GU_ORDER:
         part = prev_gz(f"out/master_gu/{gu}.json.gz")
-        if part and (today - datetime.date.fromisoformat(part["generatedAt"])).days < fresh_days: done.append(gu)
+        if part and part.get("schema", 1) >= SCHEMA and (today - datetime.date.fromisoformat(part["generatedAt"])).days < fresh_days: done.append(gu)   # 스키마가 낮은 옛 결과는 오래된 것으로 보고 다시 수집
         else: todo.append(gu)
     print(f"최신 구 {len(done)}개, 수집할 구 {len(todo)}개: {', '.join(todo) or '-'}", flush=True)
     for gu in todo:
@@ -107,7 +108,7 @@ def do_master():
         if os.environ.get("KAKAO_REST_KEY"):
             gc = mm.geocode_master(os.environ["KAKAO_REST_KEY"], res["apts"], gc); dump("out/geo_cache.json", gc)
         for a in res["apts"]: a["asof"] = res["generatedAt"]
-        dump_gz(f"out/master_gu/{gu}.json.gz", {"gu": gu, "generatedAt": res["generatedAt"], "apts": res["apts"], "report": res["report"]})
+        dump_gz(f"out/master_gu/{gu}.json.gz", {"gu": gu, "schema": SCHEMA, "generatedAt": res["generatedAt"], "apts": res["apts"], "report": res["report"]})
         print(f"{gu} 저장: {len(res['apts'])}개 단지", flush=True)
     parts = [p for p in (prev_gz(f"out/master_gu/{g}.json.gz") for g in GU_ORDER) if p]
     if not parts: return
@@ -161,7 +162,10 @@ for key, name, fn in JOBS:
     if key == "PUBLIC" or os.environ.get(key): step(name, fn)
     else: print(f"{key} 없음: {name} 건너뜀")
 
-if os.environ.get("RUN_ONLY") != "master": subprocess.run([sys.executable, "build_data.py"], check=True)   # 마스터 전용 실행은 앱 데이터(real-data.js)를 건드리지 않는다
+if os.environ.get("RUN_ONLY") != "master":
+    try: import build_school_catalog as bsc; bsc.run()    # 학교 목록(data/schools_seed.csv) -> NEIS 행·앱 학교 목록·학교군 판정
+    except Exception as e: WARN.append(f"학교 목록 갱신 실패: {type(e).__name__}: {str(e)[:100]}")
+    subprocess.run([sys.executable, "build_data.py"], check=True)   # 마스터 전용 실행은 앱 데이터(real-data.js)를 건드리지 않는다
 if os.environ.get("RUN_ONLY") != "master":
     try: import build_school_admission as bsa; bsa.main()   # 하이인포 명단과 대조해 학교 입학 방식 분류 갱신
     except Exception as e: WARN.append(f"학교 입학 방식 갱신 실패: {type(e).__name__}: {str(e)[:100]}")

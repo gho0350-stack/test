@@ -1,5 +1,5 @@
 window.SG_REAL = {
- "generatedAt": "2026-11-25",
+ "generatedAt": "2026-11-27",
  "sources": {
   "schools": "NEIS 교육정보 개방포털 schoolInfo",
   "academy": "NEIS 교육정보 개방포털 acaInsTiInfo",
@@ -184,6 +184,261 @@ window.SG_REAL = {
    "homepage": "http://hanyoung.sen.hs.kr",
    "tel": "02-6954-1504",
    "founded": "19330418",
+   "loaded": "20260423"
+  },
+  "dankook": {
+   "code": "7010137",
+   "officialName": "단국대학교사범대학부속고등학교",
+   "addr": "서울특별시 강남구 도곡로64길 21",
+   "dong": "대치동",
+   "zip": "06278",
+   "founding": "사립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://dan-kook.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "jungdae": {
+   "code": "7010241",
+   "officialName": "중앙대학교사범대학부속고등학교",
+   "addr": "서울특별시 강남구 선릉로 207",
+   "dong": "도곡동",
+   "zip": "06277",
+   "founding": "사립",
+   "coedu": "남여공학",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://cau.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "eunkwang": {
+   "code": "7010226",
+   "officialName": "은광여자고등학교",
+   "addr": "서울특별시 강남구 남부순환로359길 36",
+   "dong": "도곡동",
+   "zip": "06264",
+   "founding": "사립",
+   "coedu": "여",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://eunkwang.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "jinseon": {
+   "code": "7010245",
+   "officialName": "진선여자고등학교",
+   "addr": "서울특별시 강남구 선릉로85길 27",
+   "dong": null,
+   "zip": "06213",
+   "founding": "사립",
+   "coedu": "여",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "https://jinseon.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "gyeonggi": {
+   "code": "7010059",
+   "officialName": "경기고등학교",
+   "addr": "서울특별시 강남구 영동대로 643",
+   "dong": "삼성동",
+   "zip": "06086",
+   "founding": "공립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://kyunggi.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "youngdong": {
+   "code": "7010212",
+   "officialName": "영동고등학교",
+   "addr": "서울특별시 강남구 선릉로 742",
+   "dong": "청담동",
+   "zip": "06065",
+   "founding": "사립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "yd.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "seoul": {
+   "code": "7010083",
+   "officialName": "서울고등학교",
+   "addr": "서울특별시 서초구 효령로 197",
+   "dong": "서초동",
+   "zip": "06669",
+   "founding": "공립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://seoul.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "seomun": {
+   "code": "7010183",
+   "officialName": "서문여자고등학교",
+   "addr": "서울특별시 서초구 동광로12길 84",
+   "dong": "방배동",
+   "zip": "06565",
+   "founding": "사립",
+   "coedu": "여",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://suhmoon.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "sangmun": {
+   "code": "7010179",
+   "officialName": "상문고등학교",
+   "addr": "서울특별시 서초구 명달로 45",
+   "dong": "방배동",
+   "zip": "06707",
+   "founding": "사립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://sangmoon.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "sehwayeo": {
+   "code": "7010198",
+   "officialName": "세화여자고등학교",
+   "addr": "서울특별시 서초구 신반포로 56-7",
+   "dong": null,
+   "zip": "06548",
+   "founding": "사립",
+   "coedu": "여",
+   "hsType": "자율고",
+   "course": "일반계",
+   "homepage": "https://sehwags.sen.hs.kr/",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "jeongsin": {
+   "code": "7010236",
+   "officialName": "정신여자고등학교",
+   "addr": "서울특별시 송파구 올림픽로4길 16",
+   "dong": "잠실동",
+   "zip": "05571",
+   "founding": "사립",
+   "coedu": "여",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "https://chungshin.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "youngdongil": {
+   "code": "7010712",
+   "officialName": "영동일고등학교",
+   "addr": "서울특별시 송파구 석촌호수로 93",
+   "dong": "잠실동",
+   "zip": "05555",
+   "founding": "사립",
+   "coedu": "남여공학",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://ydi.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "mokdong": {
+   "code": "7010744",
+   "officialName": "목동고등학교",
+   "addr": "서울특별시 양천구 목동동로2길 68",
+   "dong": "신정동",
+   "zip": "08099",
+   "founding": "사립",
+   "coedu": "여",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "https://mokdong.sen.hs.kr/",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "sinmok": {
+   "code": "7010093",
+   "officialName": "신목고등학교",
+   "addr": "서울특별시 양천구 안양천로 739",
+   "dong": "신정동",
+   "zip": "08018",
+   "founding": "공립",
+   "coedu": "남여공학",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://shinmok.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "yangcheon": {
+   "code": "7010209",
+   "officialName": "양천고등학교",
+   "addr": "서울특별시 양천구 신정로14길 13",
+   "dong": "신정동",
+   "zip": "08108",
+   "founding": "사립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://yangcheon.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "jaehyeon": {
+   "code": "7010235",
+   "officialName": "재현고등학교",
+   "addr": "서울특별시 노원구 덕릉로82길 64",
+   "dong": "중계동",
+   "zip": "01717",
+   "founding": "사립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://jaehyun.sen.hs.kr",
+   "tel": null,
+   "founded": null,
+   "loaded": "20260423"
+  },
+  "daejin": {
+   "code": "7010146",
+   "officialName": "대진고등학교",
+   "addr": "서울특별시 노원구 공릉로62가길 47",
+   "dong": "하계동",
+   "zip": "01807",
+   "founding": "사립",
+   "coedu": "남",
+   "hsType": "일반고",
+   "course": "일반계",
+   "homepage": "http://daejin.sen.hs.kr",
+   "tel": null,
+   "founded": null,
    "loaded": "20260423"
   }
  },
@@ -42271,6 +42526,91 @@ window.SG_REAL = {
       }
      }
     }
+   },
+   "dankook": {
+    "x": 127.057768228297,
+    "y": 37.4956174948977,
+    "by": "school_geo"
+   },
+   "jungdae": {
+    "x": 127.05169012944,
+    "y": 37.4918425685769,
+    "by": "school_geo"
+   },
+   "eunkwang": {
+    "x": 127.035021467585,
+    "y": 37.4883484513575,
+    "by": "school_geo"
+   },
+   "jinseon": {
+    "x": 127.048286565491,
+    "y": 37.5023028920315,
+    "by": "school_geo"
+   },
+   "gyeonggi": {
+    "x": 127.056075505663,
+    "y": 37.517564539911,
+    "by": "school_geo"
+   },
+   "youngdong": {
+    "x": 127.043739258782,
+    "y": 37.5213890143821,
+    "by": "school_geo"
+   },
+   "seoul": {
+    "x": 127.004901860862,
+    "y": 37.4842930566875,
+    "by": "school_geo"
+   },
+   "seomun": {
+    "x": 126.984505510839,
+    "y": 37.4888933207865,
+    "by": "school_geo"
+   },
+   "sangmun": {
+    "x": 127.003916819634,
+    "y": 37.4797554325594,
+    "by": "school_geo"
+   },
+   "sehwayeo": {
+    "x": 126.994230013893,
+    "y": 37.5019964569165,
+    "by": "school_geo"
+   },
+   "jeongsin": {
+    "x": 127.073847329188,
+    "y": 37.5094538398143,
+    "by": "school_geo"
+   },
+   "youngdongil": {
+    "x": 127.089443727735,
+    "y": 37.5099746522433,
+    "by": "school_geo"
+   },
+   "mokdong": {
+    "x": 126.86019842592,
+    "y": 37.5092159752312,
+    "by": "school_geo"
+   },
+   "sinmok": {
+    "x": 126.873606945101,
+    "y": 37.512909431854,
+    "by": "school_geo"
+   },
+   "yangcheon": {
+    "x": 126.845202874653,
+    "y": 37.5083201483795,
+    "by": "school_geo"
+   },
+   "jaehyeon": {
+    "x": 127.080799772038,
+    "y": 37.6612906377296,
+    "by": "school_geo"
+   },
+   "daejin": {
+    "x": 127.076090022542,
+    "y": 37.6378068538477,
+    "by": "school_geo"
    }
   },
   "apts": {
