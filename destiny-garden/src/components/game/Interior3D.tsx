@@ -8,12 +8,13 @@ import { Furniture } from './Furniture';
 import { useGame } from '@/lib/client/store';
 import { interactNear } from '@/lib/client/interact';
 import { roomOf, resolveIn, nearestIn, NPCS } from '@/lib/game/world';
+import { cam, camRelative, resetCam } from '@/lib/client/camera';
+import { woodTex, plasterTex } from '@/lib/client/textures';
+import { RoomProps } from './RoomProps';
+import { Shadowed } from './Shadowed';
 import { AVATARS } from '@/lib/game/world';
 
-let tex: THREE.Texture | null = null;
-function glow() { if (tex) return tex; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d')!; const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,230,160,1)'); r.addColorStop(0.4, 'rgba(255,200,110,0.4)'); r.addColorStop(1, 'rgba(255,200,110,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); tex = new THREE.CanvasTexture(c); return tex; }
-const Halo = ({ position, size = 1.6, color = '#ffd98a', opacity = 0.9 }: { position: [number, number, number]; size?: number; color?: string; opacity?: number }) =>
-  <sprite position={position} scale={[size, size, 1]}><spriteMaterial map={glow()} color={color} transparent opacity={opacity} depthWrite={false} blending={THREE.AdditiveBlending} /></sprite>;
+import { Halo } from './RoomProps';
 
 export function Interior({ id }: { id: string }) {
   const room = roomOf(id)!;
@@ -28,17 +29,19 @@ export function Interior({ id }: { id: string }) {
   return (
     <group>
       <color attach="background" args={['#120a24']} />
-      <ambientLight intensity={1.25} color="#e8d8ff" />
-      <directionalLight position={[3, 9, 6]} intensity={1.3} color={T.light} />
-      <pointLight position={[0, 3.2, 0]} intensity={14} distance={13} color={T.light} />
-      {/* 바닥/벽 (정면·우측은 열린 단면 구조: 캐릭터가 가려지지 않음) */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color={T.floor} flatShading /></mesh>
-      {Array.from({ length: 6 }, (_, i) => <mesh key={i} rotation-x={-Math.PI / 2} position={[0, 0.005, -d / 2 + 0.75 + i * 1.5]}><planeGeometry args={[w, 0.05]} /><meshStandardMaterial color="#00000030" transparent opacity={0.35} /></mesh>)}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0.4]}><circleGeometry args={[2.6, 24]} /><meshStandardMaterial color={T.accent} transparent opacity={0.18} /></mesh>
-      <mesh position={[0, 2.2, -d / 2]}><boxGeometry args={[w + 0.4, 4.4, 0.3]} /><meshStandardMaterial color={T.wall} flatShading /></mesh>
-      <mesh position={[-w / 2, 2.2, 0]}><boxGeometry args={[0.3, 4.4, d]} /><meshStandardMaterial color={T.wall} flatShading /></mesh>
-      <mesh position={[0, 0.25, -d / 2 + 0.2]}><boxGeometry args={[w, 0.5, 0.15]} /><meshStandardMaterial color={T.accent} emissive={T.accent} emissiveIntensity={0.15} /></mesh>
-      {[-3.2, 3.2].map((x) => <group key={x}><mesh position={[x, 2.9, -d / 2 + 0.17]}><planeGeometry args={[1.5, 1.7]} /><meshStandardMaterial color="#1b1550" emissive="#4a3fa0" emissiveIntensity={0.6} /></mesh><mesh position={[x, 2.9, -d / 2 + 0.2]}><boxGeometry args={[1.6, 0.06, 0.04]} /><meshStandardMaterial color={T.accent} /></mesh></group>)}
+      <ambientLight intensity={0.9} color="#e8d8ff" />
+      <hemisphereLight args={['#fff1dc', '#3a2b5a', 0.55]} />
+      <directionalLight position={[4, 11, 7]} intensity={1.5} color={T.light} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={28} shadow-bias={-0.0004} />
+      <pointLight position={[0, 3.4, 0]} intensity={10} distance={13} color={T.light} />
+      {/* 바닥/벽 (정면·우측은 열린 단면 구조: 캐릭터가 가려지지 않음, 벽은 단면이라 뒤에서 보면 투명) */}
+      <mesh rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[w, d]} /><meshStandardMaterial map={woodTex(T.floor, [w / 3, d / 3])} roughness={0.75} /></mesh>
+      <mesh position={[0, 2.2, -d / 2]} receiveShadow><planeGeometry args={[w + 0.4, 4.4]} /><meshStandardMaterial map={plasterTex(T.wall, [w / 3, 1.6])} /></mesh>
+      <mesh position={[-w / 2, 2.2, 0]} rotation-y={Math.PI / 2} receiveShadow><planeGeometry args={[d, 4.4]} /><meshStandardMaterial map={plasterTex(T.wall, [d / 3, 1.6])} /></mesh>
+      <mesh position={[0, 0.6, -d / 2 + 0.02]}><planeGeometry args={[w + 0.4, 1.2]} /><meshStandardMaterial map={woodTex('#5a3a22', [w / 2, 0.5])} /></mesh>
+      <mesh position={[-w / 2 + 0.02, 0.6, 0]} rotation-y={Math.PI / 2}><planeGeometry args={[d, 1.2]} /><meshStandardMaterial map={woodTex('#5a3a22', [d / 2, 0.5])} /></mesh>
+      <mesh position={[0, 1.22, -d / 2 + 0.05]}><boxGeometry args={[w + 0.4, 0.08, 0.1]} /><meshStandardMaterial color={T.accent} emissive={T.accent} emissiveIntensity={0.15} /></mesh>
+      {[-3.2, 3.2].map((x) => <group key={x}><mesh position={[x, 2.9, -d / 2 + 0.03]}><planeGeometry args={[1.5, 1.7]} /><meshStandardMaterial color="#1b1550" emissive="#6a5fd0" emissiveIntensity={0.9} toneMapped={false} /></mesh>{[-0.75, 0, 0.75].map((dx) => <mesh key={dx} position={[x + dx, 2.9, -d / 2 + 0.06]}><boxGeometry args={[0.05, 1.7, 0.04]} /><meshStandardMaterial color="#3a2418" /></mesh>)}<mesh position={[x, 2.9, -d / 2 + 0.06]}><boxGeometry args={[1.6, 0.05, 0.04]} /><meshStandardMaterial color="#3a2418" /></mesh><Halo position={[x, 2.9, -d / 2 + 0.6]} size={3.4} color="#9a8cff" opacity={0.25} /></group>)}
+      <RoomProps id={id} w={w} d={d} accent={T.accent} light={T.light} />
       {/* 출입구 */}
       {[-1.1, 1.1].map((x) => <mesh key={x} position={[x, 1.1, d / 2 - 0.1]}><boxGeometry args={[0.14, 2.2, 0.14]} /><meshStandardMaterial color={T.accent} emissive={T.accent} emissiveIntensity={0.5} /></mesh>)}
       <Halo position={[0, 1.2, d / 2 - 0.2]} size={4} color={T.light} opacity={0.25} />
@@ -49,7 +52,7 @@ export function Interior({ id }: { id: string }) {
           <group key={o.id} position={[o.pos.x, 0, o.pos.z]} rotation-y={o.rot ?? 0}>
             <group onClick={(e) => { e.stopPropagation(); const p = useGame.getState().roomPlayer; if (Math.hypot(p.x - o.pos.x, p.z - o.pos.z) < 2.3) interactNear({ kind: 'object', id: o.id }); else useGame.setState({ target: { x: o.pos.x + Math.sin(o.rot ?? 0) * 1.5 + 0.0, z: o.pos.z + Math.cos(o.rot ?? 0) * 1.6 } }); }}
               onPointerOver={() => (document.body.style.cursor = 'pointer')} onPointerOut={() => (document.body.style.cursor = '')}>
-              <Furniture type={o.type} open={isDone || anim[o.id] === 'opening'} />
+              <Shadowed><Furniture type={o.type} open={isDone || anim[o.id] === 'opening'} /></Shadowed>
             </group>
             {canOpen && !isDone && <Halo position={[0, 1.6, 0]} size={isTarget ? 2.8 : 1.8} color={isTarget ? '#ffe08a' : '#cfa9ff'} opacity={isTarget ? 0.95 : 0.55} />}
             {isTarget && <mesh position={[0, 3.3, 0]}><coneGeometry args={[0.18, 0.4, 4]} /><meshBasicMaterial color="#ffd36b" toneMapped={false} /></mesh>}
@@ -60,7 +63,7 @@ export function Interior({ id }: { id: string }) {
       {/* 현자 */}
       <group position={[room.sage.pos.x, 0, room.sage.pos.z]} rotation-y={0.5}>
         <group onClick={(e) => { e.stopPropagation(); interactNear({ kind: 'sage', id: room.sage.id }); }}>
-          <Character look={{ skin: '#f6d6bb', hair: '#3a2a20', robe: sageNpc.color, trim: sageNpc.accent, style: (room.sage.id === 'sage' ? 'sage' : room.sage.id) as any }} />
+          <Shadowed><Character look={{ skin: '#f6d6bb', hair: '#3a2a20', robe: sageNpc.color, trim: sageNpc.accent, style: (room.sage.id === 'sage' ? 'sage' : room.sage.id) as any }} /></Shadowed>
           <mesh position={[0, 1.2, 0]} visible={false}><cylinderGeometry args={[0.7, 0.7, 2.6, 6]} /></mesh>
         </group>
         {unlocked && <Halo position={[0, 1.3, 0]} size={3.6} color="#ffe08a" opacity={0.55} />}
@@ -95,13 +98,14 @@ function InteriorPlayer({ id }: { id: string }) {
       if ((k === 'e' || k === 'enter') && !useGame.getState().panel && !useGame.getState().reveal) { const n = useGame.getState().near; if (n) interactNear(n); } };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     window.addEventListener('keydown', dn); window.addEventListener('keyup', up);
-    camera.position.set(0, 9, 12); return () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); };
+    resetCam('room', size.width / size.height); camera.position.set(0, 9, 12); return () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); };
   }, [camera]);
   useFrame((_, dt0) => {
     const dt = Math.min(dt0, 0.05); const g = useGame.getState();
     let dx = 0, dz = 0; const k = keys.current;
     if (k.has('w') || k.has('arrowup')) dz -= 1; if (k.has('s') || k.has('arrowdown')) dz += 1; if (k.has('a') || k.has('arrowleft')) dx -= 1; if (k.has('d') || k.has('arrowright')) dx += 1;
     dx += g.joy.x; dz += g.joy.y;
+    [dx, dz] = camRelative(dx, dz);
     const blocked = !!g.panel || !!g.reveal || !!g.sageUnlock;
     let moving = false;
     if (Math.hypot(dx, dz) > 0.12 && !blocked) { if (g.target) useGame.setState({ target: null }); const l = Math.hypot(dx, dz), m = Math.min(1, l); dx = (dx / l) * m; dz = (dz / l) * m; moving = true; }
@@ -122,9 +126,9 @@ function InteriorPlayer({ id }: { id: string }) {
     }
     walk.current += ((moving ? 1 : 0) - walk.current) * Math.min(1, dt * 10);
     if (group.current) { group.current.position.copy(pos.current); group.current.rotation.y = yaw.current; }
-    const asp = size.width / size.height; const k2 = asp < 0.9 ? 1 + (0.9 - asp) * 1.6 : 1; const kx = asp < 0.9 ? 0.7 : 0.35;
-    camera.position.lerp(new THREE.Vector3(pos.current.x * kx, 8.6 * k2, pos.current.z * 0.25 + 9.6 * k2), Math.min(1, dt * 5));
-    camera.lookAt(pos.current.x * kx, 0.4, -0.6);
+    const cp = Math.cos(cam.pitch) * cam.dist; const tx = pos.current.x * 0.6, tz = pos.current.z * 0.5 - 0.4;
+    camera.position.lerp(new THREE.Vector3(tx + Math.sin(cam.yaw) * cp, 0.4 + Math.sin(cam.pitch) * cam.dist, tz + Math.cos(cam.yaw) * cp), Math.min(1, dt * 6));
+    camera.lookAt(tx, 0.6, tz);
     tick.current += dt;
     if (tick.current > 0.1) {
       tick.current = 0; const n = nearestIn(room, pos.current.x, pos.current.z); const key = n ? n.kind + n.id : '';
@@ -134,7 +138,7 @@ function InteriorPlayer({ id }: { id: string }) {
     if (ring.current) { const t = g.target; ring.current.visible = !!t; if (t) { ring.current.position.set(t.x, 0.06, t.z); const s = 1 + Math.sin(performance.now() / 200) * 0.12; ring.current.scale.set(s, s, 1); } }
   });
   return <>
-    <group ref={group}><Character look={{ ...look, scale: 1.05 }} walkRef={walk} /></group>
+    <group ref={group}><Shadowed><Character look={{ ...look, scale: 1.05 }} walkRef={walk} /></Shadowed></group>
     <mesh ref={ring} rotation-x={-Math.PI / 2} visible={false}><ringGeometry args={[0.3, 0.42, 24]} /><meshBasicMaterial color="#ffe08a" transparent opacity={0.9} /></mesh>
   </>;
 }

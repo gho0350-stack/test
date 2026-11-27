@@ -31,6 +31,8 @@ interface G {
   anim: Record<string, 'opening' | 'open'>;
   reveal: Reveal | null;
   sageUnlock: string | null;
+  quality: 'high' | 'low';
+  setQuality: (q: 'high' | 'low') => void;
   player: { x: number; z: number };
   load: () => Promise<GameState | null>;
   setState: (s: GameState) => void;
@@ -44,7 +46,7 @@ interface G {
 }
 let tid = 1;
 export const useGame = create<G>((set, get) => ({
-  state: null, loaded: false, panel: null, toasts: [], joy: { x: 0, y: 0 }, target: null, pending: null, near: null, room: null, roomPlayer: { x: 0, z: 3 }, anim: {}, reveal: null, sageUnlock: null, player: { x: 0, z: 9 },
+  state: null, loaded: false, panel: null, toasts: [], joy: { x: 0, y: 0 }, target: null, pending: null, near: null, room: null, roomPlayer: { x: 0, z: 3 }, anim: {}, reveal: null, sageUnlock: null, quality: 'high', setQuality: (q) => { try { localStorage.setItem('dg_quality', q); } catch {} set({ quality: q }); }, player: { x: 0, z: 9 },
   load: async () => { try { const j = await api('/api/state'); set({ state: j.state, loaded: true }); return j.state; } catch { set({ loaded: true }); return null; } },
   setState: (s) => set({ state: s }),
   open: (p) => {

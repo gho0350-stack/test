@@ -126,7 +126,7 @@ export function ReportView({ kind, partnerId }: { kind: string; partnerId?: stri
 
 // ───────── 설정/알림 ─────────
 export function Settings() {
-  const st = useGame((s) => s.state)!; const router = useRouter();
+  const st = useGame((s) => s.state)!; const quality = useGame((s) => s.quality); const router = useRouter();
   const [busy, setBusy] = useState(false);
   const c = st.chart!;
   return (
@@ -135,6 +135,7 @@ export function Settings() {
       <div className="card"><div className="lbl">출생 정보</div>{c.input.calendar === 'lunar' ? '음력' : '양력'} {c.input.year}.{c.input.month}.{c.input.day}{c.input.isLeapMonth ? '(윤달)' : ''} {c.meta.hourKnown ? `${c.input.hour}:${String(c.input.minute ?? 0).padStart(2, '0')}` : '시간 미상'} · {c.input.region}
         <div style={{ marginTop: 8 }}><button className="btn sm line" onClick={() => { close(); router.push('/create'); }}>출생 정보 수정</button></div></div>
       <div className="card"><div className="lbl">계산 기준</div><div className="muted">{c.meta.engine}<br />월주는 절기(節) 시각 기준, 일주는 자정 기준{c.input.nightZi === 'next_day' ? '(야자시 익일 처리)' : ''}. 상세 기준은 docs/SAJU_STANDARDS.md 에 있어요.{c.correctionMinutes ? ` 진태양시 보정 ${c.correctionMinutes}분 적용.` : ''}</div></div>
+      <div className="card"><div className="lbl">그래픽 품질</div><div className="seg"><button className={quality === 'high' ? 'on' : ''} onClick={() => { useGame.getState().setQuality('high'); }}>높음 (그림자·빛 번짐)</button><button className={quality === 'low' ? 'on' : ''} onClick={() => { useGame.getState().setQuality('low'); }}>낮음 (성능 우선)</button></div><div className="muted" style={{ marginTop: 6 }}>화면이 끊기면 ‘낮음’을 선택하세요.</div></div>
       <div className="card"><div className="lbl">AI / 결제 모드</div><div className="muted">AI: {st.config.aiMode === 'openai' ? 'OpenAI 연결됨' : '오프라인(규칙 DB, 개발용)'} · 결제: {st.config.payMode === 'toss' ? '토스페이먼츠' : st.config.payMode === 'mock' ? '테스트(가상 결제)' : '비활성'}</div></div>
       <button className="btn line block" style={{ marginBottom: 10 }} disabled={busy} onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); useGame.setState({ state: null, panel: null }); router.push('/'); }}>로그아웃</button>
       <button className="btn block" style={{ background: '#d9534f' }} disabled={busy} onClick={async () => { if (!confirm('계정과 출생 정보·상담 기록이 모두 삭제돼요. 계속할까요?')) return; setBusy(true); await api('/api/account', { method: 'DELETE' }); useGame.setState({ state: null, panel: null }); router.push('/'); }}>계정 및 개인정보 삭제</button>

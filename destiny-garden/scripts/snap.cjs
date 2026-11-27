@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
   const email = `snap_${Date.now()}@test.kr`;
   await ctx.request.post(BASE + '/api/auth/signup', { data: { email, password: 'password123', consent: true } });
   await ctx.request.post(BASE + '/api/character', { data: { nickname: '하늘', avatar: 0, year: 1995, month: 4, day: 17, calendar: 'solar', hour: 14, minute: 30, gender: 'female', region: '서울' } });
-  const p = await ctx.newPage(); await p.goto(BASE + '/garden'); await p.waitForSelector('canvas');
+  const p = await ctx.newPage(); await p.addInitScript(() => localStorage.setItem('dg_quality', 'high')); await p.goto(BASE + '/garden'); await p.waitForSelector('canvas');
   if (process.env.ROOM) { await p.evaluate((r) => window.__dg.getState().enterRoom(r), process.env.ROOM); }
   if (x) await p.evaluate(([x, z]) => window.__dg.setState({ target: { x: +x, z: +z } }), [x, z]);
   await new Promise((r) => setTimeout(r, x ? 6000 : 4500));

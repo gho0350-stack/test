@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/lib/client/store';
+import { cam } from '@/lib/client/camera';
 import { HUD } from '@/components/game/HUD';
 import { PanelHost } from '@/components/panels/PanelHost';
 
@@ -11,7 +12,11 @@ const Garden3D = dynamic(() => import('@/components/game/Garden3D'), { ssr: fals
 export default function GardenPage() {
   const router = useRouter();
   const { state, loaded, load } = useGame();
-  useEffect(() => { load(); (window as any).__dg = useGame; }, [load]); // E2E/디버그용 스토어 핸들
+  useEffect(() => {
+    load(); (window as any).__dg = useGame; (window as any).__cam = cam; // E2E/디버그용 스토어 핸들
+    let q: 'high' | 'low' = navigator.webdriver ? 'low' : 'high'; try { const s = localStorage.getItem('dg_quality'); if (s === 'high' || s === 'low') q = s; } catch {}
+    useGame.setState({ quality: q });
+  }, [load]);
   useEffect(() => { if (loaded && (!state || !state.profile)) router.replace(state ? '/create' : '/'); }, [loaded, state, router]);
   useEffect(() => { const p = state?.position; if (p && !useGame.getState().room && useGame.getState().player.z === 9 && useGame.getState().player.x === 0) useGame.setState({ player: { x: p.x, z: p.z } }); }, [state?.position]);
   if (!loaded || !state?.profile) return <div className="loading"><div className="spin" />정원으로 들어가는 중…</div>;

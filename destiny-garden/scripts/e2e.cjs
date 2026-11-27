@@ -52,6 +52,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('독립 3D 실내 맵으로 전환(방 이름·나가기 버튼)', (await page.textContent('.room-bar')).includes('재물의 방') && (await S(() => window.__dg.getState().room)) === 'wealth');
   ok('방 전용 퀘스트 표시(재물의 비밀 0/5)', (await page.textContent('[data-testid=room-quest]')).includes('재물의 비밀') && (await page.textContent('[data-testid=room-quest]')).includes('0/5'));
 
+  // ── 카메라 조작: 드래그로 둘러보기, 휠로 확대/축소 ──
+  const c0 = await S(() => ({ yaw: window.__cam.yaw, dist: window.__cam.dist }));
+  await page.mouse.move(200, 300); await page.mouse.down(); await page.mouse.move(300, 320, { steps: 6 }); await page.mouse.up(); await sleep(200);
+  const c1 = await S(() => ({ yaw: window.__cam.yaw, dist: window.__cam.dist }));
+  ok('드래그로 카메라 회전', Math.abs(c1.yaw - c0.yaw) > 0.3, `yaw ${c0.yaw.toFixed(2)}→${c1.yaw.toFixed(2)}`);
+  await page.mouse.wheel(0, 500); await sleep(300);
+  const c2 = await S(() => window.__cam.dist); ok('휠로 확대/축소', c2 > c1.dist * 1.2, `dist ${c1.dist.toFixed(1)}→${c2.toFixed(1)}`);
+  await page.mouse.wheel(0, -900); await sleep(300); const c3 = await S(() => window.__cam.dist); ok('휠 확대(가까이)', c3 < c2);
+  await S(() => { window.__cam.yaw = 0; });
   // ── 실내 이동 ──
   const r0 = (await gs()).roomPlayer;
   await page.keyboard.down('w'); await sleep(900); await page.keyboard.up('w'); await sleep(200);

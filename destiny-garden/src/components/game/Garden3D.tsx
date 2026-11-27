@@ -7,6 +7,11 @@ import { Character } from './Character';
 import { useGame } from '@/lib/client/store';
 import { AVATARS, BUILDINGS, NPCS, OBSTACLES, RADIUS, nearest, resolve, interactWith } from '@/lib/game/world';
 import { Interior } from './Interior3D';
+import { CameraControls } from './CameraControls';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import { Shadowed } from './Shadowed';
+import { groundTex, stoneTex, roofTex } from '@/lib/client/textures';
+import { cam, camRelative, resetCam } from '@/lib/client/camera';
 
 // ───────── 공용 ─────────
 let glowTex: THREE.Texture | null = null;
@@ -41,7 +46,7 @@ function Roof({ w, d, h = 1.7, y, color = ROOF, segs = 4, rot = Math.PI / 4 }: {
   const r = Math.hypot(w, d) / 2;
   return (
     <group position={[0, y, 0]}>
-      <mesh rotation-y={rot} scale={[w / (r * 1.41), 1, d / (r * 1.41)]} position={[0, h / 2, 0]}><coneGeometry args={[r * 1.02, h, segs]} /><Mat c={color} /></mesh>
+      <mesh rotation-y={rot} scale={[w / (r * 1.41), 1, d / (r * 1.41)]} position={[0, h / 2, 0]}><coneGeometry args={[r * 1.02, h, segs]} /><meshStandardMaterial map={roofTex(color, [4, 3])} color="#fff" flatShading /></mesh>
       <mesh rotation-y={rot} scale={[w / (r * 1.41), 1, d / (r * 1.41)]} position={[0, -0.04, 0]}><coneGeometry args={[r * 1.12, 0.24, segs]} /><Mat c={ROOF2} /></mesh>
       <mesh position={[0, h + 0.1, 0]}><coneGeometry args={[0.12, 0.34, 6]} /><Mat c="#f5c451" e="#f5c451" ei={0.6} /></mesh>
     </group>
@@ -170,7 +175,7 @@ function Buildings() {
     const pr = rooms?.find((r) => r.id === b.id);
     const todo = !!pr && !pr.complete;
     return <group key={b.id} position={[b.pos.x, 0, b.pos.z]}>
-      <Hover onClick={() => interact('building', b.id)}><group rotation-y={p.rot}><p.Comp /></group></Hover>
+      <Hover onClick={() => interact('building', b.id)}><Shadowed><group rotation-y={p.rot}><p.Comp /></group></Shadowed></Hover>
       <Label y={p.labelY} icon={p.icon} text={b.name} sub={pr ? `${pr.got}/${pr.required}` : undefined} quest={todo} onClick={() => interact('building', b.id)} />
     </group>;
   })}</>;
@@ -182,9 +187,9 @@ function Ground() {
   const patches = useMemo(() => Array.from({ length: 26 }, (_, i) => { const a = i * 2.4, r = 4 + ((i * 7) % 13); return [Math.cos(a) * r, Math.sin(a) * r, 1.2 + (i % 4) * 0.5] as [number, number, number]; }), []);
   return <group>
     <mesh rotation-x={-Math.PI / 2} position={[0, -0.02, 0]} onPointerDown={(e) => { if (e.delta > 4) return; e.stopPropagation(); const [x, z] = resolve(e.point.x, e.point.z); useGame.setState({ target: { x, z }, pending: null }); }}>
-      <circleGeometry args={[RADIUS + 4, 48]} /><meshStandardMaterial color="#3d3a5e" flatShading />
+      <circleGeometry args={[RADIUS + 4, 48]} /><meshStandardMaterial map={groundTex('#3d3a5e', [12, 12])} />
     </mesh>
-    <mesh rotation-x={-Math.PI / 2} position={[0, -0.01, 0]}><circleGeometry args={[RADIUS - 0.5, 48]} /><meshStandardMaterial color="#4a5a5a" flatShading /></mesh>
+    <mesh rotation-x={-Math.PI / 2} position={[0, -0.01, 0]}><circleGeometry args={[RADIUS - 0.5, 48]} /><meshStandardMaterial map={groundTex('#4d6a5c', [9, 9])} /></mesh>
     {patches.map(([x, z, r], i) => <mesh key={i} rotation-x={-Math.PI / 2} position={[x, 0.0, z]}><circleGeometry args={[r, 7]} /><meshStandardMaterial color={i % 2 ? '#587068' : '#415b57'} flatShading /></mesh>)}
     {/* 외곽 산 */}
     {Array.from({ length: 14 }, (_, i) => { const a = (i / 14) * Math.PI * 2, r = RADIUS + 10 + (i % 3) * 4; return <mesh key={i} position={[Math.cos(a) * r, 3 + (i % 4), Math.sin(a) * r]}><coneGeometry args={[7 + (i % 3) * 2, 12 + (i % 4) * 3, 6]} /><meshStandardMaterial color={i % 2 ? '#2a2552' : '#332b63'} flatShading /></mesh>; })}
@@ -201,7 +206,7 @@ function PathStones() {
     return out;
   }, []);
   useEffect(() => { const m = ref.current; if (!m) return; const o = new THREE.Object3D(); pts.forEach(([x, z, s, j], i) => { o.position.set(x, 0.03, z); o.rotation.y = j; o.scale.set(s, 1, s); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, new THREE.Color(j % 2 ? '#a7a3bb' : '#8f8ba6')); }); m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }, [pts]);
-  return <instancedMesh ref={ref} args={[undefined, undefined, pts.length]}><cylinderGeometry args={[1, 1, 0.08, 7]} /><meshStandardMaterial flatShading /></instancedMesh>;
+  return <instancedMesh ref={ref} args={[undefined, undefined, pts.length]}><cylinderGeometry args={[1, 1, 0.08, 7]} /><meshStandardMaterial map={stoneTex('#b6b2cc', [1, 1])} flatShading /></instancedMesh>;
 }
 function Pond() {
   return <group position={[-9, 0, 7]}>
@@ -220,13 +225,13 @@ const TREES: [number, number, number][] = [[-14, -8, 1.3], [-15, 1, 1.1], [15, 9
 function BlossomTrees() {
   return <>{TREES.map(([x, z, s], i) => {
     const pink = ['#ff9fd0', '#e684d8', '#ffb7dd', '#c58cf0'];
-    return <group key={i} position={[x, 0, z]} scale={s} rotation-y={i}>
+    return <Shadowed key={i} position={[x, 0, z]}><group scale={s} rotation-y={i}>
       <mesh position={[0, 1.2, 0]}><cylinderGeometry args={[0.18, 0.3, 2.4, 6]} /><Mat c="#5a3a2a" /></mesh>
       <mesh position={[0, 3.0, 0]}><icosahedronGeometry args={[1.5, 0]} /><Mat c={pink[i % 4]} e={pink[i % 4]} ei={0.18} /></mesh>
       <mesh position={[1.0, 2.6, 0.4]}><icosahedronGeometry args={[1.0, 0]} /><Mat c={pink[(i + 1) % 4]} e={pink[(i + 1) % 4]} ei={0.18} /></mesh>
       <mesh position={[-0.9, 2.7, -0.3]}><icosahedronGeometry args={[1.1, 0]} /><Mat c={pink[(i + 2) % 4]} e={pink[(i + 2) % 4]} ei={0.18} /></mesh>
       <mesh position={[0.1, 3.9, 0.1]}><icosahedronGeometry args={[0.9, 0]} /><Mat c={pink[(i + 3) % 4]} e={pink[(i + 3) % 4]} ei={0.18} /></mesh>
-    </group>;
+    </group></Shadowed>;
   })}</>;
 }
 const LANTERNS: [number, number][] = [[-1.8, 10], [1.8, 10], [-1.8, 4], [1.8, 4], [-1.8, -2.5], [2.2, -5], [-2.0, -6.5], [-3.4, 1.8], [4.4, -1.2], [4.6, 7.6], [-3.4, 6.8], [3.2, 13]];
@@ -269,6 +274,7 @@ function Player() {
   const ring = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
+    resetCam('garden', size.width / size.height);
     const [x, z] = resolve(pos.current.x, pos.current.z); pos.current.set(x, 0, z); useGame.setState({ player: { x, z } });
     const typing = () => { const a = document.activeElement as HTMLElement | null; return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); };
     const dn = (e: KeyboardEvent) => { if (typing()) return; const k = e.key.toLowerCase(); if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { keys.current.add(k); e.preventDefault(); }
@@ -285,6 +291,7 @@ function Player() {
     const k = keys.current;
     if (k.has('w') || k.has('arrowup')) dz -= 1; if (k.has('s') || k.has('arrowdown')) dz += 1; if (k.has('a') || k.has('arrowleft')) dx -= 1; if (k.has('d') || k.has('arrowright')) dx += 1;
     dx += g.joy.x; dz += g.joy.y;
+    [dx, dz] = camRelative(dx, dz);
     const manual = Math.hypot(dx, dz) > 0.12;
     if (g.panel) { dx = 0; dz = 0; }
     let moving = false;
@@ -307,10 +314,10 @@ function Player() {
     walk.current += ((moving ? 1 : 0) - walk.current) * Math.min(1, dt * 10);
     if (group.current) { group.current.position.copy(pos.current); group.current.rotation.y = yaw.current; }
     // 카메라
-    const asp = size.width / size.height; const k2 = asp < 0.9 ? 1.0 + (0.9 - asp) * 1.1 : 1;
-    const want = new THREE.Vector3(pos.current.x * 0.8, 11 * k2, pos.current.z + 12 * k2);
-    camera.position.lerp(want, Math.min(1, dt * 4));
-    camera.lookAt(pos.current.x * 0.8, 0.5, pos.current.z - 5.5);
+    const cp = Math.cos(cam.pitch) * cam.dist;
+    const want = new THREE.Vector3(pos.current.x + Math.sin(cam.yaw) * cp, 1 + Math.sin(cam.pitch) * cam.dist, pos.current.z + Math.cos(cam.yaw) * cp);
+    camera.position.lerp(want, Math.min(1, dt * 6));
+    camera.lookAt(pos.current.x, 0.9, pos.current.z - 1.5);
     // 근접 감지/HUD 동기화 (프레임당 상태 갱신 최소화)
     tick.current += dt;
     if (tick.current > 0.1) {
@@ -322,27 +329,29 @@ function Player() {
     if (ring.current) { const t = g.target; ring.current.visible = !!t; if (t) { ring.current.position.set(t.x, 0.06, t.z); const s = 1 + Math.sin(performance.now() / 200) * 0.12; ring.current.scale.set(s, s, 1); } }
   });
   return <>
-    <group ref={group}><Character look={{ ...look, scale: 1.05 }} walkRef={walk} /><Glow position={[0, 1.2, 0]} size={3.2} color="#ffe2a0" opacity={0.18} /></group>
+    <group ref={group}><Shadowed><Character look={{ ...look, scale: 1.05 }} walkRef={walk} /></Shadowed><Glow position={[0, 1.2, 0]} size={3.2} color="#ffe2a0" opacity={0.18} /></group>
     <mesh ref={ring} rotation-x={-Math.PI / 2} visible={false}><ringGeometry args={[0.3, 0.42, 24]} /><meshBasicMaterial color="#ffe08a" transparent opacity={0.9} /></mesh>
   </>;
 }
 
 export default function Garden3D() {
-  const room = useGame((s) => s.room);
+  const room = useGame((s) => s.room); const hi = useGame((s) => s.quality) === 'high';
   return (
-    <Canvas dpr={[1, 1.5]} camera={{ fov: 50, position: [0, 9, 20], near: 0.5, far: 160 }} gl={{ antialias: true, powerPreference: 'high-performance' }} style={{ touchAction: 'none' }}>
+    <Canvas shadows={hi} dpr={[1, 1.5]} camera={{ fov: 50, position: [0, 9, 20], near: 0.5, far: 160 }} gl={{ antialias: true, powerPreference: 'high-performance' }} style={{ touchAction: 'none' }}>
+      <CameraControls />
       {room ? <Interior key={room} id={room} /> : (
         <>
           <color attach="background" args={['#1b1140']} />
           <fog attach="fog" args={['#2b1a5c', 26, 66]} />
           <ambientLight intensity={1.15} color="#b8a6ff" />
           <hemisphereLight args={['#c9b8ff', '#3a2b5a', 0.8]} />
-          <directionalLight position={[-14, 22, 10]} intensity={1.4} color="#ffe6c4" />
+          <directionalLight position={[-14, 22, 10]} intensity={1.4} color="#ffe6c4" castShadow={hi} shadow-mapSize={[1536, 1536]} shadow-camera-left={-26} shadow-camera-right={26} shadow-camera-top={26} shadow-camera-bottom={-26} shadow-camera-near={1} shadow-camera-far={70} shadow-bias={-0.0006} />
           <directionalLight position={[10, 8, -8]} intensity={0.5} color="#8a7cff" />
           <Stars radius={90} depth={40} count={1400} factor={5} fade speed={0.6} />
           <Moon /><Ground /><PathStones /><Pond /><BlossomTrees /><Lanterns /><Buildings /><Player /><Petals />
         </>
       )}
+      {hi && <EffectComposer multisampling={0}><Bloom intensity={0.75} luminanceThreshold={0.82} luminanceSmoothing={0.2} mipmapBlur /><Vignette eskil={false} offset={0.25} darkness={0.55} /></EffectComposer>}
     </Canvas>
   );
 }
