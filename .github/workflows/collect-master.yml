@@ -32,12 +32,18 @@ jobs:
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
           MONTHS: '60'
           MASTER_BUDGET_MIN: ${{ inputs.budget || '130' }}
-      - name: 변경된 데이터 커밋
+      - name: 원천 데이터 커밋 (수집 결과는 앱 파일과 분리해 먼저 저장)
         run: |
           git config user.name "eodisalji-bot"
           git config user.email "eodisalji-bot@users.noreply.github.com"
-          git add schoolmap/master-data.js pipeline/out/master.json.gz pipeline/out/kapt_cache.json.gz pipeline/out/master_gu pipeline/out/geo_cache.json pipeline/out/school_geo.json pipeline/out/quality_report.json pipeline/out/quality_report.md 2>/dev/null || true
+          git add pipeline/out/master.json.gz pipeline/out/kapt_cache.json.gz pipeline/out/master_gu pipeline/out/geo_cache.json pipeline/out/school_geo.json pipeline/out/quality_report.json pipeline/out/quality_report.md 2>/dev/null || true
+          git checkout -- schoolmap 2>/dev/null || true      # 앱용 생성물은 아래에서 최신 코드로 다시 만든다(충돌 방지)
           git diff --cached --quiet || (git commit -m "chore: update master (구 단위)" && git pull --rebase --autostash origin "$GITHUB_REF_NAME" && git push)
+      - name: 앱 데이터 재생성·커밋 (병합된 최신 코드 기준)
+        run: |
+          python3 pipeline/build_master_data.py
+          git add schoolmap/master-data.js schoolmap/master-detail 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "chore: 앱 마스터 데이터 갱신" && git pull --rebase --autostash -X theirs origin "$GITHUB_REF_NAME" && git push)
       - name: 수집 단계 실패 여부 표시
         if: steps.collect.outcome == 'failure'
         run: |

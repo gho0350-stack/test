@@ -599,7 +599,7 @@
     if (gen) {
       const mine = cov(myKey);
       const allPartners = [...new Set(META.integrated.filter((p) => p.includes(myKey)).flat().filter((x) => x !== myKey))];
-      notice += `<div class="cov"><b>데이터 수집 범위</b> · 서울 25개 구 중 ${GUS.size}개 구(${[...GUS].join('·').replace(/구/g, '')})만 수집했어요. 아래 곳수는 전체 아파트가 아니라 수집된 데이터 기준이에요.<br>2단계 지역: ${covTxt(myKey)}${mine.full ? '' : ` (미수집 ${mine.miss.join('·')})`}</div>`;
+      notice += `<div class="cov"><b>데이터 수집 범위</b> · ${GUS.size >= 25 ? '서울 25개 구 전체를 수집했어요. 아래 곳수는 최근 5년 실거래와 공동주택 정보로 확인된 단지 기준이라 모든 건물을 뜻하지는 않아요.' : '서울 25개 구 중 ' + GUS.size + '개 구(' + [...GUS].map((g) => g.replace(/구$/, '')).join('·') + ')만 수집했어요. 아래 곳수는 전체 아파트가 아니라 수집된 데이터 기준이에요.'}<br>2단계 지역: ${covTxt(myKey)}${mine.full ? '' : ` (미수집 ${mine.miss.join('·')})`}</div>`;
       if (ui.stage3) notice += `<div class="cov s3"><b>3단계 통합학교군 지역</b> · 1·2단계 미배정자를 대상으로 통합학교군 안에서 배정하는 범위예요. 실제 배정 학교는 지원 이력, 통학 편의, 학교별 수용 여건 등에 따라 달라지며 특정 학교 배정을 보장하지 않아요. 배정 확률은 계산하지 않아요.<br>이 학교와 묶인 학교군: ${allPartners.map((k) => `${covTxt(k)}${cov(k).got.length ? '' : ' (미수집)'}`).join(' · ')}</div>`;
     }
     if (rule.note) notice += `<div class="cov"><b>별도 안내</b> · ${esc(rule.note)}</div>`;
