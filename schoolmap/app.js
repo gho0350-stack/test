@@ -80,11 +80,12 @@
   const REG = Object.fromEntries(D.REGIONS.map((r) => [r.id, r]));
   const ADM = window.SG_ADMISSIONS || {};
   const admOf = (id) => { const ys = ADM[id] || {}, y = Object.keys(ys).map(Number).filter((k) => ys[k].has_count).sort((a, b) => b - a)[0]; return y ? Object.assign({ year: y }, ys[y]) : null; };
-  const SCHOOLS = D.SCHOOLS.map((s) => Object.assign({}, s, {
+  const SAMPLE_APTS = Object.fromEntries(D.SCHOOLS.map((x) => [x.id, x.apts]));   // 마스터 데이터를 못 불러올 때만 쓰는 비상용 목록
+  const SCHOOLS = (window.SG_SCHOOLS || D.SCHOOLS).map((s) => Object.assign({}, s, {
     adm: admOf(s.id),
     statsRaw: admOf(s.id) ? [admOf(s.id).medical_count, admOf(s.id).sky_count, admOf(s.id).inseoul_count, admOf(s.id).snu_count] : [null, null, null, null],   // 확인된 값만(없으면 자료 미확보)
     stats: (admOf(s.id) ? [admOf(s.id).medical_count, admOf(s.id).sky_count, admOf(s.id).inseoul_count, admOf(s.id).snu_count] : [null, null, null, null]).map((v) => (v == null ? 0 : v)),
-    apts: s.apts.map((a, i) => ({ id: s.id + '-' + i, sid: s.id, letter: String.fromCharCode(65 + i), name: a[0], hh: a[1], year: a[2], sale: a[3], jeonse: a[4], elem: a[5], mid: a[6], hi: a[7] }))
+    apts: (s.apts || SAMPLE_APTS[s.id] || []).map((a, i) => ({ id: s.id + '-' + i, sid: s.id, letter: String.fromCharCode(65 + i), name: a[0], hh: a[1], year: a[2], sale: a[3], jeonse: a[4], elem: a[5], mid: a[6], hi: a[7] }))
   }));
   let APTS = SCHOOLS.flatMap((s) => s.apts);
   const Z = window.SG_ZONES || {};

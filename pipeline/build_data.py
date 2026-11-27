@@ -27,6 +27,14 @@ def schools():
                     "tel": r.get("ORG_TELNO"), "founded": r.get("FOND_YMD"), "loaded": r.get("LOAD_DTM")}
     return res
 
+def geo_schools(sch, kakao_schools):
+    """학교 좌표: 카카오 수집 결과(주변 시설 포함)가 있으면 그것을, 없으면 전체 학교 좌표(school_geo)로 채운다(시설 정보 없음)."""
+    out = dict(kakao_schools); p = f"{OUT}/school_geo.json"
+    g = json.load(open(p, encoding="utf8")) if os.path.exists(p) else {}
+    for sid, v in sch.items():
+        if sid not in out and v["officialName"] in g: out[sid] = {"x": g[v["officialName"]]["lng"], "y": g[v["officialName"]]["lat"], "by": "school_geo"}
+    return out
+
 def academies():
     """구 단위 집계(키 없이 가능) + 동 단위 집계(NEIS_KEY 로 전체 목록을 받은 경우에만)."""
     res = {}
@@ -82,7 +90,7 @@ if __name__ == "__main__":
     mr = molit_result(); kr = kakao_result()
     data = {"generatedAt": TODAY.isoformat(), "sources": {"schools": "NEIS 교육정보 개방포털 schoolInfo", "academy": "NEIS 교육정보 개방포털 acaInsTiInfo", "trades": "국토교통부 실거래가 (수집 시)"},
             "schools": schools(), "academy": academies(), "trades": (mr or {}).get("trades") or trades(), "kapt": (mr or {}).get("kapt", {}), "molitAsOf": (mr or {}).get("generatedAt"),
-            "geo": {"schools": (kr or {}).get("schools", {}), "apts": (kr or {}).get("apts", {})}}
+            "geo": {"schools": geo_schools(schools(), (kr or {}).get("schools", {})), "apts": (kr or {}).get("apts", {})}}
     if kr and kr.get("neis_academy"):  # 동 단위 집계를 구 단위 결과에 병합
         for gu, v in kr["neis_academy"].items():
             g = data["academy"].setdefault(gu, {"registered": v["registered"], "boseup": 0, "fetched": str(TODAY), "dongs": {}})
