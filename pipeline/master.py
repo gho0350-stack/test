@@ -180,9 +180,22 @@ def bldrgst_fill(key, master, kapt, log=print):
             if errs >= 5 and not res["filled"]: break          # 연속 실패면 활용신청/주소 문제로 보고 중단(사유는 report 에 남김)
     return res
 
+def _endpoint(kind, key, today, log=print):
+    """실거래 엔드포인트 점검. 공공데이터포털의 일시적 [04] HTTP 오류로 전체 수집이 중단되지 않도록 재시도하고,
+    끝내 실패하면 개발용(Dev)이 아닌 일반 엔드포인트(인덱스 1)로 진행한다(이후 호출은 각자 재시도한다)."""
+    last = None
+    for attempt in range(4):
+        try: return m.find_endpoint(kind, key, today)
+        except m.ApiError as e:
+            last = str(e)
+            if "[30]" in last and "[04]" not in last and "요청 실패" not in last: break      # 키 문제는 재시도해도 소용없다
+            log(f"엔드포인트 점검 일시 실패({kind}) {attempt + 1}/4: {last[:80]}"); time.sleep(20 * (attempt + 1))
+    log(f"엔드포인트 점검 실패({kind}): 일반 엔드포인트로 진행: {str(last)[:120]}")
+    return 1 if len(m.EP[kind]) > 1 else 0
+
 def run_master(key, targets=None, months=60, today=None, cache=None, log=print, on_kapt=None, deadline=None):
     key = urllib.parse.unquote(key.strip()); today = today or date.today(); targets = targets or list(LAWD_ALL)
-    ep = {k: m.find_endpoint(k, key, today) for k in m.EP}
+    ep = {k: _endpoint(k, key, today, log) for k in m.EP}
     DEADLINE[0] = deadline; PARTIAL.clear()
     kapt = kapt_collect(key, targets, (cache or {}).get("kapt_cache"), log, max_calls=int(os.environ.get("KAPT_MAX_CALLS", "6000")))
     if on_kapt: on_kapt(kapt)                       # K-apt 조회분은 먼저 저장해 다음 실행에서 이어받는다
