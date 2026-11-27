@@ -35,7 +35,7 @@ def load_edu():
     if not os.path.exists(p): return None
     d = json.load(gzip.open(p, "rt", encoding="utf8"))
     def prep(zs): return [dict(z, bb=(min(x for r in z["rings"] for x, _ in r), min(y for r in z["rings"] for _, y in r), max(x for r in z["rings"] for x, _ in r), max(y for r in z["rings"] for _, y in r))) for z in zs]
-    return {"es": prep(d["es"]), "ms": prep(d["ms"])}
+    return {"es": prep(d["es"]), "ms": prep(d["ms"]), "hs": prep(d.get("hs", []))}
 
 def hit_edu(x, y, zs):
     for z in zs:
@@ -64,24 +64,23 @@ def load_ms_members():
         if x.get("학교급구분") == "중학교": m.setdefault(x["학구ID"], []).append(x["학교명"])
     return m
 
+def zone_dist(x, y, z):
+    """점에서 구역 경계선까지 최소 거리(m)."""
+    return min(dist_m(x, y, r) for r in z["rings"])
+
 def es_names(zname):
     """'서울미아초통학구역' -> ['서울미아초등학교'], '서울금옥초서울옥수초공동통학구역' -> 두 학교."""
     t = re.sub(r"(공동)?통학구역$", "", zname)
     parts = re.split(r"(?<=초)(?=서울)", t)
     return [re.sub(r"초$", "초등학교", p) for p in parts if p]
 
-def avg12(rows, as_of):
-    """월별 시리즈 [ym, 월 중앙값, 건수] 중 기준일 직전 12개월(달력 기준)을 건수로 가중평균. 단일 거래 달은 그 거래가가 그대로 들어가 거래가 평균에 가깝다."""
-    y, mth = int(as_of[:4]), int(as_of[5:7]); lo = y * 12 + mth - 11
-    rows = [r for r in (rows or []) if int(r[0][:4]) * 12 + int(r[0][4:6]) >= lo]
-    n = sum(r[2] for r in rows)
-    return round(sum(r[1] * r[2] for r in rows) / n, 2) if n else None
-
 def b(v, ser=None, as_of=''):
+    """단지 통계 -> [중앙값, 최저, 최고, 건수, 마지막 거래일, 실제 평균(없으면 None), 최근 거래가, 최근 거래일]. 평균은 원천 거래로 계산한 값만 쓴다(근사 금지)."""
     out = {}
     for k, s in (v or {}).items():
-        av = avg12((ser or {}).get(k) or [], as_of)
-        out[k] = [s["median"], s["min"], s["max"], s["count"], s["last"], av]
+        row = [s["median"], s["min"], s["max"], s["count"], s["last"], s.get("mean"), s.get("lastp"), s.get("lastd")]
+        while row and row[-1] is None: row.pop()          # 아직 새 스키마로 재수집되지 않은 구는 평균·최근 거래가 없음(빈 칸)
+        out[k] = row
     return out
 
 def run():
@@ -98,10 +97,12 @@ def run():
         if SKIP.search(a["name"]): skipped += 1; continue
         c = a.get("coord")
         if not c: nocoord += 1; continue
-        zid, d = zone_of(c["lng"], c["lat"], Z["zones"])
-        if zid is None: outside.append(f"{a['gu']} {a['dong']} {a['name']} ({d}m)"); continue
+        # 고등학교 학교군은 지도 표시용 단순화 경계가 아니라 원본에 가까운 경계로 판정한다. 경계 밖 단지를 가까운 학교군에 편입하지 않는다.
+        zh = hit_edu(c["lng"], c["lat"], edu["hs"]) if edu and edu.get("hs") else None
+        zid = zh["id"] if zh else None
+        if zid is None: outside.append(f"{a['gu']} {a['dong']} {a['name']}"); continue
         if zid not in need: notneeded += 1; continue
-        if d: border += 1
+        d = 0
         hh = int(float(a["households"])) if a.get("households") else None
         ap = a.get("approved") or ""
         rec = {"id": a["uid"], "n": a["name"], "gu": a["gu"], "d": a["dong"], "la": round(c["lat"], 5), "lo": round(c["lng"], 5), "z": zid}
@@ -122,7 +123,9 @@ def run():
                     rec["mn"] = [[msn_ix.setdefault(n, len(msn_ix)), round(dm / 10)] for dm, n in near]; n_mn += 1   # 가까운 순 [학교 번호, 직선거리(10m)]
                     for n in msn_ix:
                         if n not in msn: msn.append(n)
-        if d: rec["zb"] = d                      # 경계 밖 250m 이내라 가까운 학교군으로 편입(단순화 오차 가능)
+        if edu:                                   # 경계선에서 30m 안이면 주소 좌표 오차로 반대편일 수 있어 '경계 인접'으로 표시한다
+            near = [n for n, zz in (("hs", zh), ("es", ze), ("ms", zm)) if zz and zone_dist(c["lng"], c["lat"], zz) < 30]
+            if near: rec["eb"] = near; border += 1
         if a.get("sale"): rec["sale"] = b(a["sale"], a["series"].get("sale"), a.get("asof", m["generatedAt"]))
         if a.get("jeonse"): rec["jeonse"] = b(a["jeonse"], a["series"].get("jeonse"), a.get("asof", m["generatedAt"]))
         ser = {k: {p: [[ym, v] for ym, v, _n in rows] for p, rows in (a["series"].get(k) or {}).items()} for k in ("sale", "jeonse")}
@@ -130,6 +133,7 @@ def run():
         if any(ser[k] for k in ser): det["ser"] = ser
         rc = a.get("recent") or {}
         if any(rc.get(k) for k in ("sale", "jeonse")): det["rc"] = rc
+        if a.get("areas") and any(a["areas"].values()): det["ar"] = a["areas"]
         if det: details.setdefault(a["uid"][:5], {})[a["uid"]] = det      # 월별 추이·개별 거래는 상세 화면을 열 때만 구 단위 파일에서 불러온다
         out.append(rec)
     msn = sorted(msn_ix, key=msn_ix.get)
@@ -138,7 +142,7 @@ def run():
     dd = os.path.join(ROOT, "schoolmap/master-detail"); os.makedirs(dd, exist_ok=True)
     for f in os.listdir(dd): os.remove(os.path.join(dd, f))        # 옛 파일 정리(이 폴더는 생성 결과물만 담는다)
     for code, d in details.items(): open(os.path.join(dd, code + ".json"), "w", encoding="utf8").write(json.dumps(d, ensure_ascii=False, separators=(",", ":")))
-    rep = {"단지": len(out), "오피스텔 등 제외": skipped, "좌표 없음 제외": nocoord, "경계 밖 250m 이내 편입": border, "학교군 밖 제외": len(outside), "앱 대상 학교군 밖(미탑재)": notneeded, "학교군 밖 예": outside[:10], "초등 통학구역 판정": n_es if edu else "자료 없음", "중학교 학교군 판정": n_ms if edu else "자료 없음", "초등학교 거리 계산": n_ed, "중학교 가까운 학교 계산": n_mn, "중학교군 소속 학교 수 자료": len(msm), "학교 좌표 보유": len(geo), "KB": round(len(js.encode()) / 1024), "상세 파일 KB": sum(len(json.dumps(v, ensure_ascii=False, separators=(",", ":")).encode()) for v in details.values()) // 1024}
+    rep = {"단지": len(out), "오피스텔 등 제외": skipped, "좌표 없음 제외": nocoord, "경계 30m 이내(경계 인접 표시)": border, "학교군 밖 제외": len(outside), "앱 대상 학교군 밖(미탑재)": notneeded, "학교군 밖 예": outside[:10], "초등 통학구역 판정": n_es if edu else "자료 없음", "중학교 학교군 판정": n_ms if edu else "자료 없음", "초등학교 거리 계산": n_ed, "중학교 가까운 학교 계산": n_mn, "중학교군 소속 학교 수 자료": len(msm), "학교 좌표 보유": len(geo), "KB": round(len(js.encode()) / 1024), "상세 파일 KB": sum(len(json.dumps(v, ensure_ascii=False, separators=(",", ":")).encode()) for v in details.values()) // 1024}
     print(json.dumps(rep, ensure_ascii=False, indent=1)); return rep
 
 if __name__ == "__main__": run()

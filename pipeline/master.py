@@ -101,11 +101,21 @@ def pack(e, today):
     for kind in ("sale", "jeonse"):
         for k in m.AREA_BUCKETS:
             st = m.stats(e[kind], k, today, "amount")
-            if st: out[kind][k] = st
+            if st:
+                # 실제 원천 거래 기준 평균·가장 최근 거래(가격·일자). 월별 중앙값의 가중평균 같은 근사값을 쓰지 않는다.
+                start = today - timedelta(days=round(12 * 30.4))
+                sel = sorted((r for r in e[kind] if m.bucket(r["area"]) == k and start <= date.fromisoformat(r["date"]) <= today), key=lambda r: r["date"], reverse=True)
+                st["mean"] = m.eok(sum(r["amount"] for r in sel) / len(sel)); st["lastp"] = m.eok(sel[0]["amount"]); st["lastd"] = sel[0]["date"]
+                out[kind][k] = st
             ser = [x for x in m.month_stats([r for r in e[kind] if r["date"] >= cut], k, "amount")]
             if ser: out["series"][kind][k] = ser
             rc = sorted((r for r in e[kind] if m.bucket(r["area"]) == k), key=lambda r: r["date"], reverse=True)[:3]
             if rc: out["recent"][kind][k] = [{"date": r["date"], "floor": r["floor"], "price": m.eok(r["amount"])} for r in rc]
+    start = today - timedelta(days=round(12 * 30.4)); byar = {}
+    for kind in ("sale", "jeonse"):
+        for r in e[kind]:
+            if start <= date.fromisoformat(r["date"]) <= today and r["area"]: byar.setdefault((kind, round(r["area"])), []).append(r["amount"])
+    out["areas"] = {kind: sorted([[a, len(v), m.eok(median(v))] for (kd, a), v in byar.items() if kd == kind], key=lambda x: -x[1])[:10] for kind in ("sale", "jeonse")}
     return out
 
 def join(kapt, ents, today):

@@ -1,4 +1,4 @@
-/* 어디살지 - 샘플 앱 (바닐라 JS, 해시 라우팅). 앱화 시 data/store 부분만 API 로 교체하세요. */
+/* 어디살지 (바닐라 JS, 해시 라우팅). 앱화 시 data/store 부분만 API 로 교체하세요. */
 (function () {
   'use strict';
   const D = window.SG;
@@ -15,8 +15,8 @@
   const AREA_RANGE = { 59: [55, 60], 84: [80, 85], 101: [95, 105] };
   const R = window.SG_REAL || {};
   const normName = (n) => String(n || '').replace(/\(.*?\)/g, '').replace(/[\s·\-]/g, '').replace(/(아파트|단지)$/, '');
-  const METRIC = { med: ['의대', 0], sky: ['SKY', 1], seoul: ['인서울', 2] };
-  const METRIC_ICON = { med: 'medical', sky: 'star', seoul: 'cap' };
+  const METRIC = { snu: ['서울대', 3], med: ['의대', 0], sky: ['SKY', 1] };
+  const METRIC_ICON = { snu: 'cap', med: 'medical', sky: 'star' };
 
   /* ---------- 아이콘 (선 아이콘, 이모지 사용 안 함) ---------- */
   const ICONS = {
@@ -68,7 +68,7 @@
 
   /* ---------- UI 상태 ---------- */
   const ui = {
-    area: 59, metric: 'sky', region: 'all', sortKey: 'metric', preSel: null,
+    area: 59, metric: 'snu', type: 'all', admOnly: false, region: 'all', sortKey: 'metric', preSel: null,
     layers: { zone: true, apt: true }, radius: 20, sortBy: 'dist', sel: null, vb: null, listKind: 'sale',
     budget: { kind: 'sale', sale: 15, jeonse: 6 }, cmp: ['sookmyung', 'sehwa', 'hwimun'],
     aptTab: 'chart', aptKind: 'both', aptRange: 3, aptCmp: [],
@@ -82,14 +82,15 @@
   const admOf = (id) => { const ys = ADM[id] || {}, y = Object.keys(ys).map(Number).filter((k) => ys[k].has_count).sort((a, b) => b - a)[0]; return y ? Object.assign({ year: y }, ys[y]) : null; };
   const SCHOOLS = D.SCHOOLS.map((s) => Object.assign({}, s, {
     adm: admOf(s.id),
-    statsRaw: admOf(s.id) ? [admOf(s.id).medical_count, admOf(s.id).sky_count, admOf(s.id).inseoul_count] : D.STATS[s.id],
-    stats: (admOf(s.id) ? [admOf(s.id).medical_count, admOf(s.id).sky_count, admOf(s.id).inseoul_count] : D.STATS[s.id]).map((v) => (v == null ? 0 : v)),
+    statsRaw: admOf(s.id) ? [admOf(s.id).medical_count, admOf(s.id).sky_count, admOf(s.id).inseoul_count, admOf(s.id).snu_count] : [null, null, null, null],   // 확인된 값만(없으면 자료 미확보)
+    stats: (admOf(s.id) ? [admOf(s.id).medical_count, admOf(s.id).sky_count, admOf(s.id).inseoul_count, admOf(s.id).snu_count] : [null, null, null, null]).map((v) => (v == null ? 0 : v)),
     apts: s.apts.map((a, i) => ({ id: s.id + '-' + i, sid: s.id, letter: String.fromCharCode(65 + i), name: a[0], hh: a[1], year: a[2], sale: a[3], jeonse: a[4], elem: a[5], mid: a[6], hi: a[7] }))
   }));
   let APTS = SCHOOLS.flatMap((s) => s.apts);
   const Z = window.SG_ZONES || {};
   const zoneOf = (s) => (Z.zones || []).find((z) => z.id === (Z.schoolZone || {})[s.id]) || null;
-  const sd = (s, k) => (s.statsRaw[k] == null ? '미공개' : s.statsRaw[k]);
+  const sd = (s, k) => (s.statsRaw[k] == null ? '자료 미확보' : s.statsRaw[k]), hasV = (s, k) => s.statsRaw[k] != null;
+  const sortedByMetric = () => ui.sortKey === 'metric';
   const anyAdm = () => SCHOOLS.some((x) => x.adm);
   const schoolById = (id) => SCHOOLS.find((s) => s.id === id);
   const realOf = (s) => (R.schools || {})[s.id] || null;
@@ -105,12 +106,12 @@
   });
   /* 전체 아파트 마스터(실데이터): 학교군 경계 안 단지 전체를 해당 학교군 학교들의 '배정 가능 단지'로 사용 */
   const MD = (window.SG_MASTER || {}).apts || [], MAPTS = [], ZAPTS = {}, ZSCH = {};
-  const toStat = (o) => (o ? Object.fromEntries(Object.entries(o).map(([p, v]) => [p, { median: v[0], min: v[1], max: v[2], count: v[3], last: v[4], avg: v[5] }])) : undefined);
+  const toStat = (o) => (o ? Object.fromEntries(Object.entries(o).map(([p, v]) => [p, { median: v[0], min: v[1], max: v[2], count: v[3], last: v[4], mean: v[5], lastp: v[6], lastd: v[7] }])) : undefined);
   SCHOOLS.forEach((s) => { const z = (Z.schoolZone || {})[s.id]; if (z) (ZSCH[z] = ZSCH[z] || []).push(s); });
   MD.forEach((m, i) => {
     const sc = (ZSCH[m.z] || [])[0]; if (!sc) return;
     const a = { id: 'm' + i, master: true, sid: sc.id, zone: m.z, name: m.n, gu: m.gu, dong: m.d, hh: m.hh || 0, hhReal: !!m.hh, year: m.yr || 0, yearReal: !!m.yk, coord: { lat: m.la, lng: m.lo }, elem: null, mid: null, hi: null, zb: m.zb || 0,
-      rt: m.sale || m.jeonse ? { sale: toStat(m.sale), jeonse: toStat(m.jeonse), series: m.ser, recent: m.rc } : null, uid: m.id, mn: m.mn || null, mc: m.mc || 0, es: m.es || null, ed: m.ed || null, ms: m.ms || null };
+      rt: m.sale || m.jeonse ? { sale: toStat(m.sale), jeonse: toStat(m.jeonse), series: m.ser, recent: m.rc } : null, uid: m.id, mn: m.mn || null, mc: m.mc || 0, eb: m.eb || null, es: m.es || null, ed: m.ed || null, ms: m.ms || null };
     MAPTS.push(a); (ZAPTS[m.z] = ZAPTS[m.z] || []).push(a);
   });
   if (MAPTS.length) { SCHOOLS.forEach((s) => { const l = ZAPTS[(Z.schoolZone || {})[s.id]]; if (l && l.length) { s.sampleApts = s.apts; s.apts = l; } }); APTS = MAPTS; }
@@ -156,9 +157,9 @@
   const wm = (v) => (v == null ? '-' : v + '분'), hhT = (a) => (a.hh ? a.hh.toLocaleString() : '-'), yrT = (a) => (a.year ? a.year + '년' : '-');
   const walkHi = (a, s) => (a.master ? (walkTo(a, s || schoolOf(a)) == null ? '-' : walkTo(a, s || schoolOf(a)) + '분 (추정)') : `${a.hi}분${a.hiEst ? ' (추정)' : ''}`);
   const realStat = (a, k) => { const t = realTrade(a); return t && t[k] && t[k][ui.area] ? t[k][ui.area] : null; };
-  const pr = (a, k) => { const rs = realStat(a, k === 'jeonse' ? 'jeonse' : 'sale'); if (rs) return rs.avg != null ? rs.avg : rs.median; if (realTrade(a)) return null; return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]); };
+  const pr = (a, k) => { const rs = realStat(a, k === 'jeonse' ? 'jeonse' : 'sale'); if (rs) return rs.median; if (realTrade(a)) return null; return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[ui.area]); };
   const linked = (a) => !!realTrade(a);
-  const ps = (a, k, p) => { if (linked(a)) { const st = (realTrade(a)[k] || {})[p]; return st ? (st.avg != null ? st.avg : st.median) : null; } return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[p]); };
+  const ps = (a, k, p) => { if (linked(a)) { const st = (realTrade(a)[k] || {})[p]; return st ? st.median : null; } return r1((k === 'jeonse' ? a.jeonse : a.sale) * AREA_F[p]); };
   const ratio = (a, p) => { const sv = ps(a, 'sale', p), jv = ps(a, 'jeonse', p); return sv && jv ? Math.round((jv / sv) * 100) + '%' : '-'; };
   const srcTag = (a) => (a.master ? (hasData(a) ? '<span class="rt real">실거래</span>' : '<span class="rt">거래 없음</span>') : linked(a) ? '<span class="rt real">실거래</span>' : '<span class="rt">샘플</span>');
   const agg = (s) => { const sv = s.apts.map((a) => pr(a, 'sale')).filter((v) => v != null), jv = s.apts.map((a) => pr(a, 'jeonse')).filter((v) => v != null), mm = (v, f) => (v.length ? f(...v) : null); return { sMin: mm(sv, Math.min), sMax: mm(sv, Math.max), jMin: mm(jv, Math.min), jMax: mm(jv, Math.max), sAvg: sv.length ? avg(sv) : null, jAvg: jv.length ? avg(jv) : null }; };
@@ -207,7 +208,7 @@
   const pushRecent = (sid) => { db.recent = [sid].concat(db.recent.filter((x) => x !== sid)).slice(0, 5); save(); };
 
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200); }
-  const badge = (cat) => `<span class="badge b-${cat}">${D.CAT_LABEL[cat]}</span>`;
+  const badge = () => '';   // 샘플 분류 뱃지는 사용하지 않는다(유형은 입학 방식 데이터에서 표시)
   const areaSeg = () => `<span class="seg" role="group" aria-label="평형">${[59, 84, 101].map((v) => `<button class="${ui.area === v ? 'on' : ''}" data-act="area" data-v="${v}" title="전용 ${AREA_RANGE[v][0]}~${AREA_RANGE[v][1]}㎡ (서비스 기준)">${v}㎡</button>`).join('')}</span>`;
   const backLink = (href, label) => `<a class="back" href="${href}">${ic('chevL')}${label}</a>`;
 
@@ -246,7 +247,7 @@
    * 01 메인
    * ===================================================================== */
   function viewHome() {
-    const regs = D.REGIONS.map((r) => { const ss = SCHOOLS.filter((s) => s.region === r.id); return { r, st: [0, 1, 2].map((k) => ss.reduce((n, s) => n + s.stats[k], 0)), avg: avg(ss.map((s) => agg(s).sAvg).filter((v) => v != null)) }; }).sort((a, b) => b.st[1] - a.st[1]);
+    const regs = D.REGIONS.map((r) => { const ss = SCHOOLS.filter((s) => s.region === r.id); return { r, st: [0, 1, 2].map((k) => ss.reduce((n, s) => n + s.stats[k], 0)), avg: avg(ss.map((s) => agg(s).sAvg).filter((v) => v != null)) }; }).sort((a, b) => b.avg - a.avg);
     const mx = Math.max(...regs.map((x) => x.avg));
     const recent = db.recent.map(schoolById).filter(Boolean);
     view.innerHTML = `
@@ -260,22 +261,23 @@
           </div>
           <form id="sform" class="searchbar" role="search">${ic('search')}<input id="q" type="text" placeholder="학교명·지역·아파트명을 입력하세요" aria-label="검색"><button type="submit" aria-label="검색">${ic('search')}</button></form>
           <div class="quick">
-            <a href="#/schools?metric=med">${ic('medical')}의대 진학 우수</a><a href="#/schools?metric=sky">${ic('star')}SKY 진학 우수</a><a href="#/schools?metric=seoul">${ic('cap')}인서울 진학 우수</a>
+            <a href="#/schools?metric=snu">${ic('cap')}서울대 합격 실적</a><a href="#/schools?metric=med">${ic('medical')}의대 합격 실적</a>
             <a href="#/schools">${ic('pin')}핵심 학군지</a><a href="#/search?new=1">${ic('building')}신축 아파트</a><a href="#/schools">${ic('search')}전체 찾기</a>
           </div>
         </div>
         <div class="hero-art">${bldg()}</div>
       </section>
-      <div class="notice">${ic('info')}<span>샘플 화면입니다. 진학 실적·가격·세대수 등 모든 수치는 시연용 가상 데이터이며 실제와 다릅니다.</span></div>
+      <div class="notice">${ic('info')}<span>베타 서비스예요. 가격은 국토교통부 실거래가(${esc(((window.SG_MASTER || {}).asOf) || '')} 기준 최근 12개월), 학교군은 서울시교육청·한국교육시설안전원 자료 기준이에요. 진학 실적은 학교가 공개한 자료를 확인한 학교만 보여주고, 확인하지 못한 항목은 '자료 미확보'로 표시해요. <a href="#/guide">데이터 출처와 기준</a></span></div>
       ${recent.length ? `<div class="recent"><h3>최근 본 학교</h3><div class="chips">${recent.map((s) => `<a class="chip" href="#/school/${s.id}">${esc(s.name)}</a>`).join('')}</div></div>` : ''}
       <div class="home-grid">
         <section class="card pad">
-          <div class="sec-h"><span class="crown">${ic('crown')}</span><h2>주요 학군지 TOP ${regs.length}</h2><small>${anyAdm() ? '입력된 실적 포함 · 나머지는 샘플' : '샘플 진학 실적 합계 기준'}</small></div>
-          <div style="margin-top:8px">${regs.map((x, i) => `<a class="toprow" href="#/schools?region=${x.r.id}"><span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span><span><b>${x.r.dong}</b> <small class="muted">(${x.r.gu})</small></span><span class="st">의대 <b>${x.st[0]}</b> · SKY <b>${x.st[1]}</b> · 인서울 <b>${x.st[2]}</b></span>${ic('chevR')}</a>`).join('')}</div>
+          <div class="sec-h"><span class="crown">${ic('crown')}</span><h2>진학 실적을 확인한 학교</h2><small>학교가 공개한 자료를 확인한 값만 표시</small></div>
+          <div style="margin-top:8px">${SCHOOLS.filter((x) => x.adm).sort((x, y) => nv(y.statsRaw[3], -1) - nv(x.statsRaw[3], -1)).map((x, i) => `<a class="toprow" href="#/school/${x.id}"><span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span><span><b>${esc(x.name)}</b> <small class="muted">${regOf(x).gu} · ${esc((RULES[x.id] || {}).type || '')}</small></span><span class="st">서울대 <b>${sd(x, 3)}</b> · 의대 <b>${sd(x, 0)}</b></span>${ic('chevR')}</a>`).join('') || '<div class="empty">확인된 진학 실적이 아직 없어요.</div>'}</div>
+          <small class="muted" style="display:block;margin-top:8px">${SCHOOLS.filter((x) => x.adm).length}/${SCHOOLS.length}개 학교의 실적을 확인했어요. 합격 건수(중복·졸업생 포함 여부는 학교별 상세 참고)이며 진학률이 아니에요.</small>
         </section>
         <section class="card pad bubble">
           <div class="sec-h"><span class="crown">${ic('bars')}</span><h2>학군 가격 비교</h2></div>
-          <p>비슷한 교육환경의 지역 중 가장 합리적으로 들어갈 수 있는 곳은 어디일까요? 지역별 평균 59㎡ 매매가를 비교해 보세요.</p>
+          <p>비슷한 교육환경의 지역 중 가장 합리적으로 들어갈 수 있는 곳은 어디일까요? 지역별 59㎡ 매매 대표 가격(최근 12개월 중앙값의 평균)을 비교해 보세요.</p>
           <div class="mini" aria-hidden="true">${regs.map((x) => `<i style="height:${Math.round((x.avg / mx) * 100)}%"></i>`).join('')}</div>
           <a class="btn primary block lg" href="#/compare">지금 비교하기${ic('chevR')}</a>
         </section>
@@ -290,48 +292,52 @@
     if (q.has('metric') && METRIC[q.get('metric')]) { ui.metric = q.get('metric'); ui.sortKey = 'metric'; }
     if (q.has('region')) ui.region = q.get('region');
     const mk = METRIC[ui.metric][1];
-    let list = SCHOOLS.filter((s) => ui.region === 'all' || s.region === ui.region);
-    const sorters = { metric: (a, b) => (anyAdm() ? (b.adm ? 1 : 0) - (a.adm ? 1 : 0) : 0) || b.stats[mk] - a.stats[mk], sale_desc: (a, b) => nv(agg(b).sMax, -1) - nv(agg(a).sMax, -1), sale_asc: (a, b) => nv(agg(a).sMin, 1e9) - nv(agg(b).sMin, 1e9), jeonse_desc: (a, b) => nv(agg(b).jMax, -1) - nv(agg(a).jMax, -1), jeonse_asc: (a, b) => nv(agg(a).jMin, 1e9) - nv(agg(b).jMin, 1e9) };
+    let list = SCHOOLS.filter((s) => (ui.region === 'all' || s.region === ui.region) && (ui.type === 'all' || kindOf(s) === ui.type) && (!ui.admOnly || s.adm));
+    const sorters = { metric: (a, b) => (hasV(b, mk) ? 1 : 0) - (hasV(a, mk) ? 1 : 0) || b.stats[mk] - a.stats[mk], sale_desc: (a, b) => nv(agg(b).sMax, -1) - nv(agg(a).sMax, -1), sale_asc: (a, b) => nv(agg(a).sMin, 1e9) - nv(agg(b).sMin, 1e9), jeonse_desc: (a, b) => nv(agg(b).jMax, -1) - nv(agg(a).jMax, -1), jeonse_asc: (a, b) => nv(agg(a).jMin, 1e9) - nv(agg(b).jMin, 1e9) };
     list = list.slice().sort(sorters[ui.sortKey]);
     const pre = list.find((s) => s.id === ui.preSel) || list[0];
     const hl = (k) => (mk === k ? 'hl' : '');
     const row = (s, i) => { const g = agg(s); return `
       <a class="srow ${pre && pre.id === s.id ? 'on' : ''}" href="#/school/${s.id}" data-act="pre" data-v="${s.id}">
-        <span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span>
+        <span class="rk ${i === 0 && hasV(s, mk) ? 'r1' : ''}">${sortedByMetric() && !hasV(s, mk) ? '-' : i + 1}</span>
         <span class="name"><b>${esc(s.name)}</b> ${badge(s.cat)}<span class="mreg muted">${regOf(s).gu}${realOf(s) ? ' · ' + esc(realOf(s).hsType) : ''}</span></span>
         <span class="reg">${regOf(s).gu}</span>
-        <span class="stat">의대 <b>${sd(s, 0)}</b> · SKY <b>${sd(s, 1)}</b> · 인서울 <b>${sd(s, 2)}</b></span>
-        <span class="m num ${hl(0)}">${sd(s, 0)}</span><span class="k num ${hl(1)}">${sd(s, 1)}</span><span class="si num ${hl(2)}">${sd(s, 2)}</span>
+        <span class="stat">서울대 <b>${sd(s, 3)}</b> · 의대 <b>${sd(s, 0)}</b> · SKY <b>${sd(s, 1)}</b></span>
+        <span class="m num ${hl(0)}">${sd(s, 0)}</span><span class="k num ${hl(1)}">${sd(s, 1)}</span><span class="si num ${hl(3)}">${sd(s, 3)}</span>
         <span class="ap num">${s.apts.length}개</span>
         <span class="sale num"><small>매매</small><b>${range(g.sMin, g.sMax)}</b></span><span class="jeo num"><small>전세</small>${range(g.jMin, g.jMax)}</span>
       </a>`; };
     const pg = pre ? agg(pre) : null;
     view.innerHTML = `
-      <h2 class="page-title">학교 목록</h2><p class="sub">진학 실적 기준으로 학교를 비교하고 선택하세요 (진학 실적은 샘플 수치)</p>
+      <h2 class="page-title">학교 목록</h2><p class="sub">학교를 선택하세요. 진학 실적은 학교가 공개한 자료를 확인한 학교만 순위에 포함하고, 나머지는 '자료 미확보'로 표시해요.</p>
       <div class="tabs" style="margin-top:14px">${Object.entries(METRIC).map(([k, [l]]) => `<button class="${ui.metric === k ? 'on' : ''}" data-act="metric" data-v="${k}">${ic(METRIC_ICON[k])}${l} 진학 우수</button>`).join('')}</div>
       <div class="toolbar">
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <label class="sel"><span>지역</span><select id="fr" aria-label="지역"><option value="all">전체</option>${D.REGIONS.map((r) => `<option value="${r.id}" ${ui.region === r.id ? 'selected' : ''}>${r.gu} ${r.dong}</option>`).join('')}</select></label>
+          <label class="sel"><span>유형</span><select id="ft" aria-label="학교 유형"><option value="all">전체</option><option value="general" ${ui.type === 'general' ? 'selected' : ''}>일반고</option><option value="jayul" ${ui.type === 'jayul' ? 'selected' : ''}>자사고·자율고</option></select></label>
+          <label class="sel"><span>실적</span><select id="fa" aria-label="실적 확인 여부"><option value="0">전체 학교</option><option value="1" ${ui.admOnly ? 'selected' : ''}>실적 확인 학교</option></select></label>
           <label class="sel"><span>정렬</span><select id="fs" aria-label="정렬">${[['metric', METRIC[ui.metric][0] + ' 진학자 수순'], ['sale_desc', '매매가 높은순'], ['sale_asc', '매매가 낮은순'], ['jeonse_desc', '전세가 높은순'], ['jeonse_asc', '전세가 낮은순']].map(([v, l]) => `<option value="${v}" ${ui.sortKey === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
         </div>${areaSeg()}
       </div>
-      <p class="muted" style="font-size:12px;margin-bottom:8px">${ui.area}㎡형 = 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ (서비스 기준) · 가격은 최근 12개월 거래 기준 · ${anyAdm() ? '진학 실적은 입력된 학교만 실제 값이고, 나머지는 샘플이라 아래쪽에 두었어요' : '진학 실적은 샘플'}</p>
+      <p class="muted" style="font-size:12px;margin-bottom:8px">${ui.area}㎡형 = 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ (서비스 기준) · 가격은 최근 12개월 실거래 기준 · 실적 수치는 합격 건수이며 학교마다 중복·졸업생 포함 여부가 달라 직접 비교에 주의하세요</p>
       <div class="s-layout">
         <div class="card tcard">
-          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대</span><span class="k ${hl(1)}">SKY</span><span class="si ${hl(2)}">인서울</span><span class="ap">학교군 단지</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
+          <div class="thead srow" aria-hidden="true"><span>순위</span><span class="name">학교명</span><span class="reg">지역</span><span class="m ${hl(0)}">의대</span><span class="k ${hl(1)}">SKY</span><span class="si ${hl(3)}">서울대</span><span class="ap">학교군 단지</span><span class="sale">${ui.area}㎡ 매매가</span><span class="jeo">${ui.area}㎡ 전세가</span></div>
           ${list.map(row).join('') || '<div class="empty">조건에 맞는 학교가 없어요.</div>'}
         </div>
         ${pre ? `<aside class="card pad preview pv" aria-label="선택한 학교">
           <div class="pv-img">${bldg()}</div>
           <div class="pvh"><div><h3>${esc(pre.name)}</h3><p class="muted">서울 ${regOf(pre).gu} · ${regOf(pre).dong}${realOf(pre) ? ' · ' + esc(realOf(pre).hsType) + ' · ' + esc(sexLabel(realOf(pre).coedu)) : ''}</p></div>${favBtn('s', pre.id)}</div>
-          <p style="margin-top:12px;font-size:13px" class="muted">진학 실적 (샘플)</p>
-          <div class="stats"><span>의대<b>${sd(pre, 0)}</b></span><span>SKY<b>${sd(pre, 1)}</b></span><span>인서울<b>${sd(pre, 2)}</b></span></div>
+          <p style="margin-top:12px;font-size:13px" class="muted">진학 실적${pre.adm ? ' (' + pre.adm.year + '학년도 ' + esc(pre.adm.count_type || '') + ')' : ''}</p>
+          <div class="stats"><span>서울대<b>${sd(pre, 3)}</b></span><span>의대<b>${sd(pre, 0)}</b></span><span>SKY<b>${sd(pre, 1)}</b></span></div>
           <p style="font-size:14px">학교군 해당 아파트 <b>${pre.apts.length}단지</b></p>
           <p style="font-size:14px;margin:2px 0 14px">${ui.area}㎡ 매매 <b>${range(pg.sMin, pg.sMax)}</b><br>${ui.area}㎡ 전세 <b>${range(pg.jMin, pg.jMax)}</b></p>
           <a class="btn primary block lg" href="#/school/${pre.id}">학교 상세·지도 보기${ic('chevR')}</a></aside>` : ''}
       </div>`;
     $('#fr').onchange = (e) => { ui.region = e.target.value; viewSchools(new URLSearchParams()); };
     $('#fs').onchange = (e) => { ui.sortKey = e.target.value; viewSchools(new URLSearchParams()); };
+    $('#ft').onchange = (e) => { ui.type = e.target.value; viewSchools(new URLSearchParams()); };
+    $('#fa').onchange = (e) => { ui.admOnly = e.target.value === '1'; viewSchools(new URLSearchParams()); };
   }
 
   /* =====================================================================
@@ -463,7 +469,7 @@
         const show = o.on || !hit(box); if (show) placed.push(box);
         const cls = 'kb' + (o.on ? ' on' : '') + (o.out ? ' out' : '') + (o.alt ? ' alt' : '') + (o.v == null ? ' na' : '');
         const price = o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? `<small>${o.alt}㎡</small>` : '');
-        const tip = `${o.a.name} · ${o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? ' (' + o.alt + '㎡형)' : '')}${o.out ? ' · 3단계 통합학교군 지역(배정 보장 아님)' : ''}`;
+        const tip = `${o.a.name} · ${o.v == null ? '거래없음' : eokS(o.v) + (o.alt ? ' (' + o.alt + '㎡형)' : '') + ' (12개월 중앙값)'}${o.out ? ' · 3단계 통합학교군 지역(배정 보장 아님)' : ''}`;
         const n = show && (tier > 1 || (tier > 0 && o.v != null)) ? node(cls + (tier === 1 ? ' sm' : ''), `<b>${price}</b>${tier === 2 ? `<span>${esc(o.a.name)}${kind === 'jeonse' ? ' · 전세' : ''}</span>` : ''}`, () => pick(s, o.a.id))
           : node('kd' + (o.out ? ' out' : '') + (o.on ? ' on' : ''), '', () => pick(s, o.a.id));
         n.title = tip; ov(o.p, n, n.className.indexOf('kb') === 0 ? 1.15 : 0.5, o.on ? 9 : 5);
@@ -486,8 +492,7 @@
     view.innerHTML = `
       ${backLink('#/schools', '학교 목록')}
       <div class="s-head">
-        <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} ${reg.dong} · ${zoneOf(s) ? esc(zoneOf(s).name) + ' · ' : ''}${esc(reg.tag)} · 의대 ${sd(s, 0)} · ${s.adm && s.adm.snu_count != null ? '서울대 ' + s.adm.snu_count + ' · ' : ''}SKY ${sd(s, 1)} · 인서울 ${sd(s, 2)}${s.adm ? ` (${s.adm.year}학년도 ${s.adm.count_type || ''})` : ' (샘플)'}</p></div>
-        <a class="btn primary" href="#/community?region=${s.region}">${ic('chat')}${reg.gu} 커뮤니티</a>
+        <div><h2>${esc(s.name)} ${badge(s.cat)} ${favBtn('s', s.id)}</h2><p class="sub">${reg.gu} · ${esc((RULES[s.id] || {}).type || (realOf(s) || {}).hsType || '')}${isGen(s) && zoneOf(s) ? ' · ' + esc(zoneOf(s).name) : ''} · 서울대 ${sd(s, 3)} · 의대 ${sd(s, 0)} · SKY ${sd(s, 1)}${s.adm ? ` (${s.adm.year}학년도 ${esc(s.adm.count_type || '')})` : ''}</p></div>
       </div>
       <div class="m-layout">
         <section class="card mapcard" aria-label="${esc(s.name)} 주변 지도">
@@ -524,7 +529,7 @@
       <small class="muted" style="display:block;margin-top:4px">분류 상태: ${esc(rl.status || '미확인')}${rl.note ? ' · ' + esc(rl.note) : ''}${rl.src ? ` · <a href="${esc(rl.src)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">2027학년도 기본계획</a>` : ''}</small></div></div>`;
   }
   function admRow(s) {
-    const a = s.adm; if (!a) return '<div class="srcrow"><span class="src sample">샘플</span><div><b>진학 실적</b> <small class="muted">아직 입력된 실제 실적이 없어요 (화면의 수치는 샘플). 공식 공시·학교 발표·별도 집계로 출처를 구분해 입력할 예정이에요.</small></div></div>';
+    const a = s.adm; if (!a) return '<div class="srcrow"><span class="src sample">미확보</span><div><b>진학 실적</b> <small class="muted">학교가 공개한 자료로 확인된 실적이 아직 없어요. 확인되는 대로 출처와 함께 보여드릴게요. 합격 건수와 진학률은 다른 지표예요.</small></div></div>';
     const ok = a.verified_status === '확인완료';
     return `<div class="srcrow"><span class="src ${ok ? 'real' : 'sample'}">${esc(a.source_type || '출처 미기재')}</span><div><b>진학 실적 ${a.year}학년도</b> <small class="muted">${esc(a.count_type || '')} · ${esc(a.student_scope || '')} · 중복합격 ${esc(a.duplicate_included || '')} · ${ok ? '검증 ' + esc(a.verified_at || '') : '미확인'}</small>
       <div class="dchips">${[['의대', 0], ['SKY', 1], ['인서울', 2]].map(([l, k]) => `<span class="dchip"><b>${l}</b> ${sd(s, k)}</span>`).join('')}${a.snu_count != null ? `<span class="dchip"><b>서울대</b> ${a.snu_count}</span>` : ''}${a.graduate_count != null ? `<span class="dchip">졸업생 ${a.graduate_count}명</span>` : ''}</div>
@@ -590,7 +595,7 @@
     let list = matched.slice(0, ui.lim || 30); const sel = pool.find((a) => a.id === ui.sel); if (sel && !list.includes(sel)) list = [sel].concat(list);
     const rows = list.map((a) => {
       const on = a.id === ui.sel, no = all.indexOf(a) + 1, w = walkTo(a, s);
-      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${no < 1 || no > 99 ? '·' : no}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}<small class="muted" style="display:block">${a.master ? esc(a.dong) + ' · ' : ''}${gen ? (s.apts.includes(a) ? '2단계 지원 가능 지역 · ' : '3단계 통합학교군 지역 · ') : ''}도보 ${w == null ? '-' : w + '분 (추정)'}</small></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매 평균</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세 평균</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
+      return `<button class="arow ${on ? 'on' : ''}" data-act="pick" data-v="${a.id}"><span class="l">${no < 1 || no > 99 ? '·' : no}</span><span><b>${esc(a.name)}</b> ${srcTag(a)}<small class="muted" style="display:block">${a.master ? esc(a.dong) + ' · ' : ''}${gen ? (s.apts.includes(a) ? '2단계 지원 가능 지역 · ' : '3단계 통합학교군 지역 · ') : ''}도보 ${w == null ? '-' : w + '분 (추정)'}</small></span><span class="p ${k === 'sale' ? 'em' : ''}"><small>매매 중앙값</small><b>${eokS(pr(a, 'sale'))}</b></span><span class="p ${k === 'jeonse' ? 'em' : ''}"><small>전세 중앙값</small><b>${eokS(pr(a, 'jeonse'))}</b></span></button>
         ${on ? `<div class="apick"><div class="kv"><div><span>세대수</span><b>${hhT(a)}</b></div><div><span>준공연도</span><b>${yrT(a)}</b></div><div><span>${esc(s.name)} 도보</span><b>${walkHi(a, s)}</b></div><div><span>초등 통학구역</span><b>${a.master ? esc(esT(a)) + esc(esWalkT(a)) : wm(a.elem)}</b></div><div><span>${a.master ? '중학교군' : '중등 도보'}</span><b>${a.master ? esc(msT(a)) : wm(a.mid)}</b></div><div><span>전세가율</span><b>${ratio(a, ui.area)}</b></div></div><a class="btn primary block" href="#/apt/${a.id}">단지 상세·실거래가 보기${ic('chevR')}</a></div>` : ''}`;
     }).join('');
     const sv = near.map((a) => pr(a, 'sale')).filter((v) => v != null), jv = near.map((a) => pr(a, 'jeonse')).filter((v) => v != null), withData = near.filter((a) => pr(a, k) != null).length;
@@ -609,7 +614,7 @@
       <div class="chips" style="padding:0 var(--gx) 8px">${(gen ? [[0, '2단계 지원 가능 전체'], [10, '도보 10분'], [20, '도보 20분']] : [[10, '도보 10분'], [20, '도보 20분'], [30, '도보 30분']]).map(([v, l]) => `<button class="chip ${ui.radius === v ? 'on' : ''}" data-act="radius" data-v="${v}">${l}</button>`).join('')}<span class="seg" style="margin-left:auto">${[['dist', '가까운 순'], ['price', '가격 순']].map(([v, l]) => `<button class="${ui.sortBy === v ? 'on' : ''}" data-act="sortby" data-v="${v}">${l}</button>`).join('')}</span>${gen ? `<button class="chip ${ui.stage3 ? 'on' : ''}" data-act="stage3" title="3단계는 1·2단계에서 배정되지 않은 학생을 통합학교군 안에서 전산배정하는 절차예요">3단계 통합학교군 지역</button>` : ''}</div>
       ${notice}
       <div class="pf"><label>${ui.area}㎡ 매매 <input id="mxs" type="number" min="1" step="0.5" inputmode="decimal" placeholder="최대 억" value="${ui.maxSale == null ? '' : ui.maxSale}"></label><label>전세 <input id="mxj" type="number" min="1" step="0.5" inputmode="decimal" placeholder="최대 억" value="${ui.maxJeonse == null ? '' : ui.maxJeonse}"></label></div>
-      <div style="padding:0 var(--gx) 10px"><input id="aq" class="aq" type="search" value="${esc(q)}" placeholder="단지명·동 검색" aria-label="단지 검색"><small class="muted" style="display:block;margin-top:6px">가격은 최근 12개월 거래 평균이에요. 이 ${ui.area}㎡형은 ${withData}곳에 거래가 있고, 없는 단지는 '-'로 보여요. ${gen ? `학교군 경계 안이면 2단계 지원 대상이지만 특정 학교 배정이 확정되거나 배정 확률이 높다는 뜻은 아니에요. 거리는 통학 참고용이에요.` : '자율고·자사고는 거주지로 배정되지 않아요. 거리는 통학 참고용이에요.'} 가까운 순에서는 거래가 있는 단지를 먼저 보여줘요.</small></div>
+      <div style="padding:0 var(--gx) 10px"><input id="aq" class="aq" type="search" value="${esc(q)}" placeholder="단지명·동 검색" aria-label="단지 검색"><small class="muted" style="display:block;margin-top:6px">가격은 최근 12개월 실거래 중앙값(대표 가격)이에요. 이 ${ui.area}㎡형은 ${withData}곳에 거래가 있고, 없는 단지는 '-'로 보여요. ${gen ? `학교군 경계 안이면 2단계 지원 대상이지만 특정 학교 배정이 확정되거나 배정 확률이 높다는 뜻은 아니에요. 거리는 통학 참고용이에요.` : '자율고·자사고는 거주지로 배정되지 않아요. 거리는 통학 참고용이에요.'} 가까운 순에서는 거래가 있는 단지를 먼저 보여줘요.</small></div>
       ${rows || '<div class="empty">조건에 맞는 단지가 없어요. 범위를 넓혀 보세요.</div>'}
       ${matched.length > list.length ? `<div style="padding:10px var(--gx) 16px"><button class="btn block" data-act="more">${matched.length - list.length}곳 더 보기</button></div>` : ''}`;
     const num = (id, key) => { const el = $(id); if (el) el.onchange = (e) => { const v = parseFloat(e.target.value); ui[key] = isNaN(v) || v <= 0 ? null : v; ui.lim = 30; const cs = curSchool(); drawPanel(cs); drawMap(cs); }; }; num('#mxs', 'maxSale'); num('#mxj', 'maxJeonse');
@@ -649,8 +654,8 @@
     const r = rng(a.id + 'cnt'), n = 3 + Math.floor(r() * 14);
     return `최근 12개월 매매 ${n}건 · 최근 거래일 ${tradesOf(a).sale[0].date} · 샘플 수치 · 전용 ${AREA_RANGE[ui.area][0]}~${AREA_RANGE[ui.area][1]}㎡ 기준`;
   }
-  function bigP(a, k, t) { if (linked(a)) { const st = realStat(a, k); return st ? eokL(st.avg != null ? st.avg : st.median) : '-'; } return t[k][0] ? eokL(t[k][0].price) : '-'; }
-  function subP(a, k, chg) { if (linked(a)) { const st = realStat(a, k); return st ? `<small class="muted">${eokS(st.min)} ~ ${eokS(st.max)} · ${st.count}건${chg != null ? ' · ' : ''}</small>${chg != null ? chgHtml(chg) : ''}` : '<small class="muted">이 면적대 최근 12개월 거래 없음</small>'; } return chgHtml(chg); }
+  function bigP(a, k, t) { if (linked(a)) { const st = realStat(a, k); return st ? eokL(st.median) : '-'; } return t[k][0] ? eokL(t[k][0].price) : '-'; }
+  function subP(a, k, chg) { if (linked(a)) { const st = realStat(a, k); return st ? `<small class="muted">${eokS(st.min)} ~ ${eokS(st.max)} · ${st.count}건${st.mean != null ? ' · 평균 ' + eokS(st.mean) : ''}${st.lastp != null ? ' · 최근 거래 ' + eokS(st.lastp) + ' (' + st.lastd + ')' : st.last ? ' · 최근 거래일 ' + st.last : ''}${chg != null ? ' · ' : ''}</small>${chg != null ? chgHtml(chg) : ''}` : '<small class="muted">이 면적대 최근 12개월 거래 없음</small>'; } return chgHtml(chg); }
   function viewApt(id) {
     const a = aptById(id); if (a && a.master && a.rt && !a._det) loadDetail(a).then((ch) => { if (ch && location.hash === '#/apt/' + id) viewApt(id); });
     if (!a) { view.innerHTML = '<div class="empty">단지를 찾을 수 없어요. <a href="#/schools" class="chip">학교 목록</a></div>'; return; }
@@ -691,14 +696,15 @@
             <p style="margin:10px 0">${a.master ? (ZSCH[a.zone] || []).map((x) => `<a href="#/school/${x.id}" class="tag">${esc(x.name)}</a>`).join(' ') + ` <span class="tag">${esc((Z.zones.find((z) => z.id === a.zone) || {}).name || '')}</span>` : `<a href="#/school/${s.id}" class="tag">학교군: ${esc(s.name)}</a>`} <span class="tag">${ui.area}㎡형</span> ${srcTag(a)}</p>${areaSeg()}
             <p class="muted" style="font-size:12px;margin-top:8px">${basisLine(a)}</p></div></section>
         <div class="a-metrics">
-          <div class="card mc"><small>${linked(a) ? '최근 12개월 매매 (평균)' : '최근 매매 실거래가'}</small><div class="big">${bigP(a, 'sale', t)}</div>${subP(a, 'sale', cSale)}${sv ? spark(sv, 'var(--c1)') : ''}</div>
-          <div class="card mc"><small>${linked(a) ? '최근 12개월 전세 (평균)' : '최근 전세 실거래가'}</small><div class="big">${bigP(a, 'jeonse', t)}</div>${subP(a, 'jeonse', cJ)}${jv ? spark(jv, 'var(--c2)') : ''}</div>
+          <div class="card mc"><small>${linked(a) ? '최근 12개월 매매 (중앙값)' : '최근 매매 실거래가'}</small><div class="big">${bigP(a, 'sale', t)}</div>${subP(a, 'sale', cSale)}${sv ? spark(sv, 'var(--c1)') : ''}</div>
+          <div class="card mc"><small>${linked(a) ? '최근 12개월 전세 (중앙값)' : '최근 전세 실거래가'}</small><div class="big">${bigP(a, 'jeonse', t)}</div>${subP(a, 'jeonse', cJ)}${jv ? spark(jv, 'var(--c2)') : ''}</div>
         </div>
       </div>
       <div class="facts">
         <div class="card fact">${ic('backpack')}${a.master ? '초등학교' : esc(edu[0])}<b>${a.master ? esc(esT(a)) + ' 통학구역' + esc(esWalkT(a)) : '도보 ' + a.elem + '분 (샘플)'}</b></div><div class="card fact">${ic('school')}${a.master ? '중학교' : esc(edu[1])}<b>${a.master ? esc(msT(a)) : '도보 ' + a.mid + '분 (샘플)'}</b></div><div class="card fact">${ic('cap')}${esc(s.name)}<b>도보 ${walkHi(a, s)}</b></div>
         <div class="card fact">${ic('building')}세대수<b>${a.hh ? a.hh.toLocaleString() + '세대' : '정보 없음'}${a.hh && !a.hhReal ? ' (샘플)' : ''}</b></div><div class="card fact">${ic('calendar')}준공연도<b>${a.year ? a.year + '년 (' + (2026 - a.year) + '년차)' : '정보 없음'}${a.year && !a.yearReal ? (a.master ? ' (실거래 기준)' : ' (샘플)') : ''}</b></div><div class="card fact">${ic('pie')}전세가율<b>${ratio(a, ui.area)}</b></div>
       </div>
+      ${a.master && a.eb ? `<p class="warnline" style="padding:0 var(--gx) 6px;font-size:12px">경계 인접: 이 단지는 ${a.eb.map((k) => ({ hs: '고등학교 학교군', es: '초등 통학구역', ms: '중학교군' }[k])).join('·')} 경계에서 30m 이내예요. 주소 좌표 오차로 반대편일 수 있으니 소속 학교는 교육지원청에서 꼭 확인하세요.</p>` : ''}
       ${a.master ? `<p class="muted" style="padding:0 var(--gx) 4px;font-size:12px">${a.mn ? '중학교군에 속한 중학교 ' + a.mc + '곳 중 가까운 학교: ' + esc(msNear(a)) + ' (도보 시간은 직선거리 기준 추정)' : ''}</p>
       <p class="muted" style="padding:0 var(--gx) 12px;font-size:12px">초등학교 통학구역과 중학교 학교군은 한국교육시설안전원 학구도(2026-09-20 기준)로 단지 위치를 판정한 값이에요. 해당 구역에 속한다는 뜻이며 배정을 보장하지 않으니 교육지원청 안내로 확인하세요. 중학교는 학교군 단위로 배정되며, 가까운 학교는 거리 참고용이에요.</p>` : ''}
       <div class="a-low">
@@ -742,32 +748,42 @@
   function viewCompare(q) {
     if (q.get('ids')) ui.cmp = q.get('ids').split(',').filter((id) => schoolById(id)).slice(0, 3);
     const ss = ui.cmp.map(schoolById).filter(Boolean);
-    const idx = (s) => (agg(s).sAvg ? (s.stats[0] + s.stats[1]) / agg(s).sAvg : 0);
+    const idxN = (s) => (agg(s).sAvg && hasV(s, 3) ? s.statsRaw[3] / agg(s).sAvg : null), idx = (s) => (idxN(s) == null ? '자료 미확보' : idxN(s));
     const rows = [
-      ['지역', (s) => `${regOf(s).gu} ${regOf(s).dong}`, null], ['의대 진학자', (s) => (s.statsRaw[0] == null ? '미공개' : s.statsRaw[0]), 'max'], ['SKY 진학자', (s) => (s.statsRaw[1] == null ? '미공개' : s.statsRaw[1]), 'max'], ['인서울 진학자', (s) => (s.statsRaw[2] == null ? '미공개' : s.statsRaw[2]), 'max'],
+      ['지역', (s) => `${regOf(s).gu} ${regOf(s).dong}`, null], ['서울대 합격 건수', (s) => (s.statsRaw[3] == null ? '자료 미확보' : s.statsRaw[3]), 'max'], ['의대 합격 건수', (s) => (s.statsRaw[0] == null ? '자료 미확보' : s.statsRaw[0]), 'max'], ['SKY 합격 건수', (s) => (s.statsRaw[1] == null ? '자료 미확보' : s.statsRaw[1]), 'max'], ['실적 기준', (s) => (s.adm ? s.adm.year + '학년도 ' + (s.adm.count_type || '') + (s.adm.duplicate_included ? ' · 중복' + s.adm.duplicate_included : '') : '자료 미확보'), null],
       [isGenAny() ? '2단계 지원 가능·통학권 아파트' : '아파트', (s) => s.apts.length + '개' + (isGen(s) ? '' : ' (통학권)'), null], [`${ui.area}㎡ 평균 매매가`, (s) => agg(s).sAvg, 'min', eokS], [`${ui.area}㎡ 평균 전세가`, (s) => agg(s).jAvg, 'min', eokS],
       ['평균 고교 도보', (s) => avg(s.apts.map((a) => walkTo(a, s)).filter((v) => v != null)), 'min', (v) => v.toFixed(1) + '분'], ['평균 준공연도', (s) => avg(s.apts.filter((a) => a.year).map((a) => a.year)), 'max', (v) => Math.round(v) + '년'],
-      ['총 세대수', (s) => s.apts.reduce((n, a) => n + a.hh, 0), 'max', (v) => v.toLocaleString()], ['억당 의대·SKY 진학자', idx, 'max', (v) => v.toFixed(1) + '명']
+      ['총 세대수', (s) => s.apts.reduce((n, a) => n + a.hh, 0), 'max', (v) => v.toLocaleString()], ['대표 가격 1억 원당 서울대 합격 건수', idx, 'max', (v) => (typeof v === 'number' ? v.toFixed(1) + '건' : v)]
     ];
     const body = rows.map(([l, fn, best, fmt]) => { const vals = ss.map(fn), nums = vals.filter((v) => typeof v === 'number'), bv = best ? (best === 'max' ? Math.max(...nums) : Math.min(...nums)) : null; return `<tr><th scope="row">${l}</th>${vals.map((v) => `<td class="${best && v === bv && ss.length > 1 ? 'best' : ''}">${fmt ? fmt(v) : v}</td>`).join('')}</tr>`; }).join('');
-    const all = SCHOOLS.slice().sort((a, b) => idx(b) - idx(a)), mx = idx(all[0]);
+    const all = SCHOOLS.filter((s) => idxN(s) != null).sort((a, b) => idxN(b) - idxN(a)), mx = all.length ? idxN(all[0]) : 1;
     view.innerHTML = `
-      <h2 class="page-title">학군 비교</h2><p class="sub">학교를 최대 3곳까지 골라 진학 실적과 주거비를 비교하세요 (샘플 수치)</p>
+      <h2 class="page-title">학군 비교</h2><p class="sub">학교를 최대 3곳까지 골라 확인된 진학 실적과 주거비를 비교하세요</p>
       <div class="chips" style="margin-top:14px">${SCHOOLS.map((s) => `<button class="chip ${ui.cmp.includes(s.id) ? 'on' : ''}" data-act="cmp-toggle" data-v="${s.id}">${esc(s.name)}</button>`).join('')}</div>
       <div class="toolbar"><span class="muted" style="font-size:13px">초록색은 항목별로 가장 유리한 값</span>${areaSeg()}</div>
       ${ss.length ? `<div class="card cmp-wrap"><table><tr><th></th>${ss.map((s) => `<th><a href="#/school/${s.id}" style="font-size:15px;color:var(--ink)">${esc(s.name)}</a> ${badge(s.cat)}</th>`).join('')}</tr>${body}</table></div>` : '<div class="empty card">비교할 학교를 선택하세요.</div>'}
-      <section class="card pad" style="margin-top:14px"><div class="sec-h"><h2>학군 가성비</h2><small>평균 ${ui.area}㎡ 매매가 1억 원당 의대·SKY 진학자 수 (샘플)</small></div>
-        <div class="bars" style="margin-top:14px">${all.map((s) => `<div class="bar-row"><a href="#/school/${s.id}">${esc(s.name)}</a><div class="trk"><i style="width:${Math.round((idx(s) / mx) * 100)}%"></i></div><b class="num">${idx(s).toFixed(1)}</b></div>`).join('')}</div></section>`;
+      <section class="card pad" style="margin-top:14px"><div class="sec-h"><h2>학군 가성비</h2><small>${ui.area}㎡ 매매 대표 가격 1억 원당 서울대 합격 건수 · 실적이 확인된 학교만</small></div>
+        <div class="bars" style="margin-top:14px">${all.map((s) => `<div class="bar-row"><a href="#/school/${s.id}">${esc(s.name)}</a><div class="trk"><i style="width:${Math.round((idxN(s) / mx) * 100)}%"></i></div><b class="num">${idxN(s).toFixed(1)}</b></div>`).join('') || '<div class="empty">비교할 수 있는 실적이 아직 없어요.</div>'}</div><small class="muted" style="display:block;margin-top:8px">학교마다 집계 기준(중복·졸업생 포함 여부)이 달라 참고용 지표예요.</small></section>`;
   }
 
   function viewGuide() {
+    const asOf = ((window.SG_MASTER || {}).asOf) || '';
+    const SRC = ['<ul>',
+      `<li><b>실거래가</b>: 국토교통부 아파트 매매·전월세 실거래가(최근 60개월, 해제 거래 제외). 가격은 최근 12개월 거래의 중앙값을 대표 가격으로 쓰고, 건수·최저·최고를 함께 표시해요. 거래가 없는 단지는 추정하지 않고 '거래 없음'으로 보여요. 갱신 기준일 ${esc(asOf)}.</li>`,
+      '<li><b>단지 정보</b>: K-apt 공동주택 기본정보, 건축물대장. 단지 위치는 카카오 주소 검색 기준이며 도보 시간은 직선거리 기반 추정값이에요.</li>',
+      '<li><b>학교군·통학구역</b>: 한국교육시설안전원 학구도(2026-09-20 기준). 경계에서 30m 이내 단지는 주소 좌표 오차로 반대편일 수 있어 \'경계 인접\'으로 표시해요. 학교군에 해당한다는 것은 배정을 보장하지 않아요.</li>',
+      '<li><b>배정·입학 규칙</b>: 서울시교육청 2027학년도 고등학교 입학전형 기본계획. 일반고는 1·2·3단계 절차, 자사고·자율고는 학교별 모집요강을 따라요. 학년도마다 달라질 수 있어요.</li>',
+      '<li><b>학교 정보</b>: NEIS 학교기본정보, 서울 고교홍보사이트(하이인포) 학교 유형.</li>',
+      '<li><b>진학 실적</b>: 학교가 공개한 자료를 확인한 값만 표시해요. 학교마다 합격 건수·중복·졸업생 포함 여부가 달라 학교 상세의 기준 표기를 확인하세요. 확인하지 못한 학교는 \'자료 미확보\'예요.</li>',
+      '</ul>'].join('');
     const G = [
+      ['데이터 출처와 기준', SRC],
       ['학군지로 이사할 때 체크리스트', '<ol><li>희망 학교의 학교군·평준화 여부·지원 방식을 교육지원청과 학교 모집요강에서 확인 (고등학교는 학교군에 속해도 특정 학교 배정이 확정된 것은 아닙니다)</li><li>잔금일과 전입신고 날짜, 학기 일정을 함께 맞추기</li><li>전입 후 배정 통지와 전학 서류 확인</li><li>학원 이동 동선과 하교 시간대 교통 확인</li></ol>'],
       ['실거래가 읽는 법', '<ul><li>같은 단지라도 평형·층·동에 따라 가격이 다릅니다</li><li>계약일과 신고일이 다를 수 있어 최근 거래가 늦게 보일 수 있어요</li><li>직거래·특수관계 거래는 시세와 차이가 날 수 있습니다</li></ul>'],
       ['전세가율이란?', '<p style="color:var(--muted);margin:0 0 14px">전세가율은 매매가 대비 전세가의 비율입니다. 높을수록 매매·전세 차이가 작아 갭 투자 위험과 보증금 안전성을 함께 살펴봐야 합니다.</p>'],
       ['진학 실적 출처 등급', '<ul><li><b>공식 공시</b>: 학교알리미 등 법정 공시 자료</li><li><b>학교 발표</b>: 학교가 자체 공개한 합격 실적</li><li><b>별도 집계</b>: 언론·공개자료를 모아 정리한 자료</li><li>재학생만 포함인지, 졸업생 포함인지, 중복합격 포함인지, 실제 등록 인원인지 기준이 다르면 순위가 왜곡될 수 있어 기준연도와 함께 표시합니다</li></ul>'],
       ['고등학교 배정, 이렇게 달라요', '<ul><li>초등학교: 지정된 통학구역에 따라 배정</li><li>중학교: 학구·학교군 안에서 추첨 등 시·도별 방식</li><li>일반고: 거주지 기준 학교군을 바탕으로 한 지원·추첨 (단계별 방식과 비율은 시·도교육청 안내로 확인)</li><li>자율고·특목고: 학교별 입학전형과 통학권</li><li>그래서 이 앱은 고등학교에 대해 ‘배정 확정’이 아니라 ‘학교군 해당 지역’으로 표시합니다</li></ul>'],
-      ['진학 실적 데이터 볼 때 주의할 점', '<ul><li>졸업생 수가 다른 학교끼리는 비율로 비교하세요</li><li>해마다 편차가 있어 여러 해를 함께 보세요</li><li>이 앱의 수치는 샘플이며, 서비스에서는 공시 자료 출처를 함께 표시할 예정입니다</li></ul>']
+      ['진학 실적 데이터 볼 때 주의할 점', '<ul><li>졸업생 수가 다른 학교끼리는 비율로 비교하세요</li><li>해마다 편차가 있어 여러 해를 함께 보세요</li><li>이 앱의 진학 실적은 학교가 공개한 자료를 확인한 값만 보여주고, 학교마다 집계 기준(중복·졸업생 포함 여부)이 달라 직접 비교에는 한계가 있어요</li></ul>']
     ];
     view.innerHTML = `<h2 class="page-title">정보·가이드</h2><p class="sub">학군지 이사와 입시 정보를 읽는 기본기</p><div class="guide">${G.map(([t, b], i) => `<details class="card" ${i === 0 ? 'open' : ''}><summary>${t}</summary>${b}</details>`).join('')}</div>`;
   }
@@ -934,8 +950,11 @@
   }
   const closeModal = () => { $('#modal-root').innerHTML = ''; };
   function refreshChrome() {
-    const u = me(); $('#authbtn').textContent = u ? u.nick : '로그인'; $('#joinbtn').hidden = !!u;
-    const n = unreadCount(); $$('.dot').forEach((d) => { d.hidden = !n; });
+    // 회원가입·로그인·쪽지·커뮤니티는 서버가 필요해 아직 제공하지 않는다(베타). 가짜 로그인 상태를 보여주지 않는다.
+    const a = $('#authbtn'); a.textContent = '회원 기능 준비 중'; a.disabled = true; $('#joinbtn').hidden = true; $$('.bell').forEach((b) => { b.hidden = true; });
+  }
+  function viewSoon(title) {
+    view.innerHTML = `<h2 class="page-title">${esc(title)}</h2><div class="card pad" style="margin-top:14px"><p style="font-size:15px;font-weight:700">준비 중이에요</p><p class="muted" style="margin-top:6px">회원가입, 쪽지, 지역 커뮤니티는 실제 서비스에 맞는 서버를 준비한 뒤 열 예정이에요. 지금은 학군·학교·아파트 정보를 먼저 정확하게 제공하고 있어요.</p><p style="margin-top:14px"><a class="btn primary" href="#/schools">학교 탐색하기</a> <a class="btn" href="#/budget">예산으로 찾기</a></p></div>`;
   }
 
   /* =====================================================================
@@ -946,9 +965,10 @@
     if (cleanup) { cleanup(); cleanup = null; }
     kakaoReset();
     const h = location.hash.slice(1) || '/', [path, qs] = h.split('?'), q = new URLSearchParams(route.last === h ? '' : qs || ''), seg = path.split('/').filter(Boolean), page = seg[0] || 'home';
+    const SOON = { community: '지역 커뮤니티', post: '지역 커뮤니티', write: '지역 커뮤니티', messages: '쪽지', me: '내 정보' };
     const R = { school: () => viewSchool(seg[1]), schools: () => viewSchools(q), apt: () => viewApt(seg[1]), budget: viewBudget, compare: () => viewCompare(q), guide: viewGuide, search: () => viewSearch(q), community: () => viewCommunity(q), post: () => viewPost(seg[1]), write: () => viewWrite(q), messages: () => viewMessages(q), me: viewMe };
     route.last = h;
-    (R[page] || viewHome)();
+    if (SOON[page]) viewSoon(SOON[page]); else (R[page] || viewHome)();
     const nav = { home: 'home', school: 'schools', schools: 'schools', apt: 'schools', search: 'schools', budget: 'budget', compare: 'compare', guide: 'guide', community: 'community', post: 'community', write: 'community', me: 'me', messages: 'me' }[page] || 'home';
     $$('[data-nav]').forEach((a) => a.classList.toggle('on', a.dataset.nav === nav));
     document.body.classList.toggle('sub', !!R[page] && !ROOT_PAGES.includes(page));
