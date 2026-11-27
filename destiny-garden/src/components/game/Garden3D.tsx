@@ -5,7 +5,8 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { Character } from './Character';
 import { useGame } from '@/lib/client/store';
-import { AVATARS, BUILDINGS, NPCS, OBSTACLES, RADIUS, nearest, resolve, INTERACT } from '@/lib/game/world';
+import { AVATARS, BUILDINGS, NPCS, OBSTACLES, RADIUS, nearest, resolve, interactWith } from '@/lib/game/world';
+import objects from '@data/explore_objects.json';
 
 // ───────── 공용 ─────────
 let glowTex: THREE.Texture | null = null;
@@ -124,19 +125,52 @@ function TarotTent() {
   </group>;
 }
 
+function TimeRoom() {
+  return <group>
+    <mesh position={[0, 0.2, 0]}><cylinderGeometry args={[2.7, 2.9, 0.4, 10]} /><Mat c={STONE} /></mesh>
+    <mesh position={[0, 2.3, 0]}><cylinderGeometry args={[1.9, 2.1, 3.8, 10]} /><Mat c="#3b3f78" /></mesh>
+    <mesh position={[0, 2.8, 2.07]}><circleGeometry args={[0.85, 20]} /><meshStandardMaterial color="#fff1c8" emissive="#ffd36b" emissiveIntensity={1.3} toneMapped={false} /></mesh>
+    <mesh position={[0, 2.8, 2.09]} rotation-z={0.6}><boxGeometry args={[0.07, 0.6, 0.03]} /><Mat c="#3a2400" /></mesh>
+    <mesh position={[0, 2.8, 2.09]} rotation-z={-1.2}><boxGeometry args={[0.07, 0.45, 0.03]} /><Mat c="#3a2400" /></mesh>
+    {[0, 1, 2, 3].map((i) => <mesh key={i} position={[Math.cos(i * 1.57 + 0.78) * 1.95, 1.2, Math.sin(i * 1.57 + 0.78) * 1.95]}><boxGeometry args={[0.35, 0.8, 0.12]} /><meshStandardMaterial color="#ffcf7a" emissive="#ffb347" emissiveIntensity={1.4} toneMapped={false} /></mesh>)}
+    <mesh position={[0, 5.2, 0]}><coneGeometry args={[2.5, 2.2, 10]} /><Mat c="#5a2f8a" /></mesh>
+    <mesh position={[0, 6.5, 0]}><sphereGeometry args={[0.22, 10, 10]} /><meshStandardMaterial color="#cfa9ff" emissive="#a67cff" emissiveIntensity={2} toneMapped={false} /></mesh>
+    <Glow position={[0, 6.5, 0]} size={3} color="#b58bff" />
+    <Glow position={[0, 2.8, 2.5]} size={3.2} color="#ffd36b" opacity={0.5} />
+  </group>;
+}
+function SageHouse() {
+  const w = 3.8, d = 3.2;
+  return <group>
+    <mesh position={[0, 0.17, 0]}><boxGeometry args={[w + 1, 0.34, d + 1]} /><Mat c={STONE} /></mesh>
+    <mesh position={[0, 1.3, 0]}><boxGeometry args={[w - 0.3, 2.0, d - 0.3]} /><Mat c="#e9d7b5" /></mesh>
+    <Pillars pts={[[-w / 2, d / 2], [w / 2, d / 2], [-w / 2, -d / 2], [w / 2, -d / 2]]} h={2.0} />
+    <Windows w={w - 1} z={d / 2 - 0.12} n={2} y={1.2} h={1.0} />
+    <mesh position={[0, 1.0, d / 2 - 0.08]}><boxGeometry args={[0.9, 1.5, 0.05]} /><meshStandardMaterial color="#8a5fe0" emissive="#6b3fb5" emissiveIntensity={0.8} /></mesh>
+    <Roof w={w + 1.4} d={d + 1.4} y={2.3} h={1.7} color="#4b2f8a" />
+    <HangingLantern position={[-w / 2, 2.1, d / 2 + 0.5]} /><HangingLantern position={[w / 2, 2.1, d / 2 + 0.5]} />
+    <mesh position={[0, 4.4, 0]}><sphereGeometry args={[0.18, 10, 10]} /><meshStandardMaterial color="#ffe7a1" emissive="#ffd062" emissiveIntensity={2} toneMapped={false} /></mesh>
+    <Glow position={[0, 4.4, 0]} size={2.4} />
+  </group>;
+}
+
 const BUILD_PRESET: Record<string, { rot: number; Comp: () => React.JSX.Element; labelY: number; icon: string }> = {
   library: { rot: Math.PI / 2, Comp: Library, labelY: 5.6, icon: '📖' },
-  temple: { rot: 0, Comp: Temple, labelY: 9.4, icon: '🪙' },
+  wealth: { rot: 0, Comp: Temple, labelY: 9.4, icon: '🪙' },
   pavilion: { rot: -Math.PI / 2, Comp: Pavilion, labelY: 6.8, icon: '♡' },
   tarot: { rot: -Math.PI / 2, Comp: TarotTent, labelY: 4.6, icon: '🃏' },
+  time: { rot: 0.6, Comp: TimeRoom, labelY: 7.9, icon: '⏳' },
+  sagehouse: { rot: -0.5, Comp: SageHouse, labelY: 5.6, icon: '🧙' },
 };
 
 function Buildings() {
   const interact = useInteract();
-  const quests = useGame((s) => s.state?.quests);
+  const cards = useGame((s) => s.state?.cards);
   return <>{BUILDINGS.map((b) => {
     const p = BUILD_PRESET[b.id];
-    const todo = quests?.some((q) => q.event === b.quest_event && !q.done);
+    // 아직 열어 보지 않은(잠금 해제된) 오브젝트가 있으면 ! 표시
+    const have = new Set((cards ?? []).map((c) => c.key.split(':')[0]));
+    const todo = b.content === 'room' && objects.some((o: any) => o.building === b.id && o.kind === 'card' && !o.daily && !have.has(o.card) && (!o.unlock || ('category' in o.unlock ? (cards ?? []).filter((c) => c.category === o.unlock.category).length >= o.unlock.count : (cards ?? []).length >= o.unlock.total)));
     return <group key={b.id} position={[b.pos.x, 0, b.pos.z]}>
       <Hover onClick={() => interact('building', b.id)}><group rotation-y={p.rot}><p.Comp /></group></Hover>
       <Label y={p.labelY} icon={p.icon} text={b.name} quest={!!todo} onClick={() => interact('building', b.id)} />
@@ -159,7 +193,7 @@ function Ground() {
   </group>;
 }
 const PATH: [number, number][] = [[0, 12], [0, 9], [0.4, 6], [-0.5, 3], [0, 0], [0, -3], [0.4, -6], [0, -7.9]];
-const BRANCH: [number, number][][] = [[[0, 0], [-2, 0.3], [-4.0, 0.4]], [[0.4, -3], [2.5, -2.8], [4.9, -2.8]], [[0.2, 6], [3, 6.1], [6.1, 6.2]], [[-0.5, 3], [-2.5, 4.8], [-4.5, 5.4]], [[0.2, -6], [2.5, -6.2], [4.3, -6.3]], [[0, -6], [-1.6, -7.2], [-2.6, -8.2]]];
+const BRANCH: [number, number][][] = [[[0, 0], [-2, 0.3], [-4.0, 0.4]], [[0.4, -3], [2.5, -2.8], [4.9, -2.8]], [[0.2, 6], [3, 6.1], [6.1, 6.2]], [[-0.5, 3], [-2.5, 4.8], [-4.5, 5.4]], [[0.4, -6], [3.2, -7.4], [6.0, -8.4]], [[0, -6], [-2.6, -7.4], [-5.2, -8.4]]];
 function PathStones() {
   const ref = useRef<THREE.InstancedMesh>(null);
   const pts = useMemo(() => {
@@ -184,7 +218,7 @@ function Pond() {
     </group>
   </group>;
 }
-const TREES: [number, number, number][] = [[-14, -8, 1.3], [-15, 1, 1.1], [15, 9, 1.2], [15, 1, 1.15], [13, -9, 1.6], [-4, -15, 1.2], [5, -15, 1.3], [-16, -3, 1], [16, -5, 1], [-9, -9, 0.9], [-14, 11, 1.1], [13, 12, 1]];
+const TREES: [number, number, number][] = [[-14, -8, 1.3], [-15, 1, 1.1], [15, 9, 1.2], [15, 1, 1.15], [13, -9, 1.6], [-4, -15, 1.2], [5, -15, 1.3], [-16, -3, 1], [16, -5, 1], [-14, 11, 1.1], [13, 12, 1]];
 function BlossomTrees() {
   return <>{TREES.map(([x, z, s], i) => {
     const pink = ['#ff9fd0', '#e684d8', '#ffb7dd', '#c58cf0'];
@@ -219,13 +253,7 @@ function Petals() {
 
 // ───────── 상호작용 ─────────
 function useInteract() {
-  return (kind: 'building' | 'npc', id: string) => {
-    const { player, open } = useGame.getState();
-    const t = kind === 'building' ? BUILDINGS.find((b) => b.id === id)!.door : NPCS.find((n) => n.id === id)!.pos;
-    const d = Math.hypot(player.x - t.x, player.z - t.z);
-    if (d <= (kind === 'building' ? INTERACT.building : INTERACT.npc)) { open({ type: kind, id } as any); useGame.setState({ target: null, pending: null }); }
-    else { const [x, z] = kind === 'npc' ? resolve(t.x + (player.x > t.x ? 1.5 : -1.5), t.z + (player.z > t.z ? 1.5 : -1.5), 0.2) : [t.x, t.z]; useGame.setState({ target: { x, z }, pending: { kind, id, x: t.x, z: t.z } }); }
-  };
+  return (kind: 'building' | 'npc', id: string) => { const g = useGame.getState(); interactWith(kind, id, { player: g.player, open: g.open, set: (st) => useGame.setState(st) }); };
 }
 
 function Npcs() {
@@ -238,7 +266,7 @@ function Npcs() {
     return <group key={n.id} position={[n.pos.x, 0, n.pos.z]} rotation-y={face}>
       <Hover onClick={() => interact('npc', n.id)}><Character look={{ skin: '#f6d6bb', hair: '#3a2a20', robe: n.color, trim: n.accent, style, scale: 1 }} /><mesh position={[0, 1.2, 0]} visible={false}><cylinderGeometry args={[0.7, 0.7, 2.6, 6]} /></mesh></Hover>
       <Html position={[0, 3.0, 0]} center zIndexRange={[7, 0]}>
-        <button className="npc-bubble" onClick={() => interact('npc', n.id)}>{n.id === 'sage' && firstConsult && !firstConsult.done && <span className="qmark">!</span>}💬 {n.name} · 대화하기</button>
+        <button className="npc-bubble" onClick={() => interact('npc', n.id)}>💬 {n.name}</button>
       </Html>
     </group>;
   })}</>;

@@ -7,6 +7,10 @@ import { destinyCardOf, dayPillarInfo, matchRules, cycleGods, pastLifeOf } from 
 import { compareCharts } from '../compat';
 import { monthGanzhiList, yearGanzhi } from '../saju/engine';
 import { spreadOrder, isReversed, interpretDraw } from '../tarot';
+import { CARD_DEFS, generateCard, categoryOfKey, type CardContent } from '../cards';
+import objects from '@data/explore_objects.json';
+import buildings from '@data/game_buildings.json';
+import type { UserCard } from './db';
 import { answerQuestion, detectTopic, makeReport, aiMode, model } from './ai';
 import { confirmPayment, cancelPayment, payMode, tossClientKey } from './payments';
 
@@ -25,14 +29,15 @@ function ledger(db: DB, userId: string, delta: number, kind: string, ref: string
 }
 
 // ───────── 퀘스트 ─────────
-const CLIENT_EVENTS = new Set(['enter_garden', 'view_saju', 'get_card', 'view_wealth', 'visit:library', 'visit:temple', 'visit:pavilion', 'visit:tarot']);
+const CLIENT_EVENTS = new Set(['enter_garden']);
 function applyEvent(db: DB, userId: string, event: string) {
   const done = (db.quest_progress[userId] ??= {});
   const completed: any[] = [];
   const w = (db.credit_wallets[userId] ??= { user_id: userId, tickets: 0, coins: 0 });
   const prof = db.profiles[userId];
   const before = levelOf(prof?.exp ?? 0).level;
-  for (const q of C.quests.filter((q) => q.event === event)) {
+  const nCards = db.user_cards[userId]?.length ?? 0;
+  for (const q of C.quests.filter((q) => q.event === event || (event === 'cards' && q.event.startsWith('cards:') && nCards >= Number(q.event.slice(6))))) {
     if (done[q.id]) continue;
     done[q.id] = { completed_at: now() };
     w.coins += q.reward.coins;
@@ -73,6 +78,7 @@ export function buildState(db: DB, userId: string) {
     card: chart ? destinyCardOf(chart.pillars.day.name) : null,
     wallet: { tickets: w.tickets, coins: w.coins },
     quests: C.quests.map((q) => ({ ...q, done: !!done[q.id], completedAt: done[q.id]?.completed_at ?? null })),
+    cards: (db.user_cards[userId] ?? []).map((c) => ({ key: c.card_key, category: c.category, name: c.name, source: c.source, at: c.acquired_at, ...c.data })),
     position: db.user_positions[userId] ?? null,
     todayTarot: draw ? { ...interpretDraw(draw.card_id, draw.reversed, chart), position: draw.position } : null,
     relationships: db.relationships.filter((r) => r.user_id === userId).map((r) => ({ id: r.id, name: r.name, relation: r.relation, birth: r.birth, dayPillar: r.chart.pillars.day.name, compat: chart ? compareCharts(chart, r.chart) : null })),
@@ -205,25 +211,38 @@ export async function consult(userId: string, b: any) {
       if (!r) throw new HttpError(404, '선택한 인물을 찾을 수 없습니다.');
       partner = { name: r.name, chart: r.chart as SajuChart };
     }
+    const picked = (Array.isArray(b.cardKeys) ? b.cardKeys.slice(0, 3) : []).map((k: string) => (db.user_cards[userId] ?? []).find((c) => c.card_key === String(k))).filter(Boolean) as UserCard[];
+    const cards = picked.map((c) => ({ key: c.card_key, category: c.category, name: c.name, body: c.data.body }));
     let cons = db.consultations.find((c) => c.user_id === userId && c.npc_id === npc.id);
     if (!cons) { cons = { id: uid('cs_'), user_id: userId, npc_id: npc.id, topic, created_at: now() }; db.consultations.push(cons); }
     const requestId = uid('rq_');
     ledger(db, userId, -cost, 'consult_reserve', `reserve:${requestId}`);
     const prev = db.consultation_summaries.filter((s) => s.user_id === userId && (s.topic === topic || s.npc_id === npc.id)).slice(-3).map((s) => s.summary).reverse();
-    return { chart, partner, consultationId: cons.id, requestId, prev };
+    return { chart, partner, consultationId: cons.id, requestId, prev, cards };
   });
 
   // 2) AI 호출 (트랜잭션 밖)
   try {
-    const r = await answerQuestion({ npc: npc as any, question, topic, chart: pre.chart, partner: pre.partner, prevSummaries: pre.prev, deep });
+    const r = await answerQuestion({ npc: npc as any, question, topic, chart: pre.chart, partner: pre.partner, prevSummaries: pre.prev, deep, cards: pre.cards });
     // 3) 성공: 저장 + 퀘스트
     return await tx(userId, (db) => {
       db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'user', content: { text: question, deep, partnerId: b.partnerId ?? null }, cost, created_at: now() });
-      db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'npc', content: { ...r.answer, source: r.source, topic }, cost: 0, created_at: now() });
+      const mid = uid('m_');
+      const nc = r.answer.new_card;
+      let newCard: any = null;
+      if (nc?.name && nc?.body) {
+        const row: UserCard = { user_id: userId, card_key: `consult:${mid}`, category: 'consult', name: String(nc.name).slice(0, 60), source: 'consult', acquired_at: now(), data: { subtitle: question.slice(0, 40), keywords: (nc.keywords ?? []).slice(0, 4).map(String), body: String(nc.body).slice(0, 1200), basis: r.answer.basis.slice(0, 4), npc: npc.name } };
+        (db.user_cards[userId] ??= []).push(row);
+        newCard = { key: row.card_key, category: 'consult', name: row.name, source: 'consult', at: row.acquired_at, ...row.data };
+      }
+      const hint = nextHint(db.user_cards[userId] ?? [], topic);
+      r.answer.next_hint = hint ?? undefined;
+      db.consultation_messages.push({ id: uid('m_'), consultation_id: pre.consultationId, user_id: userId, npc_id: npc.id, role: 'npc', content: { ...r.answer, source: r.source, topic, usedCards: pre.cards.map((c) => c.name), newCard }, cost: 0, created_at: now() });
       db.consultation_summaries.push({ id: uid('s_'), user_id: userId, npc_id: npc.id, topic, summary: String(r.answer.summary).slice(0, 240), created_at: now() });
       db.ai_usage_logs.push({ id: uid('a_'), user_id: userId, npc_id: npc.id, model: r.model, ok: true, ms: r.ms, tokens: r.tokens, error: null, created_at: now() });
       const ev1 = applyEvent(db, userId, 'first_consult');
-      return { answer: { ...r.answer, source: r.source, topic }, cost, ev: ev1, state: buildState(db, userId) };
+      const ev2 = newCard ? applyEvent(db, userId, 'cards') : { completed: [], levelUp: null };
+      return { answer: { ...r.answer, source: r.source, topic, usedCards: pre.cards.map((c) => c.name), newCard }, cost, newCard, ev: { completed: [...ev1.completed, ...ev2.completed], levelUp: ev1.levelUp ?? ev2.levelUp }, state: buildState(db, userId) };
     });
   } catch (e: any) {
     // 실패: 질문권 복구 (멱등)
@@ -233,6 +252,45 @@ export async function consult(userId: string, b: any) {
     });
     throw new HttpError(502, 'AI 답변을 만들지 못했어요. 질문권은 차감되지 않았습니다. 잠시 후 다시 시도해 주세요.');
   }
+}
+
+// ───────── 탐험: 오브젝트 열기 → 개인화 카드 ─────────
+type Obj = (typeof objects)[number];
+const isUnlocked = (o: any, owned: { category: string }[]) => !o.unlock || ('category' in o.unlock ? owned.filter((c) => c.category === o.unlock.category).length >= o.unlock.count : owned.length >= o.unlock.total);
+const ROOM_BY_TOPIC: Record<string, string> = { wealth: 'wealth', career: 'library', general: 'library', relationship: 'pavilion', pastlife: 'time' };
+/** 상담 후 다음 탐험을 이어 주는 힌트(현자 → 정원) */
+function nextHint(owned: UserCard[], topic: string): string | null {
+  const have = new Set(owned.map((c) => c.card_key.split(':')[0]));
+  const open = (o: any) => o.kind === 'card' && !o.daily && !have.has(o.card) && isUnlocked(o, owned);
+  const o: any = objects.find((x) => x.building === ROOM_BY_TOPIC[topic] && open(x)) ?? objects.find(open);
+  if (!o) return null;
+  return `${buildings.find((b) => b.id === o.building)?.name}의 ‘${o.name}’을(를) 열어 보세요. ${o.hint}.`;
+}
+
+export async function exploreObject(userId: string, objectId: string, partnerId?: string | null) {
+  const obj: Obj | undefined = objects.find((o) => o.id === objectId);
+  if (!obj) throw new HttpError(404, '오브젝트를 찾을 수 없습니다.');
+  const today = kstDate();
+  return tx(userId, (db) => {
+    const chart: SajuChart | null = db.saju_charts[userId]?.chart ?? null;
+    if (!chart) throw new HttpError(409, '캐릭터를 먼저 만들어 주세요.');
+    const owned = (db.user_cards[userId] ??= []);
+    if (obj.kind !== 'card' && !(obj.id === 'chairs' && partnerId)) throw new HttpError(400, '카드를 얻는 오브젝트가 아닙니다.');
+    if (!isUnlocked(obj, owned)) throw new HttpError(403, `아직 열 수 없어요. ${obj.hint}`);
+    let key = (obj as any).card as string, partner = null as null | { id: string; name: string; chart: SajuChart };
+    if (obj.id === 'chairs') {
+      const r = db.relationships.find((x) => x.id === partnerId && x.user_id === userId);
+      if (!r) throw new HttpError(404, '선택한 인물을 찾을 수 없습니다.');
+      key = `love_pair:${r.id}`; partner = { id: r.id, name: r.name, chart: r.chart as SajuChart };
+    } else if ((obj as any).daily) key = `${key}:${today}`;
+    const exist = owned.find((c) => c.card_key === key);
+    if (exist) return { isNew: false, card: { key, category: exist.category, name: exist.name, source: exist.source, at: exist.acquired_at, ...exist.data }, ev: { completed: [], levelUp: null as number | null }, state: buildState(db, userId) };
+    const c: CardContent = generateCard(key, chart, { today, partner });
+    const row: UserCard = { user_id: userId, card_key: key, category: categoryOfKey(key), name: c.name, source: 'explore', acquired_at: now(), data: { subtitle: c.subtitle, keywords: c.keywords, body: c.body, basis: c.basis, object: obj.id } };
+    owned.push(row);
+    const e1 = applyEvent(db, userId, `open:${obj.id}`), e2 = applyEvent(db, userId, 'cards');
+    return { isNew: true, card: { key, category: row.category, name: row.name, source: 'explore', at: row.acquired_at, ...row.data }, ev: { completed: [...e1.completed, ...e2.completed], levelUp: e1.levelUp ?? e2.levelUp }, state: buildState(db, userId) };
+  });
 }
 
 // ───────── 상점/결제 ─────────
@@ -341,7 +399,7 @@ export async function deleteAccount(userId: string) {
 }
 const deleteAccountData = (userId: string) => tx(userId, (db) => {
   const strip = <T extends { user_id: string }>(a: T[]) => a.filter((x) => x.user_id !== userId);
-  for (const k of ['profiles', 'birth_profiles', 'saju_charts', 'user_destiny_cards', 'avatars', 'user_positions', 'quest_progress', 'credit_wallets'] as const) delete (db as any)[k][userId];
+  for (const k of ['profiles', 'birth_profiles', 'saju_charts', 'user_destiny_cards', 'user_cards', 'avatars', 'user_positions', 'quest_progress', 'credit_wallets'] as const) delete (db as any)[k][userId];
   db.game_rewards = strip(db.game_rewards); db.tarot_draws = strip(db.tarot_draws); db.relationships = strip(db.relationships);
   const csIds = new Set(db.consultations.filter((c) => c.user_id === userId).map((c) => c.id));
   db.consultations = strip(db.consultations); db.consultation_messages = db.consultation_messages.filter((m) => !csIds.has(m.consultation_id)); db.consultation_summaries = strip(db.consultation_summaries);

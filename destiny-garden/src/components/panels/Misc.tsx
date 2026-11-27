@@ -4,9 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Sheet, PillarCell, EL_COLOR, won } from '../ui/kit';
 import { api } from '@/lib/client/api';
 import { useGame } from '@/lib/client/store';
-import { ELEMENTS } from '@/lib/saju/tables';
 import products from '@data/products.json';
-import tenGodData from '@data/ten_gods.json';
 import { ProductAction } from './Buildings';
 
 const close = () => useGame.getState().open(null);
@@ -34,47 +32,11 @@ export function Bag() {
         <div className="card"><div className="lbl">🪙 게임 코인</div><b style={{ fontSize: 24 }}>{st.wallet.coins}</b><div className="muted">퀘스트로 모을 수 있어요</div></div>
       </div>
       <div className="sec-title">보유 카드</div>
-      <div className="card" style={{ display: 'flex', gap: 10, alignItems: 'center' }}><div style={{ fontSize: 34 }}>🎴</div><div><b>{st.card?.name}</b><div className="muted">{st.card?.subtitle} · {st.card?.rarity}</div></div><button className="btn sm line" style={{ marginLeft: 'auto' }} onClick={() => useGame.getState().open({ type: 'codex' })}>도감</button></div>
+      <div className="card" style={{ display: 'flex', gap: 10, alignItems: 'center' }}><div style={{ fontSize: 34 }}>🎴</div><div><b>수집한 카드 {st.cards.length}장</b><div className="muted">최근: {st.cards[st.cards.length - 1]?.name ?? '아직 없어요'}</div></div><button className="btn sm line" style={{ marginLeft: 'auto' }} onClick={() => useGame.getState().open({ type: 'codex' })}>도감</button></div>
       {st.todayTarot && <div className="card">🃏 오늘의 타로: <b>{st.todayTarot.name}</b> ({st.todayTarot.reversed ? '역' : '정'})</div>}
       <div className="sec-title">구매한 리포트</div>
       {reports.length === 0 ? <div className="muted">아직 구매한 리포트가 없어요.</div> : reports.map((e) => { const p: any = products.find((x) => x.id === e.productId); const rel = st.relationships.find((r) => r.id === e.partnerId); return <div className="prod" key={e.orderId}><div className="ic">📜</div><div><div className="nm">{p.name}{rel ? ` · ${rel.name}` : ''}</div></div><button className="btn sm gold" style={{ marginLeft: 'auto' }} onClick={() => useGame.getState().open({ type: 'report', kind: p.report, partnerId: e.partnerId })}>열람</button></div>; })}
       <p className="muted">의상·아이템은 2차 업데이트에서 만나요.</p>
-    </Sheet>
-  );
-}
-
-// ───────── 운명 도감 ─────────
-const ENTRIES = [
-  { k: 'saju', ic: '📜', nm: '나의 사주', need: null }, { k: 'ilju', ic: '🎴', nm: '나의 일주', need: null }, { k: 'elem', ic: '🌿', nm: '오행', need: null }, { k: 'gods', ic: '✨', nm: '십성', need: null },
-  { k: 'talent', ic: '💎', nm: '재능 카드', need: null }, { k: 'wealth', ic: '🪙', nm: '재물운 카드', need: 'q07', hint: '재물의 신전에서 재물운을 확인하면 발견해요' },
-  { k: 'career', ic: '💼', nm: '커리어 카드', need: 'q06', hint: '재물의 신전을 방문하면 발견해요' }, { k: 'love', ic: '💞', nm: '인연 카드', need: 'q08', hint: '인연의 정자를 방문하면 발견해요' },
-  { k: 'past', ic: '🌌', nm: '전생 카드', need: 'q03', hint: '운명의 서고를 방문하면 발견해요' }, { k: 'today', ic: '🌙', nm: '오늘의 운명 카드', need: 'q09', hint: '타로의 정원에서 오늘의 타로를 뽑으면 발견해요' },
-] as const;
-export function Codex() {
-  const st = useGame((s) => s.state)!; const chart = st.chart!;
-  const [sel, setSel] = useState<string | null>(null);
-  const [wealth, setWealth] = useState<any>(null); const [career, setCareer] = useState<any>(null);
-  const unlocked = (need: string | null) => !need || st.quests.find((q) => q.id === need)?.done;
-  useEffect(() => { if (!sel) return; if (sel === 'wealth' && !wealth) api('/api/insight?topic=wealth').then(setWealth).catch(() => {}); if ((sel === 'career' || sel === 'past' || sel === 'love') && !career) api('/api/insight?topic=career').then(setCareer).catch(() => {}); }, [sel, wealth, career]);
-  const dp = st.dayPillar!;
-  const body = () => {
-    switch (sel) {
-      case 'saju': return <div className="saju"><PillarCell label="시주" p={chart.pillars.hour} /><PillarCell label="일주" p={chart.pillars.day} day /><PillarCell label="월주" p={chart.pillars.month} /><PillarCell label="연주" p={chart.pillars.year} /></div>;
-      case 'ilju': return <><div className={'dcard ' + st.card!.rarity}><span className="rar">{st.card!.rarity.toUpperCase()}</span><div className="art">🎴</div><div className="nm">{dp.title}</div><div className="sb">{dp.name}일주 · {dp.animal}</div></div><p className="pre">{dp.summary}</p><p className="muted">{dp.shadow}</p></>;
-      case 'elem': return <>{ELEMENTS.map((e) => <div key={e} className="barrow"><span className={'el-' + e}>{e}</span><div className="bar"><i style={{ width: `${Math.min(100, chart.elements.withHidden[e] * 14)}%`, background: EL_COLOR[e] }} /></div><span>{chart.elements.withHidden[e]}</span></div>)}<p className="muted">강한 오행 {chart.elements.dominant} · 약한 오행 {chart.elements.weakest}</p></>;
-      case 'gods': return <><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{Object.entries(chart.tenGods).map(([k, v]) => <span key={k} className="chip" style={{ opacity: v ? 1 : 0.4 }}>{k} {v}</span>)}</div><p className="muted">{Object.entries(chart.tenGodGroups).map(([k, v]) => `${k} ${v}`).join(' · ')}</p></>;
-      case 'talent': return <>{Object.entries(chart.tenGods).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([g, n]) => { const t: any = tenGodData.find((x) => x.id === g); return <div className="card" key={g}><b>✦ {g} ({n})</b> · {t.keywords}<div className="muted">{t.talent}</div></div>; })}</>;
-      case 'wealth': return !wealth ? <div className="spin" style={{ margin: '20px auto' }} /> : <ul className="bul">{wealth.rules.map((r: any, i: number) => <li key={i}>{r.text}</li>)}</ul>;
-      case 'career': return !career ? <div className="spin" style={{ margin: '20px auto' }} /> : <ul className="bul">{career.rules.map((r: any, i: number) => <li key={i}>{r.text}</li>)}</ul>;
-      case 'love': return !career ? <div className="spin" style={{ margin: '20px auto' }} /> : <><p className="pre">{dp.love_hint}</p><div className="muted">등록한 인물 {st.relationships.length}명 {st.relationships.map((r) => `· ${r.name} ${r.compat?.score}점`).join(' ')}</div></>;
-      case 'past': return !career ? <div className="spin" style={{ margin: '20px auto' }} /> : <><b>{career.pastLife.era}의 {career.pastLife.title}</b><p className="pre">{career.pastLife.story}</p><div className="note">{career.pastLife.disclaimer}</div></>;
-      case 'today': return st.todayTarot ? <div className="card"><b>오늘의 타로: {st.todayTarot.name}</b> ({st.todayTarot.reversed ? '역' : '정'})<p className="pre">{st.todayTarot.reading}</p><p className="muted">{st.todayTarot.personal}</p></div> : <div className="muted">오늘의 타로를 아직 뽑지 않았어요.</div>;
-    }
-  };
-  const e = ENTRIES.find((x) => x.k === sel);
-  return (
-    <Sheet title={e ? e.nm : '운명 도감'} sub={e ? undefined : `${ENTRIES.filter((x) => unlocked(x.need)).length} / ${ENTRIES.length} 발견`} onClose={e ? () => setSel(null) : close}>
-      {e ? body() : <div className="grid2">{ENTRIES.map((x) => { const u = unlocked(x.need); return <button key={x.k} className={'cdx' + (u ? '' : ' lock')} onClick={() => (u ? setSel(x.k) : useGame.getState().toast(`🔒 ${(x as any).hint}`))}><div className="ic">{u ? x.ic : '🔒'}</div><div className="nm">{x.nm}</div><div className="st">{u ? '발견함' : '아직 발견하지 못했어요'}</div></button>; })}</div>}
     </Sheet>
   );
 }

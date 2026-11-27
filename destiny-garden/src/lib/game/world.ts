@@ -8,7 +8,7 @@ export const BUILDINGS = buildings;
 export const NPCS = npcs;
 /** 충돌 원 [x, z, r] */
 export const OBSTACLES: [number, number, number][] = [
-  [-7.6, -1, 3.2], [0, -12, 3.6], [7.8, -3.5, 2.5], [9.2, 6.2, 2.4], [-9, 7, 3.4], [13, -9, 1.0], [-14, -8, 0.9], [-15, 1, 0.9], [15, 9, 0.9], [-14, 11, 0.9], [13, 12, 0.9], [15, 1, 0.9],
+  [-7.6, -1, 3.2], [0, -12, 3.6], [7.8, -3.5, 2.5], [9.2, 6.2, 2.4], [-9, 7, 3.4], [-8.5, -10, 2.6], [8.2, -11, 2.8], [13, -9, 1.0], [-14, -8, 0.9], [-15, 1, 0.9], [15, 9, 0.9], [-14, 11, 0.9], [13, 12, 0.9], [15, 1, 0.9],
   [-3.2, -8.4, 0.5], [0.5, 1.5, 0.5], [5.2, -6.4, 0.5], [-5.4, 5.6, 0.5],
 ];
 export const INTERACT = { building: 2.6, npc: 2.8 };
@@ -21,6 +21,14 @@ export function resolve(x: number, z: number, r = 0.4): [number, number] {
     if (dd < min && dd > 0.0001) { x = ox + (dx / dd) * min; z = oz + (dz / dd) * min; }
   }
   return [x, z];
+}
+
+export function interactWith(kind: 'building' | 'npc', id: string, store: { player: { x: number; z: number }; open: (p: any) => void; set: (s: any) => void }) {
+  const t = kind === 'building' ? BUILDINGS.find((b) => b.id === id)!.door : NPCS.find((n) => n.id === id)!.pos;
+  const { player } = store;
+  const d = Math.hypot(player.x - t.x, player.z - t.z);
+  if (d <= (kind === 'building' ? INTERACT.building : INTERACT.npc)) { store.open({ type: kind, id }); store.set({ target: null, pending: null }); }
+  else { const [x, z] = kind === 'npc' ? resolve(t.x + (player.x > t.x ? 1.5 : -1.5), t.z + (player.z > t.z ? 1.5 : -1.5), 0.2) : [t.x, t.z]; store.set({ target: { x, z }, pending: { kind, id, x: t.x, z: t.z } }); }
 }
 
 export function nearest(px: number, pz: number) {

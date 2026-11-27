@@ -65,71 +65,105 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('목표 지점 이동', Math.hypot(p4.x - 3, p4.z - 6) < 0.6, `(${p4.x.toFixed(1)}, ${p4.z.toFixed(1)})`);
   await shot('04-moved');
 
-  // 5. 건물 클릭 → 이동 후 입장
+  // 5. 건물 클릭 → 서고 입장 → 서랍 열기
   await page.locator('.world-label:has-text("운명의 서고")').evaluate((e) => e.click());
   await page.waitForSelector('.sheet h2:has-text("운명의 서고")', { timeout: 15000 }); await sleep(400); await shot('05-library');
-  ok('서고: 건물 클릭→이동→패널', true);
-  ok('서고: 사주 원국 표시(무인일주)', (await page.textContent('.sheet')).includes('무인일주'));
-  ok('서고: 시주 기미', (await page.textContent('.saju')).includes('기'));
-  await page.click('.tabs button:has-text("운명 카드")'); await sleep(500); await shot('06-card');
-  await page.click('.tabs button:has-text("대운·세운")'); await sleep(900); await shot('07-cycle');
-  ok('서고: 대운 표시', (await page.textContent('.sheet')).includes('대운'));
-  await page.click('.tabs button:has-text("오행·십성")'); await sleep(300);
+  ok('서고: 건물 클릭→이동→방 입장', true);
+  ok('서고: 오브젝트 7개', (await page.locator('[data-testid=room] button[data-obj]').count()) === 7);
+  await page.click('[data-obj=drawer1]'); await page.waitForSelector('[role=dialog][aria-label*="나의 본질"]', { timeout: 8000 }); await sleep(300); await shot('06-card-reveal');
+  ok('서랍 열기 → 나의 본질 카드(무토)', (await page.textContent('[data-testid=cardmodal] .sheet-body')).includes('무토'));
+  await page.click('[data-testid=cardmodal] .x'); await sleep(200);
+  await page.click('[data-obj=drawer2]'); await sleep(900); await page.click('[data-testid=cardmodal] .x'); await sleep(200);
+  await page.click('[data-obj=drawer3]'); await sleep(900); await page.click('[data-testid=cardmodal] .x'); await sleep(200);
+  await page.click('[data-obj=scroll]'); await page.waitForSelector('.saju'); await sleep(300); await shot('07-chartbook');
+  ok('사주 두루마리: 시주 기미·무인일주', (await page.textContent('.saju')).includes('기') && (await page.textContent('.sheet')).includes('무인일주'));
   await page.click('.sheet .x'); await sleep(300);
-  const q = await page.evaluate(() => window.__dg.getState().state.quests.filter((x) => x.done).map((x) => x.id));
-  ok('퀘스트 q01~q05 완료', ['q01', 'q02', 'q03', 'q04', 'q05'].every((x) => q.includes(x)), q.join(','));
+  let q = await page.evaluate(() => window.__dg.getState().state.quests.filter((x) => x.done).map((x) => x.id));
+  ok('퀘스트 q01~q04(카드 3장) 완료', ['q01', 'q02', 'q03', 'q04'].every((x) => q.includes(x)), q.join(','));
 
-  // 6. NPC 대화 (현자)
+  // 6. 재물의 방: 3장 → 황금 열쇠
+  await page.locator('.world-label:has-text("재물의 방")').evaluate((e) => e.click());
+  await page.waitForSelector('.sheet h2:has-text("재물의 방")', { timeout: 20000 }); await sleep(400);
+  await page.click('[data-obj=goldkey]'); await sleep(400);
+  ok('잠긴 오브젝트(황금 열쇠) 안내', (await page.locator('.toast').allTextContents()).some((t) => t.includes('3장')));
+  for (const o of ['safe', 'chest', 'ledger']) { await page.click(`[data-obj=${o}]`); await sleep(900); await page.click('[data-testid=cardmodal] .x'); await sleep(200); }
+  await page.click('[data-obj=goldkey]'); await page.waitForSelector('[role=dialog][aria-label="황금 열쇠"]', { timeout: 8000 }); await sleep(300); await shot('08-goldkey');
+  ok('재물 카드 3장 → 황금 열쇠 해금', true);
+  await page.click('[data-testid=cardmodal] .x'); await sleep(200); await shot('09-wealth-room');
+  await page.click('.sheet .x'); await sleep(300);
+
+  // 7. 정원의 NPC는 안내만 (상담 X)
   await page.locator('.npc-bubble:has-text("운명의 현자")').evaluate((e) => e.click());
-  await page.waitForSelector('.sheet h2:has-text("운명의 현자")', { timeout: 15000 }); await sleep(300);
-  const t0 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
-  await page.click('.chip:has-text("내 사주 전체가 궁금해요")'); await page.waitForSelector('.ans .core', { timeout: 20000 }); await sleep(300); await shot('08-chat');
-  const t1 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
-  ok('NPC 상담 응답 + 질문권 차감', t1 === t0 - 1, `${t0}→${t1}`);
-  await page.fill('.chat-foot input.inp', '지금 이직하면 더 좋은 기회가 있을까?'); await page.click('.chat-foot form button.btn'); await page.waitForFunction(() => document.querySelectorAll('.ans .core').length >= 2, null, { timeout: 20000 });
-  ok('자유 질문 후속 답변', true);
-  const t2 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
-  await page.fill('.chat-foot input.inp', '세 번째 질문'); await page.click('.chat-foot form button.btn'); await sleep(500);
-  ok('질문권 부족 시 차단', (await page.textContent('.chat-foot')).includes('부족'), `tickets=${t2}`);
-  await shot('09-noticket');
+  await page.waitForSelector('.sheet h2:has-text("운명의 현자")', { timeout: 15000 });
+  ok('NPC 클릭은 안내만(상담창 아님)', (await page.locator('.chat-foot').count()) === 0 && (await page.textContent('.sheet')).includes('현자의 집'));
   await page.click('.sheet .x'); await sleep(300);
 
-  // 7. 상점 (테스트 결제)
-  await page.click('.cur button:first-child'); await page.waitForSelector('.sheet h2:has-text("상점")'); await sleep(500); await shot('10-shop');
-  await page.click('.prod:has-text("질문권 10개") button'); await page.waitForSelector('text=테스트 결제 승인'); await shot('11-pay');
+  // 8. 현자의 집: 카드 선택 후 상담
+  await page.click('.dock button:has-text("상담")');
+  await page.waitForSelector('.sheet h2:has-text("현자의 집")', { timeout: 25000 }); await sleep(400); await shot('10-sagehouse');
+  ok('상담 버튼 → 현자의 집으로 이동', true);
+  await page.click('[data-topic=merchant]'); await page.waitForSelector('.chat-foot'); await sleep(300);
+  await page.click('[data-card=wealth_style]'); await page.click('[data-card=goldkey], [data-card=wealth_key]');
+  const t0 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
+  await page.click('.chip:has-text("나는 사업가로 성공할 수 있을까?")'); await page.waitForSelector('.ans .core', { timeout: 20000 }); await sleep(500); await shot('11-chat-newcard');
+  const t1 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
+  ok('카드 선택 상담 + 질문권 차감', t1 === t0 - 1, `${t0}→${t1}`);
+  ok('선택한 카드가 답변에 반영', (await page.textContent('.ans')).includes('재물 형성 성향'));
+  ok('상담 후 새 카드 획득 + 다음 탐험 힌트', (await page.locator('[data-testid=cardmodal]').count()) > 0 && (await page.textContent('.ans')).includes('다음 탐험 힌트'));
+  await page.click('[data-testid=cardmodal] .x'); await sleep(200);
+  await page.fill('.chat-foot input.inp', '지금 이직하면 더 좋은 기회가 있을까?'); await page.click('.chat-foot form button.btn'); await page.waitForFunction(() => document.querySelectorAll('.ans .core').length >= 2, null, { timeout: 20000 });
+  await page.click('[data-testid=cardmodal] .x').catch(() => {}); await sleep(200);
+  const t2 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
+  await page.fill('.chat-foot input.inp', '세 번째 질문입니다'); await page.click('.chat-foot form button.btn'); await sleep(500);
+  ok('질문권 부족 시 차단', (await page.textContent('.chat-foot')).includes('부족'), `tickets=${t2}`);
+  await page.click('.sheet .x'); await sleep(300);
+
+  // 9. 상점 (테스트 결제)
+  await page.click('.cur button:first-child'); await page.waitForSelector('.sheet h2:has-text("상점")'); await sleep(500); await shot('12-shop');
+  await page.click('.prod:has-text("질문권 10개") button'); await page.waitForSelector('text=테스트 결제 승인');
   await page.click('button:has-text("테스트 결제 승인")'); await page.waitForFunction((n) => window.__dg.getState().state.wallet.tickets > n, t2, { timeout: 15000 }).catch(() => {});
   const t3 = await page.evaluate(() => window.__dg.getState().state.wallet.tickets);
   ok('질문권 결제 후 지급', t3 === t2 + 10, `${t2}→${t3}`);
   await page.click('.sheet .x'); await sleep(300);
 
-  // 8. 타로
-  await page.click('.tarot-mini'); await page.waitForSelector('.tarot-grid'); await shot('12-tarot');
-  await page.click('.tcard:nth-child(7)'); await page.waitForSelector('.flip-in.on'); await sleep(1200); await shot('13-tarot-result');
+  // 타로
+  await page.click('.tarot-mini'); await page.waitForSelector('.tarot-grid');
+  await page.click('.tcard:nth-child(7)'); await page.waitForSelector('.flip-in.on'); await sleep(1000);
   ok('타로 뽑기/해석', (await page.textContent('.sheet')).includes('카드 해석'));
   await page.click('.sheet .x'); await sleep(300);
 
-  // 9. 재물의 신전 → 심층 리포트 구매/열람
-  await page.locator('.world-label:has-text("재물의 신전")').evaluate((e) => e.click());
-  await page.waitForSelector('.sheet h2:has-text("재물의 신전")', { timeout: 20000 }); await sleep(900); await shot('14-temple');
-  ok('신전: 재물운 표시', (await page.textContent('.sheet')).includes('재물 형성 성향'));
-  await page.click('.btn:has-text("심층 재물운")'); await page.waitForSelector('.sheet h2:has-text("상점")'); await sleep(300); await page.click('.prod:has-text("심층 재물운") button'); await page.waitForSelector('text=테스트 결제 승인'); await page.click('button:has-text("테스트 결제 승인")');
-  await page.waitForSelector('.sheet h2:has-text("심층 재물운 리포트")', { timeout: 15000 }); await sleep(500); await shot('15-report');
-  ok('심층 리포트 결제→열람', true);
-  await page.click('.sheet .x'); await sleep(300);
+  // 시간의 방: 모래시계 + 오늘의 촛불
+  await page.locator('.world-label:has-text("시간의 방")').evaluate((e) => e.click());
+  await page.waitForSelector('.sheet h2:has-text("시간의 방")', { timeout: 25000 }); await sleep(400);
+  await page.click('[data-obj=hourglass]'); await sleep(900); await page.click('[data-testid=cardmodal] .x'); await sleep(200);
+  await page.click('[data-obj=candle]'); await sleep(900); await shot('13-time-candle');
+  ok('시간의 방: 대운·오늘의 운명 카드', (await page.textContent('[data-testid=cardmodal]')).includes('오늘의 운명'));
+  await page.click('[data-testid=cardmodal] .x'); await sleep(200); await page.click('.sheet .x'); await sleep(300);
 
-  // 10. 인연의 정자 (인물 등록)
+  // 10. 인연의 정자: 편지함 + 의자(인물 등록 → 관계 카드)
   await page.locator('.world-label:has-text("인연의 정자")').evaluate((e) => e.click());
   await page.waitForSelector('.sheet h2:has-text("인연의 정자")', { timeout: 25000 }); await sleep(400);
-  await page.fill('#pn', '민준'); await page.click('button:has-text("등록하고 궁합 보기")'); await page.waitForSelector('.bar', { timeout: 8000 }); await sleep(300); await shot('16-pavilion');
+  await page.click('[data-obj=mailbox]'); await sleep(900); await page.click('[data-testid=cardmodal] .x'); await sleep(200);
+  await page.click('[data-obj=chairs]'); await page.waitForSelector('#pn');
+  await page.fill('#pn', '민준'); await page.click('button:has-text("등록하고 궁합 보기")'); await page.waitForSelector('.bar', { timeout: 8000 }); await sleep(300);
   ok('궁합 계산 표시', (await page.textContent('.sheet')).includes('점'));
-  await page.click('.sheet .x'); await sleep(300);
-  // 11. 도감/가방/퀘스트
-  await page.click('.dock button:has-text("운명도감")'); await sleep(500); await shot('17-codex'); await page.click('.sheet .x');
-  await page.click('.dock button:has-text("퀘스트")'); await sleep(500); await shot('18-quests'); await page.click('.sheet .x');
+  await page.click('button:has-text("관계 카드 받기")'); await page.waitForSelector('[role=dialog][aria-label*="민준"]', { timeout: 8000 }); await sleep(300); await shot('14-pair-card');
+  ok('관계 카드(두 사람) 생성', true);
+  await page.click('[data-testid=cardmodal] .x'); await sleep(200); await page.click('.sheet .x'); await sleep(300); await page.click('.sheet .x'); await sleep(300); // 의자 → 방 → 닫기
+  // 11. 도감/연대기/퀘스트
+  await page.click('.dock button:has-text("운명도감")'); await page.waitForSelector('.sheet h2:has-text("운명 도감")'); await sleep(400); await shot('15-codex');
+  const nCards = await page.evaluate(() => window.__dg.getState().state.cards.length);
+  ok('도감: 수집 카드 표시', (await page.textContent('.sheet-head')).includes(`${nCards}장`), `${nCards}장`);
+  await page.click('[data-tab=consult]'); await sleep(200);
+  ok('도감: 상담 카드 탭', (await page.locator('.cdx:not(.lock)').count()) >= 1);
+  await page.click('[data-tab=chronicle]'); await sleep(300); await shot('16-chronicle');
+  ok('운명 연대기', (await page.locator('.sheet-body .prod').count()) >= 5);
+  await page.click('.sheet .x');
+  await page.click('.dock button:has-text("퀘스트")'); await sleep(500); await shot('17-quests'); await page.click('.sheet .x');
   const done = await page.evaluate(() => window.__dg.getState().state.quests.filter((x) => x.done).length);
   ok('퀘스트 진행(≥9/10)', done >= 9, `${done}/10`);
-  await shot('19-final');
-  ok('콘솔/페이지 오류 없음', errors.filter((e) => !/WebGL|GPU stall|ReadPixels|status of 400/i.test(e)).length === 0, errors.slice(0, 3).join(' | '));
+  await shot('18-final');
+  ok('콘솔/페이지 오류 없음', errors.filter((e) => !/WebGL|GPU stall|ReadPixels|status of 400|status of 403/i.test(e)).length === 0, errors.slice(0, 3).join(' | '));
   await browser.close();
   console.log(`\n${results.length - fail.length}/${results.length} passed`);
   process.exit(fail.length ? 1 : 0);

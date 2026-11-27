@@ -26,7 +26,7 @@ export async function sb(path: string, init: { method?: string; body?: any; head
 // ───────── 테이블 정의 ─────────
 const PK: Record<string, string[]> = {
   profiles: ['user_id'], birth_profiles: ['user_id'], saju_charts: ['user_id'], avatars: ['user_id'], user_positions: ['user_id'],
-  user_destiny_cards: ['user_id', 'card_id'], quest_progress: ['user_id', 'quest_id'], game_rewards: ['id'], tarot_draws: ['id'], relationships: ['id'],
+  user_destiny_cards: ['user_id', 'card_id'], user_cards: ['user_id', 'card_key'], quest_progress: ['user_id', 'quest_id'], game_rewards: ['id'], tarot_draws: ['id'], relationships: ['id'],
   consultations: ['id'], consultation_messages: ['id'], consultation_summaries: ['id'], ai_usage_logs: ['id'], reports: ['id'], consent_logs: ['id'],
   credit_ledger: ['id'], orders: ['id'], payments: ['id'],
 };
@@ -43,6 +43,7 @@ function flatten(db: DB, uid: string): Record<string, any[]> {
   one('profiles', db.profiles); one('saju_charts', db.saju_charts); one('avatars', db.avatars); one('user_positions', db.user_positions);
   o.birth_profiles = db.birth_profiles[uid] ? [{ user_id: uid, data: (({ user_id, created_at, ...rest }) => rest)(db.birth_profiles[uid]), created_at: db.birth_profiles[uid].created_at }] : [];
   o.user_destiny_cards = db.user_destiny_cards[uid] ?? [];
+  o.user_cards = db.user_cards[uid] ?? [];
   o.quest_progress = Object.entries(db.quest_progress[uid] ?? {}).map(([quest_id, v]) => ({ user_id: uid, quest_id, completed_at: v.completed_at }));
   for (const t of ['game_rewards', 'tarot_draws', 'relationships', 'consultations', 'consultation_messages', 'consultation_summaries', 'ai_usage_logs', 'reports', 'consent_logs', 'credit_ledger', 'orders', 'payments'] as const) o[t] = (db as any)[t];
   return o;
@@ -59,6 +60,7 @@ function inflate(uid: string, rows: Record<string, any[]>, email: string): DB {
     credit_wallets: one('credit_wallets'),
     birth_profiles: bp ? { [uid]: { user_id: uid, ...bp.data, created_at: bp.created_at } } : {},
     user_destiny_cards: { [uid]: rows.user_destiny_cards ?? [] },
+    user_cards: { [uid]: rows.user_cards ?? [] },
     quest_progress: { [uid]: qp },
     game_rewards: rows.game_rewards ?? [], tarot_draws: rows.tarot_draws ?? [], relationships: rows.relationships ?? [], consultations: rows.consultations ?? [],
     consultation_messages: rows.consultation_messages ?? [], consultation_summaries: rows.consultation_summaries ?? [], orders: rows.orders ?? [], payments: rows.payments ?? [],

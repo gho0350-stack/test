@@ -6,7 +6,8 @@ import { yearGanzhi } from '../saju/engine';
 import { strictProd } from './env';
 
 export type Topic = 'general' | 'wealth' | 'career' | 'relationship' | 'pastlife';
-export interface Answer { core: string; detail: string; basis: string[]; follow_ups: string[]; summary: string }
+export interface SelCard { key: string; category: string; name: string; body: string }
+export interface Answer { core: string; detail: string; basis: string[]; follow_ups: string[]; summary: string; new_card?: { name: string; keywords: string[]; body: string }; next_hint?: string; usedCards?: string[] }
 export interface ReportContent { title: string; summary: string; sections: { title: string; body: string }[]; disclaimer: string; source: string }
 
 export const aiMode = () => (process.env.OPENAI_API_KEY ? 'openai' : 'offline') as 'openai' | 'offline';
@@ -50,7 +51,7 @@ const OPENERS: Record<string, string[]> = {
 };
 
 /** AI 키가 없는 개발/테스트 환경용 규칙 기반 해석 (결정론적, 사주 계산 결과와 규칙 DB만 사용) */
-export function offlineAnswer(npc: Npc, q: string, topic: Topic, chart: SajuChart, partner?: { name: string; chart: SajuChart } | null, prevSummaries: string[] = []): Answer {
+export function offlineAnswer(npc: Npc, q: string, topic: Topic, chart: SajuChart, partner?: { name: string; chart: SajuChart } | null, prevSummaries: string[] = [], cards: SelCard[] = []): Answer {
   const year = YEAR();
   const ruleTopic = topic === 'general' || topic === 'pastlife' ? 'fortune' : topic;
   const rules = topic === 'pastlife' ? [] : matchRules(chart, topic === 'general' ? 'career' : (topic as any), year, 5);
@@ -80,15 +81,21 @@ export function offlineAnswer(npc: Npc, q: string, topic: Topic, chart: SajuChar
     detail = [...rules.slice(1).map((r) => '• ' + r.text), ...fortune.map((r) => '• ' + r.text)].join('\n') || dp.summary;
     for (const r of [...rules, ...fortune]) basis.push(r.basis);
   }
+  if (cards.length) { core = `${cards.map((c) => `‘${c.name}’`).join(', ')} 카드를 함께 보겠습니다. ` + core; detail = cards.map((c) => `▸ ${c.name}\n${c.body}`).join('\n\n') + '\n\n' + detail; basis.unshift(...cards.map((c) => `선택 카드 ${c.name}`)); }
   if (prevSummaries.length) detail += `\n\n(이전 상담 기억: ${prevSummaries[0]})`;
   if (!chart.meta.hourKnown) detail += '\n\n※ 출생 시간을 몰라 시주 없이 해석했어요. 시주가 있으면 더 정확해집니다.';
   void ruleTopic;
-  return { core, detail, basis: Array.from(new Set(basis)).slice(0, 8), follow_ups: FOLLOW[topic], summary: `${q.slice(0, 40)} → ${core.replace(/^[^.!?]*[.!?]\s*/, '').slice(0, 70) || core.slice(0, 70)}` };
+  const GOD_LABEL: Record<string, string> = { 비견: '독립가', 겁재: '승부사', 식신: '장인', 상관: '창작가', 편재: '사업가', 정재: '관리자', 편관: '돌파자', 정관: '조직가', 편인: '탐구자', 정인: '학자' };
+  const topGod = (Object.entries(chart.tenGods).sort((a, b) => b[1] - a[1])[0] ?? ['정재'])[0];
+  const CARD_PREFIX: Record<string, string> = { wealth: '숨겨진 재능', career: '숨겨진 재능', general: '숨겨진 재능', relationship: '관계의 열쇠', pastlife: '이어지는 기운' };
+  const new_card = { name: `${CARD_PREFIX[topic] ?? '숨겨진 재능'} : ${GOD_LABEL[topGod]}`, keywords: [String(topGod), chart.dayMaster.element + ' 기운', chart.strength.level], body: `${core.replace(/^[^.!?]*[.!?]\s*/, '').slice(0, 160) || core.slice(0, 160)} 이 카드는 상담에서 발견한 해석을 도감에 남긴 기록이에요.` };
+  return { core, detail, basis: Array.from(new Set(basis)).slice(0, 8), follow_ups: FOLLOW[topic], new_card, summary: `${q.slice(0, 40)} → ${core.replace(/^[^.!?]*[.!?]\s*/, '').slice(0, 70) || core.slice(0, 70)}` };
 }
 
 const ANSWER_SCHEMA = {
-  type: 'object', additionalProperties: false, required: ['core', 'detail', 'basis', 'follow_ups', 'summary'],
-  properties: { core: { type: 'string' }, detail: { type: 'string' }, basis: { type: 'array', items: { type: 'string' } }, follow_ups: { type: 'array', items: { type: 'string' } }, summary: { type: 'string' } },
+  type: 'object', additionalProperties: false, required: ['core', 'detail', 'basis', 'follow_ups', 'summary', 'new_card'],
+  properties: { core: { type: 'string' }, detail: { type: 'string' }, basis: { type: 'array', items: { type: 'string' } }, follow_ups: { type: 'array', items: { type: 'string' } }, summary: { type: 'string' },
+    new_card: { type: 'object', additionalProperties: false, required: ['name', 'keywords', 'body'], properties: { name: { type: 'string' }, keywords: { type: 'array', items: { type: 'string' } }, body: { type: 'string' } } } },
 };
 const REPORT_SCHEMA = {
   type: 'object', additionalProperties: false, required: ['title', 'summary', 'sections'],
@@ -100,7 +107,8 @@ const GUARD = `당신은 한국어 사주 상담 서비스 '운명의 정원'의
 3) 해석의 근거(어떤 십성/오행/대운인지)를 basis 배열에 밝히세요.
 4) 전생·영혼 이야기는 창작임을 분명히 하세요.
 5) previous_context(이전 상담 요약)가 있으면 자연스럽게 이어서 답하세요.
-6) 답변은 core(2~3문장 핵심), detail(문단 구분된 상세 해석), basis, follow_ups(후속 질문 3개), summary(다음 상담용 한 줄 요약)로 구성하세요.`;
+6) selected_cards 가 있으면 그 카드의 본문을 먼저 짚고 더 깊게 풀어 주세요.
+7) 답변은 core(2~3문장 핵심), detail(문단 구분된 상세 해석), basis, follow_ups(후속 질문 3개), summary(다음 상담용 한 줄 요약), new_card(이번 상담에서 발견한 개인화 카드: name 은 '숨겨진 재능 : 전략가'처럼 짧게, keywords 2~3개, body 2~4문장)로 구성하세요. new_card 도 제공된 사주 데이터에만 근거하세요.`;
 
 async function callResponses(instructions: string, input: string, schemaName: string, schema: object, maxTokens: number) {
   const key = process.env.OPENAI_API_KEY!;
@@ -116,11 +124,11 @@ async function callResponses(instructions: string, input: string, schemaName: st
   return { data: JSON.parse(text), tokens: j.usage?.total_tokens ?? null };
 }
 
-export async function answerQuestion(p: { npc: Npc; question: string; topic: Topic; chart: SajuChart; partner?: { name: string; chart: SajuChart } | null; prevSummaries: string[]; deep: boolean }) {
+export async function answerQuestion(p: { npc: Npc; question: string; topic: Topic; chart: SajuChart; partner?: { name: string; chart: SajuChart } | null; prevSummaries: string[]; deep: boolean; cards?: SelCard[] }) {
   const t0 = Date.now();
   if (aiMode() === 'offline') {
     if (strictProd()) throw new Error('AI 서비스가 설정되지 않았습니다(OPENAI_API_KEY).');
-    return { answer: offlineAnswer(p.npc, p.question, p.topic, p.chart, p.partner, p.prevSummaries), model: 'offline-rules', ms: Date.now() - t0, tokens: null as number | null, source: 'offline' as const };
+    return { answer: offlineAnswer(p.npc, p.question, p.topic, p.chart, p.partner, p.prevSummaries, p.cards ?? []), model: 'offline-rules', ms: Date.now() - t0, tokens: null as number | null, source: 'offline' as const };
   }
   const rt = p.topic === 'general' ? 'career' : p.topic === 'pastlife' ? 'fortune' : p.topic;
   const payload = {
@@ -130,6 +138,7 @@ export async function answerQuestion(p: { npc: Npc; question: string; topic: Top
     rules: [...matchRules(p.chart, rt as any, YEAR(), 8), ...matchRules(p.chart, 'fortune', YEAR(), 3)].map((r) => ({ text: r.text, basis: r.basis })),
     past_life: p.topic === 'pastlife' ? pastLifeOf(p.chart) : undefined,
     previous_context: p.prevSummaries,
+    selected_cards: (p.cards ?? []).map((c) => ({ name: c.name, category: c.category, body: c.body })),
   };
   const { data, tokens } = await callResponses(`${GUARD}\n\n[NPC 말투]\n${p.npc.style}\n${p.deep ? '이번은 심층 분석입니다. detail을 풍부하게(6~10문단 이내) 작성하세요.' : ''}`, JSON.stringify(payload), 'consult_answer', ANSWER_SCHEMA, p.deep ? 2500 : 1400);
   return { answer: data as Answer, model: model(), ms: Date.now() - t0, tokens, source: 'openai' as const };

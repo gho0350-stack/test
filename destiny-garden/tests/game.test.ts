@@ -6,6 +6,8 @@ import './setup-env';
 import { signup } from '../src/lib/server/auth';
 import * as G from '../src/lib/server/game';
 import { C } from '../src/lib/content';
+import objects from '../data/explore_objects.json';
+import { CARD_DEFS } from '../src/lib/cards';
 import { tx } from '../src/lib/server/db';
 import { sb } from '../src/lib/server/supabase';
 
@@ -18,7 +20,7 @@ test('데이터 규모', () => {
   const total = Object.values(C.rules).reduce((a, r) => a + r.length, 0);
   assert.ok(total >= 100, `rules ${total}`);
   assert.equal(C.tarotCards.length, 78); assert.equal(C.dayPillars.length, 60); assert.equal(C.destinyCards.length, 60);
-  assert.equal(C.pastLives.length, 30); assert.equal(C.heavenlyStems.length, 10); assert.equal(C.earthlyBranches.length, 12); assert.equal(C.quests.length, 10);
+  assert.equal(C.pastLives.length, 30); assert.equal(C.heavenlyStems.length, 10); assert.equal(C.earthlyBranches.length, 12); assert.equal(C.quests.length, 10); assert.ok(objects.length >= 20); assert.ok(CARD_DEFS.length >= 20);
   for (const f of [...C.dayPillars, ...C.tarotCards, ...Object.values(C.rules).flat()]) { assert.ok(f.source); assert.equal(f.review_status, 'pending'); }
 });
 
@@ -36,21 +38,37 @@ test('가입 → 환영 질문권 2개, 캐릭터 생성 → 퀘스트/코인/�
   assert.ok(r.ev.completed.some((q: any) => q.id === 'q02'));
 });
 
-test('퀘스트 이벤트: 중복 지급 없음, 서버 전용 이벤트 차단', async () => {
-  const a = await G.gameEvent(uid, 'visit:library');
-  assert.equal(a.completed.length, 1);
-  const b = await G.gameEvent(uid, 'visit:library');
-  assert.equal(b.completed.length, 0);
+test('탐험: 서랍 열기 → 개인화 카드·퀘스트, 중복 없음, 잠금 해제 조건', async () => {
+  const r = await G.exploreObject(uid, 'drawer1');
+  assert.equal(r.isNew, true); assert.match(r.card.name, /무토/); assert.equal(r.card.category, 'essence');
+  assert.ok(r.ev.completed.some((q: any) => q.id === 'q03'));
+  const again = await G.exploreObject(uid, 'drawer1');
+  assert.equal(again.isNew, false); assert.equal(again.state.cards.length, 1);
+  await assert.rejects(() => G.exploreObject(uid, 'goldkey'), /아직 열 수 없/);
+  await assert.rejects(() => G.exploreObject(uid, 'sealedbook'), /아직 열 수 없/);
+  await assert.rejects(() => G.exploreObject(uid, 'scroll'), /카드를 얻는/);
+  await assert.rejects(() => G.exploreObject(uid, 'nope'), /찾을 수 없/);
+  await G.exploreObject(uid, 'drawer2'); const r3 = await G.exploreObject(uid, 'drawer3');
+  assert.ok(r3.ev.completed.some((q: any) => q.id === 'q04')); // 카드 3장
+  for (const o of ['safe', 'chest', 'ledger']) await G.exploreObject(uid, o);
+  const key = await G.exploreObject(uid, 'goldkey'); assert.equal(key.card.name, '황금 열쇠');
+  const w = await G.exploreObject(uid, 'candle'); assert.match(w.card.key, /^flow_today:\d{4}-/);
+  const st = await G.getState(uid); assert.ok(st.cards.length >= 8);
   await assert.rejects(() => G.gameEvent(uid, 'first_consult'), /허용되지/);
-  await assert.rejects(() => G.gameEvent(uid, 'draw_tarot'), /허용되지/);
+  await assert.rejects(() => G.gameEvent(uid, 'open:drawer1'), /허용되지/);
 });
 
 test('NPC 상담: 질문권 차감·기록·요약·퀘스트, 이어 질문 시 이전 요약 참조', async () => {
-  const r = await G.consult(uid, { npcId: 'merchant', question: '나는 사업가로 성공할 수 있을까?' });
+  const r = await G.consult(uid, { npcId: 'merchant', question: '나는 사업가로 성공할 수 있을까?', cardKeys: ['wealth_style', 'essence_day', 'not_owned'] });
   assert.equal(r.state.wallet.tickets, 1);
+  assert.deepEqual(r.answer.usedCards, ['재물 형성 성향', '나의 본질 : 무토(戊土)'].filter((n) => r.answer.usedCards.includes(n)));
+  assert.ok(r.answer.usedCards.length === 2 && r.answer.core.includes('카드'));
+  assert.ok(r.newCard && r.newCard.category === 'consult' && /숨겨진 재능/.test(r.newCard.name));
+  assert.ok(r.answer.next_hint);
+  assert.ok(r.state.cards.some((c: any) => c.source === 'consult'));
   assert.equal(r.answer.topic, 'wealth');
   assert.ok(r.answer.core.length > 10 && r.answer.basis.length >= 2 && r.answer.follow_ups.length === 3);
-  assert.ok(r.ev.completed.some((q: any) => q.id === 'q10'));
+  assert.ok(r.ev.completed.some((q: any) => q.id === 'q09'));
   const r2 = await G.consult(uid, { npcId: 'merchant', question: '올해 재물운은 어떤가요?' });
   assert.match(r2.answer.detail, /이전 상담 기억/);
   const h = await G.consultHistory(uid, 'merchant');
@@ -72,7 +90,7 @@ test('타로: 하루 1회, 새로고침해도 동일, 퀘스트 지급', async (
   const a = await G.tarotPick(uid, 10);
   const b = await G.tarotPick(uid, 40);
   assert.equal(a.draw.cardId, b.draw.cardId);
-  assert.ok(a.ev.completed.some((q: any) => q.id === 'q09'));
+  assert.ok(a.ev.completed.some((q: any) => q.id === 'q08'));
   const info = await G.tarotInfo(uid);
   assert.equal(info.history.length, 1);
   await assert.rejects(() => G.tarotPick(uid, 99), /위치/);
@@ -117,6 +135,7 @@ test('리포트: 미구매 열람 거부 → 구매 후 열람/캐시, 열람 �
   await assert.rejects(() => G.createOrder(uid, 'report_compat'), /상대를 먼저/);
   const st = await G.addRelationship(uid, { name: '민준', relation: '연인', year: 1993, month: 9, day: 2, calendar: 'solar', hourUnknown: true, gender: 'male' });
   const rel = st.relationships[0];
+  const pc = await G.exploreObject(uid, 'chairs', rel.id); assert.match(pc.card.name, /민준/); assert.equal(pc.card.category, 'love');
   assert.ok(rel.compat!.score >= 20 && rel.compat!.score <= 98);
   const oc = await G.createOrder(uid, 'report_compat', rel.id);
   await G.confirmOrder(uid, { paymentKey: `mock_${RUN}_5`, orderId: oc.orderId, amount: 3900 });

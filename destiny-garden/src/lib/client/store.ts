@@ -2,11 +2,14 @@
 import { create } from 'zustand';
 import type { GameState, QuestDone } from './types';
 import { api } from './api';
+import { interactWith } from '../game/world';
 
 export type Panel =
   | { type: 'building'; id: string }
-  | { type: 'npc'; id: string; partnerId?: string | null }
-  | { type: 'codex' } | { type: 'bag' } | { type: 'quests' } | { type: 'shop'; focus?: string; partnerId?: string | null } | { type: 'settings' } | { type: 'notifications' }
+  | { type: 'npc'; id: string }
+  | { type: 'chat'; id: string; partnerId?: string | null; cardKeys?: string[] }
+  | { type: 'chartbook' }
+  | { type: 'codex'; focus?: string } | { type: 'bag' } | { type: 'quests' } | { type: 'shop'; focus?: string; partnerId?: string | null } | { type: 'settings' } | { type: 'notifications' }
   | { type: 'report'; kind: string; partnerId?: string | null } | { type: 'tarot' } | { type: 'consult' };
 export interface Toast { id: number; text: string; kind: 'quest' | 'level' | 'info' | 'error' }
 
@@ -26,6 +29,7 @@ interface G {
   toast: (text: string, kind?: Toast['kind']) => void;
   handleEvent: (ev?: QuestDone | null) => void;
   fire: (event: string) => Promise<void>;
+  goTo: (kind: 'building' | 'npc', id: string) => void;
 }
 let tid = 1;
 export const useGame = create<G>((set, get) => ({
@@ -39,10 +43,11 @@ export const useGame = create<G>((set, get) => ({
     for (const q of ev.completed) get().toast(`퀘스트 완료! ${q.title}  ·  +${q.reward.coins}코인 +${q.reward.exp}EXP`, 'quest');
     if (ev.levelUp) get().toast(`레벨 업! Lv.${ev.levelUp}`, 'level');
   },
+  goTo: (kind, id) => { set({ panel: null }); const g = get(); interactWith(kind, id, { player: g.player, open: g.open, set: (s) => set(s) }); },
   fire: async (event) => {
     const st = get().state; if (!st) return;
-    const already = st.quests.find((q) => q.event === event)?.done;
-    if (already) return;
+    const q = st.quests.find((x) => x.event === event);
+    if (!q || q.done) return; // 해당 이벤트의 퀘스트가 없으면 서버 호출 안 함
     try { const j = await api('/api/event', { body: { event } }); get().handleEvent(j.ev); if (j.state) set({ state: j.state }); } catch { /* 무시 */ }
   },
 }));

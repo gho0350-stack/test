@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Sheet, Tabs, PillarCell, EL_COLOR, won } from '../ui/kit';
 import { NpcPortrait } from '../ui/NpcPortrait';
+import { CardModal } from './CardView';
 import { api } from '@/lib/client/api';
 import { useGame } from '@/lib/client/store';
 import { BUILDINGS } from '@/lib/game/world';
@@ -28,18 +29,16 @@ function useInsight(topic: 'wealth' | 'career') {
 }
 
 // ───────── 운명의 서고 ─────────
-export function Library() {
+export function ChartBook() {
   const st = useGame((s) => s.state)!; const chart = st.chart!;
-  const [tab, setTab] = useState<'saju' | 'elem' | 'card' | 'cycle' | 'past'>('saju');
+  const [tab, setTab] = useState<'saju' | 'elem' | 'cycle'>('saju');
   const ins = useInsight('career');
-  useEffect(() => { if (tab === 'saju') useGame.getState().fire('view_saju'); if (tab === 'card') useGame.getState().fire('get_card'); }, [tab]);
   const dp = st.dayPillar!, card = st.card!;
   const total = ELEMENTS.reduce((a, e) => a + chart.elements.withHidden[e], 0);
-  const b = BUILDINGS.find((x) => x.id === 'library')!;
   const cg = ins?.cycle;
   return (
-    <Sheet title={b.name} sub={b.subtitle} onClose={close}
-      tabs={<Tabs value={tab} onChange={setTab} items={[['saju', '사주 원국'], ['elem', '오행·십성'], ['card', '운명 카드'], ['cycle', '대운·세운'], ['past', '전생']]} />}>
+    <Sheet title="사주 두루마리" sub="나의 사주 원국" onClose={close}
+      tabs={<Tabs value={tab} onChange={setTab} items={[['saju', '사주 원국'], ['elem', '오행·십성'], ['cycle', '대운·세운']]} />}>
       {tab === 'saju' && <>
         <div className="muted" style={{ marginBottom: 8 }}>{chart.input.calendar === 'lunar' ? `음력 ${chart.input.year}.${chart.input.month}.${chart.input.day}${chart.input.isLeapMonth ? '(윤)' : ''} → ` : ''}양력 {chart.solar.y}.{chart.solar.m}.{chart.solar.d} {chart.solar.hour != null ? `${String(chart.solar.hour).padStart(2, '0')}:${String(chart.solar.minute).padStart(2, '0')}` : '(시간 미상)'} · {chart.animal}띠 · {chart.input.gender === 'male' ? '남' : '여'}</div>
         <div className="saju">
@@ -66,14 +65,6 @@ export function Library() {
         <div className="sec-title">재능 카드</div>
         {Object.entries(chart.tenGods).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([g, n]) => { const t: any = tenGodData.find((x) => x.id === g); return <div className="card" key={g}><b>✦ {g} ({n})</b> · {t?.keywords}<div className="muted">{t?.talent}</div></div>; })}
       </>}
-      {tab === 'card' && <>
-        <div className={'dcard ' + card.rarity}><span className="rar">{card.rarity.toUpperCase()}</span><div className="art">{({ 목: '🌳', 화: '🔥', 토: '⛰️', 금: '⚔️', 수: '🌊' } as any)[card.element]}</div><div className="nm">{card.name}</div><div className="sb">{card.subtitle}</div></div>
-        <p className="pre" style={{ textAlign: 'center', marginTop: 12 }}>{card.flavor}</p>
-        <div className="card"><div className="lbl">그림자(주의할 점)</div>{dp.shadow}</div>
-        <div className="card"><div className="lbl">재능과 재물 힌트</div>{dp.wealth_hint}</div>
-        <div className="card"><div className="lbl">연애 스타일</div>{dp.love_hint}</div>
-        <ProductAction productId="report_total" label="📜 종합 운명 리포트" />
-      </>}
       {tab === 'cycle' && (!ins ? <div className="spin" style={{ margin: '30px auto' }} /> : <>
         <div className="sec-title" style={{ marginTop: 0 }}>대운 <span className="muted">({chart.daewoon.forward ? '순행' : '역행'} · 대운 시작 약 {chart.daewoon.startYears}년 {chart.daewoon.startMonths}개월 후)</span></div>
         <div className="grid2">{chart.daewoon.list.map((d) => { const now = cg?.daewoon?.ganzhi === d.ganzhi && cg?.daewoon?.startYear === d.startYear; return <div key={d.startYear} className="card" style={{ marginBottom: 0, outline: now ? '2.5px solid var(--gold)' : 'none' }}><b>{d.ganzhi}</b> <span className="muted">{d.startAge}세~ ({d.startYear}~{d.endYear})</span><div className="muted">{d.tenGodStem}·{d.tenGodBranch}{now ? ' · 현재' : ''}</div></div>; })}</div>
@@ -82,42 +73,16 @@ export function Library() {
         <div className="sec-title">월운 ({ins.seun.year}년)</div>
         <div className="grid2">{ins.wolun.map((m: any) => <div key={m.month} className="card" style={{ marginBottom: 0, padding: '8px 12px' }}><b>{m.month}월</b> {m.ganzhi} <span className="muted">({m.jie} {m.begins.slice(5)})</span></div>)}</div>
       </>)}
-      {tab === 'past' && (!ins ? <div className="spin" style={{ margin: '30px auto' }} /> : <>
-        <div className="card" style={{ background: '#ecf6ff' }}><div className="lbl">나의 전생 원형 (창작)</div><b style={{ fontSize: 18 }}>{ins.pastLife.era}의 {ins.pastLife.title}</b><div className="muted" style={{ marginTop: 6 }}>{ins.pastLife.story}</div></div>
-        <div className="note">{ins.pastLife.disclaimer}</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="btn sm" onClick={() => useGame.getState().open({ type: 'npc', id: 'guide' })}>전생의 안내자와 이야기하기</button><ProductAction productId="report_pastlife" label="📜 전생 스토리" /></div>
-      </>)}
-    </Sheet>
-  );
-}
-
-// ───────── 재물의 신전 ─────────
-export function Temple() {
-  const w = useInsight('wealth'); const c = useInsight('career');
-  const b = BUILDINGS.find((x) => x.id === 'temple')!;
-  useEffect(() => { if (w) useGame.getState().fire('view_wealth'); }, [w]);
-  return (
-    <Sheet title={b.name} sub={b.subtitle} onClose={close}>
-      <div className="npc-head"><NpcPortrait id="merchant" size={60} /><div className="bubble" style={{ margin: 0, flex: 1 }}>당신의 돈이 어떻게 흐르는지 장부부터 펼쳐 봅시다.</div></div>
-      {!w || !c ? <div className="spin" style={{ margin: '30px auto' }} /> : <>
-        <div className="sec-title">💰 재물 형성 성향 (무료)</div><ul className="bul">{w.rules.map((r: any, i: number) => <li key={i}>{r.text}<div className="muted" style={{ fontSize: 11.5 }}>근거: {r.basis}</div></li>)}</ul>
-        <div className="sec-title">🏢 사업·커리어 경향</div><ul className="bul">{c.rules.slice(0, 3).map((r: any, i: number) => <li key={i}>{r.text}</li>)}</ul>
-        <div className="sec-title">📅 올해({w.seun.year}년 {w.seun.name}) 흐름</div><ul className="bul">{w.cycleRules.map((t: string, i: number) => <li key={i}>{t}</li>)}</ul>
-      </>}
-      <div className="sec-title">더 깊이 알아보기</div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button className="btn sm gold" onClick={() => useGame.getState().open({ type: 'npc', id: 'merchant' })}>재물의 상인에게 질문하기</button>
-        <ProductAction productId="report_wealth" label="📜 심층 재물운" /><ProductAction productId="report_career" label="📜 심층 커리어운" />
-      </div>
-      <div className="note">운세·재물 해석은 참고용이며 투자·수익을 보장하지 않습니다.</div>
     </Sheet>
   );
 }
 
 // ───────── 인연의 정자 ─────────
-export function Pavilion() {
+export function PartnersView({ onClose }: { onClose: () => void }) {
   const st = useGame((s) => s.state)!;
-  const b = BUILDINGS.find((x) => x.id === 'pavilion')!;
+  const gotPair = (id: string) => st.cards.some((c) => c.key === `love_pair:${id}`);
+  const [revealed, setRevealed] = useState<any>(null);
+  async function pair(id: string) { try { const j = await api('/api/explore', { body: { objectId: 'chairs', partnerId: id } }); useGame.getState().setState(j.state); useGame.getState().handleEvent(j.ev); setRevealed(j.card); } catch (e: any) { useGame.getState().toast(e.message, 'error'); } }
   const [adding, setAdding] = useState(st.relationships.length === 0);
   const [f, setF] = useState({ name: '', relation: '연인', date: '1993-09-02', calendar: 'solar', isLeapMonth: false, hour: '12', hourUnknown: true, gender: 'male' });
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
@@ -130,7 +95,8 @@ export function Pavilion() {
   }
   async function del(id: string) { if (!confirm('이 인물을 삭제할까요?')) return; const j = await api(`/api/relationships?id=${id}`, { method: 'DELETE' }); useGame.getState().setState(j.state); }
   return (
-    <Sheet title={b.name} sub={b.subtitle} onClose={close}>
+    <Sheet title="두 개의 의자" sub="소중한 사람과 나란히 앉아요" onClose={onClose}>
+      {revealed && <CardModal card={revealed} onClose={() => setRevealed(null)} />}
       <div className="npc-head"><NpcPortrait id="guardian" size={60} /><div className="bubble" style={{ margin: 0, flex: 1 }}>소중한 사람의 생년월일을 알려 주세요. 두 사람의 사주를 나란히 놓고 살펴볼게요.</div></div>
       {st.relationships.map((r) => (
         <div className="card" key={r.id} style={{ marginTop: 10 }}>
@@ -140,7 +106,7 @@ export function Pavilion() {
             <div className="bar"><i style={{ width: r.compat.score + '%', background: 'linear-gradient(90deg,#f3a6c7,#c0568a)' }} /></div>
             <ul className="bul" style={{ marginTop: 6 }}>{r.compat.highlights.slice(0, 2).map((h, i) => <li key={i}>{h}</li>)}{r.compat.cautions.slice(0, 1).map((h, i) => <li key={'c' + i} style={{ color: '#8a5a1f' }}>{h}</li>)}</ul>
           </>}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}><button className="btn sm gold" onClick={() => useGame.getState().open({ type: 'npc', id: 'guardian', partnerId: r.id })}>수호자에게 {r.name}님과의 인연 묻기</button><ProductAction productId="report_compat" partnerId={r.id} label="📜 심층 궁합" /></div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}><button className="btn sm gold" onClick={() => pair(r.id)}>{gotPair(r.id) ? '🎴 관계 카드 다시 보기' : '🎴 관계 카드 받기'}</button><button className="btn sm line" onClick={() => useGame.getState().open({ type: 'chat', id: 'guardian', partnerId: r.id })}>{r.name}님에 대해 상담</button><ProductAction productId="report_compat" partnerId={r.id} label="📜 심층 궁합" /></div>
         </div>
       ))}
       {adding ? (

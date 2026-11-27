@@ -114,6 +114,7 @@ type Topic = 'wealth' | 'career' | 'relationship';
 const topicKo: Record<Topic, string> = { wealth: '재물', career: '커리어', relationship: '관계' };
 const rules: Record<Topic, any[]> = { wealth: [], career: [], relationship: [] };
 const topicKey: Record<Topic, 'wealth' | 'career' | 'love'> = { wealth: 'wealth', career: 'career', relationship: 'love' };
+const ga = (g: string) => g + ((g.charCodeAt(g.length - 1) - 0xac00) % 28 === 0 ? '가' : '이');
 const add = (t: Topic, id: string, when: any, text: string, basis: string) => rules[t].push({ id: `${t}_${rules[t].length + 1}_${id}`, topic: t, when, text, basis, ...meta });
 
 const groupPhrase: Record<string, Record<Topic, string>> = {
@@ -125,9 +126,9 @@ const groupPhrase: Record<string, Record<Topic, string>> = {
 };
 for (const t of ['wealth', 'career', 'relationship'] as Topic[]) {
   for (const g of TEN_GODS) {
-    add(t, `has_${g}`, { godGte: { [g]: 2 } }, `${g}이 두 개 이상으로 강합니다. ${godInfo[g][topicKey[t]]}`, `십성 ${g} ≥ 2`);
-    add(t, `one_${g}`, { godGte: { [g]: 1 }, godLte: { [g]: 1 } }, `${g}이 하나 자리 잡고 있습니다. ${godInfo[g][topicKey[t]]}`, `십성 ${g} = 1`);
-    add(t, `no_${g}`, { godLte: { [g]: 0 } }, `${g}이 드러나지 않아 '${godInfo[g].lack}'은 노력으로 채워 가는 영역입니다. 대운·세운에서 ${g}이 들어올 때 기회가 됩니다.`, `십성 ${g} = 0`);
+    add(t, `has_${g}`, { godGte: { [g]: 2 } }, `${ga(g)} 두 개 이상으로 강합니다. ${godInfo[g][topicKey[t]]}`, `십성 ${g} ≥ 2`);
+    add(t, `one_${g}`, { godGte: { [g]: 1 }, godLte: { [g]: 1 } }, `${ga(g)} 하나 자리 잡고 있습니다. ${godInfo[g][topicKey[t]]}`, `십성 ${g} = 1`);
+    add(t, `no_${g}`, { godLte: { [g]: 0 } }, `${ga(g)} 드러나지 않아 '${godInfo[g].lack}'은 노력으로 채워 가는 영역입니다. 대운·세운에서 ${g}이 들어올 때 기회가 됩니다.`, `십성 ${g} = 0`);
   }
   for (const grp of ['비겁', '식상', '재성', '관성', '인성']) {
     add(t, `grp_${grp}_strong`, { groupGte: { [grp]: 3 } }, `${grp} 기운이 강합니다. ${groupPhrase[grp][t]}`, `${grp} ≥ 3`);

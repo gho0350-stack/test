@@ -59,14 +59,14 @@ export function HUD() {
         </div>
         {next && <button className="quest-card" onClick={() => open({ type: 'quests' })} style={{ cursor: 'pointer' }}><span className="tag">{next.order === 1 ? '첫 번째 퀘스트' : `퀘스트 ${next.order}`}</span><div className="tt">{next.title}</div><div className="rw">🪙 보상 +{next.reward.coins} 코인 · ✦ {next.reward.exp}EXP</div></button>}
         <button className="tarot-mini" onClick={() => open({ type: 'tarot' })} aria-label="오늘의 타로">{!st.todayTarot && <span className="dotn">N</span>}오늘의 타로<div className="mc">{st.todayTarot ? '🃏' : '🌙'}</div></button>
-        {near && !panel && <div className="near"><span>{near.kind === 'npc' ? '💬' : '🏛'} {near.label}</span><button className="btn gold sm" onClick={() => open({ type: near.kind, id: near.id } as any)}>{near.kind === 'npc' ? '대화하기' : '입장'}</button></div>}
+        {near && !panel && <div className="near"><span>{near.kind === 'npc' ? '💬' : '🏛'} {near.label}</span><button className="btn gold sm" onClick={() => open({ type: near.kind, id: near.id } as any)}>{near.kind === 'npc' ? '말 걸기' : '입장'}</button></div>}
         <div className="hint">조이스틱 · WASD · 바닥 터치로 이동 / 건물·NPC를 눌러 보세요</div>
         <Joystick />
         <div className="hud-bottom"><div className="dock">
           <button onClick={() => open({ type: 'quests' })}><span>📜</span>퀘스트{next && <i className="dot" />}</button>
           <button onClick={() => open({ type: 'bag' })}><span>👜</span>가방</button>
           <button onClick={() => open({ type: 'codex' })}><span>📖</span>운명도감</button>
-          <button onClick={() => open({ type: 'consult' })}><span>💬</span>상담</button>
+          <button onClick={() => useGame.getState().goTo('building', 'sagehouse')}><span>💬</span>상담</button>
         </div></div>
       </div>
       <div className="toasts" aria-live="polite">{toasts.map((t) => <div key={t.id} className={'toast ' + t.kind}>{t.text}</div>)}</div>
