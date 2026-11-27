@@ -69,7 +69,7 @@
 | seoul | 일반고(평준화) | - | - | - |
 | seomun | 일반고(평준화) | - | - | SNU |
 | sangmun | 일반고(평준화) | - | - | SNU |
-| sehwayeo | 자율고 | KOREA, SNU, YONSEI | KOREA, SNU, YONSEI | KOREA, SNU, YONSEI |
+| sehwayeo | 자율형 사립고 | KOREA, SNU, YONSEI | KOREA, SNU, YONSEI | KOREA, SNU, YONSEI |
 | jeongsin | 일반고(평준화) | - | - | - |
 | youngdongil | 일반고(평준화) | - | - | - |
 | mokdong | 일반고(평준화) | - | - | - |
