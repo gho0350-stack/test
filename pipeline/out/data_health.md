@@ -43,8 +43,8 @@
 - 기준일: 2026-11-27
 
 ## 진학 실적
-- 원천 41행: {'승인': 20, '검토대기': 21}
-- 확보율: 8/87 (학교×연도 중 승인 지표가 1개 이상)
+- 원천 90행: {'승인': 54, '검토대기': 36}
+- 확보율: 17/87 (학교×연도 중 승인 지표가 1개 이상)
 
 | 학교 | 분류 | 2024 | 2025 | 2026 |
 |---|---|---|---|---|
@@ -60,16 +60,16 @@
 | cheongwon | 일반고(평준화) | - | - | - |
 | baejae | 자율형 사립고 | - | - | - |
 | hanyoung | 일반고(평준화) | - | - | - |
-| dankook | 일반고(평준화) | - | - | - |
+| dankook | 일반고(평준화) | - | - | DENT, KMED, KOREA, MED, MEDGRP, PHARM, SNU, VET, YONSEI |
 | jungdae | 일반고(평준화) | - | - | - |
-| eunkwang | 일반고(평준화) | - | - | - |
-| jinseon | 일반고(평준화) | - | - | - |
+| eunkwang | 일반고(평준화) | - | - | DENT, MED, PHARM, SNU, SNU_MED, VET |
+| jinseon | 일반고(평준화) | - | - | DENT, KMED, MED, MEDGRP, PHARM, SNU, VET |
 | gyeonggi | 일반고(평준화) | - | - | - |
-| youngdong | 일반고(평준화) | - | - | - |
+| youngdong | 일반고(평준화) | - | - | SNU |
 | seoul | 일반고(평준화) | - | - | - |
-| seomun | 일반고(평준화) | - | - | - |
-| sangmun | 일반고(평준화) | - | - | - |
-| sehwayeo | 자율고 | - | - | - |
+| seomun | 일반고(평준화) | - | - | SNU |
+| sangmun | 일반고(평준화) | - | - | SNU |
+| sehwayeo | 자율고 | KOREA, SNU, YONSEI | KOREA, SNU, YONSEI | KOREA, SNU, YONSEI |
 | jeongsin | 일반고(평준화) | - | - | - |
 | youngdongil | 일반고(평준화) | - | - | - |
 | mokdong | 일반고(평준화) | - | - | - |
