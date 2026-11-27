@@ -59,7 +59,17 @@ export async function gameEvent(userId: string, event: string) {
 function entitlements(db: DB, userId: string) {
   return db.orders.filter((o) => o.user_id === userId && o.status === 'paid').map((o) => ({ orderId: o.id, productId: o.product_id, partnerId: o.partner_id ?? null }));
 }
+/** 해금 행이 없어도(테이블 미적용 등) 방의 필수 카드를 모두 모았다면 해금된 것으로 복원. 무료 상담 사용 여부는 상담 기록에서 복원 */
+function ensureUnlocks(db: DB, userId: string) {
+  const owned = db.user_cards[userId] ?? []; const list = (db.user_sage_unlocks[userId] ??= []);
+  for (const r of rooms) {
+    if (list.some((u) => u.sage_id === r.sage.id) || !required(r as any).every((o) => hasCard(owned, o.card))) continue;
+    const usedFree = db.consultation_messages.some((m) => m.user_id === userId && m.npc_id === r.sage.id && m.role === 'user' && m.content?.free);
+    list.push({ user_id: userId, sage_id: r.sage.id, unlocked_at: now(), free_remaining: usedFree ? 0 : 1 });
+  }
+}
 export function buildState(db: DB, userId: string) {
+  ensureUnlocks(db, userId);
   const u = db.users[userId];
   const prof = db.profiles[userId];
   const w = db.credit_wallets[userId] ?? { tickets: 0, coins: 0 };
@@ -218,6 +228,7 @@ export async function consult(userId: string, b: any) {
     if (!cons) { cons = { id: uid('cs_'), user_id: userId, npc_id: npc.id, topic, created_at: now() }; db.consultations.push(cons); }
     const requestId = uid('rq_');
     // 현자 상담은 방의 카드를 모두 찾아 해금한 뒤에만 가능. 각 현자의 첫 상담은 무료(실패 시 복구)
+    ensureUnlocks(db, userId);
     const unl = (db.user_sage_unlocks[userId] ?? []).find((u) => u.sage_id === npc.id);
     if (!unl) throw new HttpError(403, '아직 이 현자와 상담할 수 없어요. 먼저 방의 운명 카드를 모두 찾아보세요.');
     const useFree = unl.free_remaining > 0 && !deep;

@@ -33,6 +33,8 @@ const PK: Record<string, string[]> = {
 /** 읽기 시 가져올 행 수 제한(최근 N개). 로그 계열은 읽지 않고 쓰기만 한다. */
 const LIMITS: Record<string, number> = { consultation_messages: 200, consultation_summaries: 60, credit_ledger: 300 };
 const WRITE_ONLY = new Set(['ai_usage_logs', 'consent_logs']);
+/** 아직 마이그레이션되지 않은(404) 선택 테이블: 읽기는 빈 목록, 쓰기는 건너뛴다 */
+const missing = new Set<string>();
 const stable = (v: any): string => JSON.stringify(v, (_, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]])) : x));
 const pkOf = (t: string, r: any) => PK[t].map((k) => String(r[k])).join('|');
 
@@ -76,7 +78,7 @@ async function loadUser(uid: string): Promise<{ db: DB; email: string }> {
     sb(`/auth/v1/admin/users/${uid}`).catch((e) => { if (e instanceof SbError && (e.status === 404 || e.status === 400)) return null; throw e; }),
     sb(`/rest/v1/credit_wallets?user_id=eq.${uid}&select=*`),
     // user_cards 마이그레이션(0002) 적용 전에도 기존 기능이 동작하도록 테이블 없음(404)은 빈 목록으로 처리
-    ...tables.map((t) => sb(`/rest/v1/${t}?user_id=eq.${uid}&select=*${LIMITS[t] ? `&order=created_at.desc&limit=${LIMITS[t]}` : ''}`).catch((e) => { if ((t === 'user_cards' || t === 'user_sage_unlocks') && e instanceof SbError && e.status === 404) return []; throw e; })),
+    ...tables.map((t) => sb(`/rest/v1/${t}?user_id=eq.${uid}&select=*${LIMITS[t] ? `&order=created_at.desc&limit=${LIMITS[t]}` : ''}`).catch((e) => { if ((t === 'user_cards' || t === 'user_sage_unlocks') && e instanceof SbError && e.status === 404) { missing.add(t); return []; } throw e; })),
   ]);
   if (!user?.id) { const e: any = new Error('USER_MISSING'); e.code = 'USER_MISSING'; throw e; }
   const rows: Record<string, any[]> = { credit_wallets: wallet };
@@ -97,6 +99,7 @@ export async function sbTx<T>(uid: string | null, fn: (db: DB) => T | Promise<T>
     const after = flatten(db, uid);
     const upserts: Record<string, any[]> = {}, deletes: Record<string, any[]> = {};
     for (const t of Object.keys(PK)) {
+      if (missing.has(t)) continue;
       const seen = new Set<string>();
       for (const r of after[t]) { const k = pkOf(t, r); seen.add(k); if (snap[t].get(k) !== stable(r)) (upserts[t] ??= []).push(r); }
       if (!WRITE_ONLY.has(t)) for (const [k, s] of snap[t]) if (!seen.has(k)) (deletes[t] ??= []).push(Object.fromEntries(PK[t].map((c, i) => [c, JSON.parse(s)[c] ?? k.split('|')[i]])));
