@@ -73,7 +73,8 @@ async function loadUser(uid: string): Promise<{ db: DB; email: string }> {
   const [user, wallet, ...res] = await Promise.all([
     sb(`/auth/v1/admin/users/${uid}`).catch((e) => { if (e instanceof SbError && (e.status === 404 || e.status === 400)) return null; throw e; }),
     sb(`/rest/v1/credit_wallets?user_id=eq.${uid}&select=*`),
-    ...tables.map((t) => sb(`/rest/v1/${t}?user_id=eq.${uid}&select=*${LIMITS[t] ? `&order=created_at.desc&limit=${LIMITS[t]}` : ''}`)),
+    // user_cards 마이그레이션(0002) 적용 전에도 기존 기능이 동작하도록 테이블 없음(404)은 빈 목록으로 처리
+    ...tables.map((t) => sb(`/rest/v1/${t}?user_id=eq.${uid}&select=*${LIMITS[t] ? `&order=created_at.desc&limit=${LIMITS[t]}` : ''}`).catch((e) => { if (t === 'user_cards' && e instanceof SbError && e.status === 404) return []; throw e; })),
   ]);
   if (!user?.id) { const e: any = new Error('USER_MISSING'); e.code = 'USER_MISSING'; throw e; }
   const rows: Record<string, any[]> = { credit_wallets: wallet };
