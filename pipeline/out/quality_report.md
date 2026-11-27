@@ -18,3 +18,6 @@
 - **거래유형/계약구분 필드 존재**: {'거래유형': True, '계약구분': True}
 - **학구도(학교군) 매칭**: 미구현
 - **단지 폴리곤 확보율**: 미구현
+
+### 실패한 단계
+- 전체 아파트 마스터: RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev: [30] 등록되지 않은 서비스키 - 등록되지 않은 서비스키예요. 일반 인증키(Decoding)를 복사했는지 확인하고, 방금 신청했다면 1~2시간 뒤 다시 시도하세요. / RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade: [04] HTTP 에러 - 
