@@ -190,3 +190,22 @@ a { color: inherit; }
 .pay-mock { text-align: center; } .pay-mock .amt { font-size: 28px; font-weight: 900; color: var(--purple-d); margin: 6px 0; }
 @media (max-width: 500px) { .quest-card ul { display: none; } }
 @media (max-width: 380px) { .dock button { width: 44px; height: 60px; font-size: 10px; } .dock { margin-left: 108px; gap: 3px; } .joy { width: 98px; height: 98px; } .joy i { left: 24px; top: 24px; } }
+
+/* 만세력 표 */
+.manse { display: grid; grid-template-columns: 38px repeat(4, 1fr); gap: 3px; font-size: 12px; }
+.manse .mrl { font-size: 10.5px; color: var(--ink2); font-weight: 800; display: flex; align-items: center; justify-content: center; text-align: center; }
+.manse .mh { text-align: center; font-weight: 800; font-size: 12px; padding: 5px 0; border-radius: 8px; background: #efe6fb; color: var(--purple-d); }
+.manse .mh.day { background: var(--purple); color: #fff; }
+.manse .mc { text-align: center; background: #fff; border-radius: 8px; padding: 4px 2px; min-height: 28px; display: flex; align-items: center; justify-content: center; flex-direction: column; font-weight: 700; line-height: 1.25; }
+.manse .mc.day { outline: 2px solid var(--gold); }
+.manse .big { width: 100%; border-radius: 8px; padding: 4px 0; font-size: 30px; font-weight: 900; line-height: 1.05; position: relative; }
+.manse .big small { display: block; font-size: 10px; font-weight: 700; opacity: 0.8; }
+.manse .gm { position: absolute; top: -3px; right: -2px; font-style: normal; font-size: 9px; background: #6a6aa8; color: #fff; border-radius: 6px; padding: 0 4px; }
+.manse .hid { display: flex; flex-direction: column; gap: 1px; font-size: 15px; font-weight: 900; }
+.manse .hid small { font-size: 9.5px; font-weight: 600; margin-left: 2px; color: var(--ink2); }
+.manse .sin { font-size: 10.5px; color: #8a3a6a; word-break: keep-all; }
+.tbl { display: grid; grid-template-columns: 1.1fr 1.2fr 1fr 1.1fr; gap: 3px; font-size: 12.5px; }
+.tbl .th { background: #efe6fb; color: var(--purple-d); font-weight: 800; text-align: center; padding: 5px 0; border-radius: 8px; font-size: 11.5px; }
+.tbl .tr > div { background: #fff; padding: 6px 4px; border-radius: 8px; text-align: center; font-weight: 700; }
+.tbl .tr.now > div { outline: 2px solid var(--gold); background: #fff8e0; }
+.tbl small { display: block; font-size: 10px; color: var(--ink2); font-weight: 600; }

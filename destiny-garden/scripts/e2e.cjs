@@ -143,8 +143,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('서고 4장 완료 → 운명의 현자 해금', (await gs()).state.rooms.find((r) => r.id === 'library').sageUnlocked);
   await page.click('[data-testid=unlockmodal] .btn.line'); await sleep(300);
   // 두루마리(사주 원국)
-  const scroll = lib.objects.find((o) => o.id === 'scroll'); await approach(scroll); await page.click('[data-testid=near-action]'); await page.waitForSelector('.saju');
-  ok('사주 두루마리: 시주 기미·무인일주', (await page.textContent('.saju')).includes('기') && (await page.textContent('.sheet')).includes('무인일주'));
+  const scroll = lib.objects.find((o) => o.id === 'scroll'); await approach(scroll); await page.click('[data-testid=near-action]'); await page.waitForSelector('.manse');
+  const mt = await page.textContent('.manse');
+  ok('사주 두루마리: 만세력 표(시주 己未·일주 戊寅·지장간·12운성·납음·신살)', mt.includes('己') && mt.includes('戊寅'.slice(0,1)) && mt.includes('12운성') && mt.includes('납음') && mt.includes('신살') && (await page.textContent('.sheet')).includes('무인일주'));
+  await page.click('.tabs button:has-text("풀이")'); await sleep(300);
+  ok('사주 풀이: 총론·격국·용신·신살·공망', (await page.textContent('.sheet-body')).includes('건록격') && (await page.textContent('.sheet-body')).includes('용신'));
   await page.click('.sheet .x'); await sleep(300);
   // 나가기
   await page.click('[data-testid=exit-room]'); await sleep(1500);

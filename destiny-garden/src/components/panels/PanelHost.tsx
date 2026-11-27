@@ -1,7 +1,8 @@
 'use client';
 import { useGame } from '@/lib/client/store';
 import { NpcChat } from './Chat';
-import { ChartBook, TarotPanel, PartnersView } from './Buildings';
+import { TarotPanel, PartnersView } from './Buildings';
+import { ChartBook } from './Manse';
 import { SagePanel, SageList } from './Sages';
 import { CardModal, UnlockModal } from './CardView';
 import { Codex } from './Codex';

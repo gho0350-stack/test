@@ -28,55 +28,6 @@ function useInsight(topic: 'wealth' | 'career') {
   return d;
 }
 
-// ───────── 운명의 서고 ─────────
-export function ChartBook() {
-  const st = useGame((s) => s.state)!; const chart = st.chart!;
-  const [tab, setTab] = useState<'saju' | 'elem' | 'cycle'>('saju');
-  const ins = useInsight('career');
-  const dp = st.dayPillar!, card = st.card!;
-  const total = ELEMENTS.reduce((a, e) => a + chart.elements.withHidden[e], 0);
-  const cg = ins?.cycle;
-  return (
-    <Sheet title="사주 두루마리" sub="나의 사주 원국" onClose={close}
-      tabs={<Tabs value={tab} onChange={setTab} items={[['saju', '사주 원국'], ['elem', '오행·십성'], ['cycle', '대운·세운']]} />}>
-      {tab === 'saju' && <>
-        <div className="muted" style={{ marginBottom: 8 }}>{chart.input.calendar === 'lunar' ? `음력 ${chart.input.year}.${chart.input.month}.${chart.input.day}${chart.input.isLeapMonth ? '(윤)' : ''} → ` : ''}양력 {chart.solar.y}.{chart.solar.m}.{chart.solar.d} {chart.solar.hour != null ? `${String(chart.solar.hour).padStart(2, '0')}:${String(chart.solar.minute).padStart(2, '0')}` : '(시간 미상)'} · {chart.animal}띠 · {chart.input.gender === 'male' ? '남' : '여'}</div>
-        <div className="saju">
-          <PillarCell label="시주" p={chart.pillars.hour} /><PillarCell label="일주" p={chart.pillars.day} day /><PillarCell label="월주" p={chart.pillars.month} /><PillarCell label="연주" p={chart.pillars.year} />
-        </div>
-        <div className="muted" style={{ textAlign: 'center', marginTop: 6 }}>위: 천간/십성 · 아래: 지지/십성 · 맨 아래: 지장간</div>
-        <div className="card" style={{ marginTop: 12, background: '#f7f0ff' }}><b>{dp.name}일주 · {dp.title}</b><div className="muted" style={{ marginTop: 4 }}>{dp.summary}</div></div>
-        <div className="grid2">
-          <div className="card"><div className="lbl">일간(나)</div><b className={'el-' + chart.dayMaster.element}>{chart.dayMaster.stem}({chart.dayMaster.hanja}) {chart.dayMaster.element}</b></div>
-          <div className="card"><div className="lbl">신강신약</div><b>{chart.strength.level}</b><div className="muted">득령 {chart.strength.deukryeong ? '○' : '×'} · 득지 {chart.strength.deukji ? '○' : '×'} · 득세 {chart.strength.deukse ? '○' : '×'}</div></div>
-        </div>
-        <div className="sec-title">합·충·형·파·해</div>
-        {chart.relations.length ? <ul className="bul">{chart.relations.map((r, i) => <li key={i}><b>{r.type}</b> {r.members.join(' – ')}{r.element ? ` → ${r.element}` : ''}</li>)}</ul> : <div className="muted">원국에 뚜렷한 합충형파해가 없어요.</div>}
-        {chart.boundaries.warnings.map((w, i) => <div key={i} className="note">⚠ {w}</div>)}
-        <div className="muted" style={{ fontSize: 11.5 }}>직전 절기 {chart.boundaries.prevJie}({chart.boundaries.prevJieAt}) · 다음 {chart.boundaries.nextJie}({chart.boundaries.nextJieAt})</div>
-      </>}
-      {tab === 'elem' && <>
-        <div className="sec-title" style={{ marginTop: 0 }}>오행 분포 <span className="muted">(지장간 포함)</span></div>
-        {ELEMENTS.map((e) => <div key={e} className="barrow"><span className={'el-' + e}>{e}</span><div className="bar"><i style={{ width: `${(chart.elements.withHidden[e] / Math.max(total, 1)) * 100 * 1.6}%`, background: EL_COLOR[e] }} /></div><span>{chart.elements.withHidden[e]}</span></div>)}
-        <div className="muted">가장 강한 오행 <b>{chart.elements.dominant}</b> · 가장 약한 오행 <b>{chart.elements.weakest}</b>{chart.elements.missing.length ? ` · 비어 있는 오행 ${chart.elements.missing.join(', ')}` : ''}</div>
-        <div className="sec-title">십성</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{Object.entries(chart.tenGods).map(([k, v]) => <span key={k} className="chip" style={{ opacity: v ? 1 : 0.4 }}>{k} {v}</span>)}</div>
-        <div className="muted" style={{ marginTop: 8 }}>{Object.entries(chart.tenGodGroups).map(([k, v]) => `${k} ${v}`).join(' · ')}</div>
-        <div className="sec-title">재능 카드</div>
-        {Object.entries(chart.tenGods).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([g, n]) => { const t: any = tenGodData.find((x) => x.id === g); return <div className="card" key={g}><b>✦ {g} ({n})</b> · {t?.keywords}<div className="muted">{t?.talent}</div></div>; })}
-      </>}
-      {tab === 'cycle' && (!ins ? <div className="spin" style={{ margin: '30px auto' }} /> : <>
-        <div className="sec-title" style={{ marginTop: 0 }}>대운 <span className="muted">({chart.daewoon.forward ? '순행' : '역행'} · 대운 시작 약 {chart.daewoon.startYears}년 {chart.daewoon.startMonths}개월 후)</span></div>
-        <div className="grid2">{chart.daewoon.list.map((d) => { const now = cg?.daewoon?.ganzhi === d.ganzhi && cg?.daewoon?.startYear === d.startYear; return <div key={d.startYear} className="card" style={{ marginBottom: 0, outline: now ? '2.5px solid var(--gold)' : 'none' }}><b>{d.ganzhi}</b> <span className="muted">{d.startAge}세~ ({d.startYear}~{d.endYear})</span><div className="muted">{d.tenGodStem}·{d.tenGodBranch}{now ? ' · 현재' : ''}</div></div>; })}</div>
-        <div className="sec-title">세운 · 올해 {ins.seun.year}년 {ins.seun.name}</div>
-        <ul className="bul">{ins.cycleRules.map((t: string, i: number) => <li key={i}>{t}</li>)}</ul>
-        <div className="sec-title">월운 ({ins.seun.year}년)</div>
-        <div className="grid2">{ins.wolun.map((m: any) => <div key={m.month} className="card" style={{ marginBottom: 0, padding: '8px 12px' }}><b>{m.month}월</b> {m.ganzhi} <span className="muted">({m.jie} {m.begins.slice(5)})</span></div>)}</div>
-      </>)}
-    </Sheet>
-  );
-}
-
 // ───────── 인연의 정자 ─────────
 export function PartnersView({ onClose }: { onClose: () => void }) {
   const st = useGame((s) => s.state)!;

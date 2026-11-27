@@ -10,6 +10,7 @@ const { chromium } = require('playwright');
   await ctx.request.post(BASE + '/api/character', { data: { nickname: '하늘', avatar: 0, year: 1995, month: 4, day: 17, calendar: 'solar', hour: 14, minute: 30, gender: 'female', region: '서울' } });
   const p = await ctx.newPage(); await p.addInitScript(() => localStorage.setItem('dg_quality', 'high')); await p.goto(BASE + '/garden'); await p.waitForSelector('canvas');
   if (process.env.ROOM) { await p.evaluate((r) => window.__dg.getState().enterRoom(r), process.env.ROOM); }
+  if (process.env.PANEL) { await p.evaluate((j) => window.__dg.getState().open(JSON.parse(j)), process.env.PANEL); await new Promise((r) => setTimeout(r, 800)); if (process.env.TAB) { await p.click(`.tabs button:has-text("${process.env.TAB}")`); await new Promise((r) => setTimeout(r, 900)); } }
   if (x) await p.evaluate(([x, z]) => window.__dg.setState({ target: { x: +x, z: +z } }), [x, z]);
   await new Promise((r) => setTimeout(r, x ? 6000 : 4500));
   await p.addStyleTag({ content: '.toasts{display:none}' });
