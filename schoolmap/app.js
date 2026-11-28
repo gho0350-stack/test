@@ -247,6 +247,14 @@
   /* =====================================================================
    * 01 메인
    * ===================================================================== */
+  const commonBasis = (x) => !!x.adm && x.adm.count_type === '합격건수' && x.adm.duplicate_included === '포함' && x.adm.student_scope === '재학생+졸업생';
+  const basisTxt = (x) => x.adm ? [x.adm.count_type || '집계 방식 미확인', x.adm.duplicate_included === '포함' ? '중복 포함' : x.adm.duplicate_included === '제외' ? '중복 제외' : '중복 여부 미확인', x.adm.student_scope && x.adm.student_scope !== '알수없음' ? x.adm.student_scope : '졸업생 포함 여부 미확인'].join(' · ') : '';
+  function homeRows() {
+    const row = (x, rk) => `<a class="toprow" href="#/school/${x.id}"><span class="rk ${rk === 1 ? 'r1' : ''}">${rk || '·'}</span><span><b>${esc(x.name)}</b> <small class="muted">${regOf(x).gu} · ${esc((RULES[x.id] || {}).type || '')} · ${x.adm.year}학년도</small></span><span class="st">서울대 <b>${sd(x, 3)}</b> · 의대 <b>${sd(x, 0)}</b></span>${ic('chevR')}</a>`;
+    const ok = SCHOOLS.filter(commonBasis).sort((x, y) => nv(y.statsRaw[3], -1) - nv(x.statsRaw[3], -1)), other = SCHOOLS.filter((x) => x.adm && !commonBasis(x));
+    return (ok.map((x, i) => row(x, i + 1)).join('') || '<div class="empty">확인된 진학 실적이 아직 없어요.</div>') +
+      (other.length ? `<h3 style="margin:14px 0 4px;font-size:13px" class="muted">집계 기준이 달라 순위에 넣지 않은 학교</h3>` + other.map((x) => row(x, 0) + `<small class="muted" style="display:block;margin:-2px 0 6px 34px">${esc(basisTxt(x))}</small>`).join('') : '');
+  }
   function viewHome() {
     const regs = D.REGIONS.map((r) => { const ss = SCHOOLS.filter((s) => s.region === r.id); return { r, st: [0, 1, 2].map((k) => ss.reduce((n, s) => n + s.stats[k], 0)), avg: avg(ss.map((s) => agg(s).sAvg).filter((v) => v != null)) }; }).sort((a, b) => b.avg - a.avg);
     const mx = Math.max(...regs.map((x) => x.avg));
@@ -273,8 +281,8 @@
       <div class="home-grid">
         <section class="card pad">
           <div class="sec-h"><span class="crown">${ic('crown')}</span><h2>진학 실적을 확인한 학교</h2><small>학교가 공개한 자료를 확인한 값만 표시</small></div>
-          <div style="margin-top:8px">${SCHOOLS.filter((x) => x.adm).sort((x, y) => nv(y.statsRaw[3], -1) - nv(x.statsRaw[3], -1)).map((x, i) => `<a class="toprow" href="#/school/${x.id}"><span class="rk ${i === 0 ? 'r1' : ''}">${i + 1}</span><span><b>${esc(x.name)}</b> <small class="muted">${regOf(x).gu} · ${esc((RULES[x.id] || {}).type || '')}</small></span><span class="st">서울대 <b>${sd(x, 3)}</b> · 의대 <b>${sd(x, 0)}</b></span>${ic('chevR')}</a>`).join('') || '<div class="empty">확인된 진학 실적이 아직 없어요.</div>'}</div>
-          <small class="muted" style="display:block;margin-top:8px">${SCHOOLS.filter((x) => x.adm).length}/${SCHOOLS.length}개 학교의 실적을 확인했어요. 합격 건수(중복·졸업생 포함 여부는 학교별 상세 참고)이며 진학률이 아니에요.</small>
+          <div style="margin-top:8px">${homeRows()}</div>
+          <small class="muted" style="display:block;margin-top:8px">${SCHOOLS.filter((x) => x.adm).length}/${SCHOOLS.length}개 학교의 실적을 확인했어요. 순위는 합격 건수·중복 포함·재학생+졸업생 기준이 같은 학교끼리만 매겼고, 진학률이 아니에요. 서울 전체 순위가 아니라 주요 학군 29개교 자료예요.</small>
         </section>
         <section class="card pad bubble">
           <div class="sec-h"><span class="crown">${ic('bars')}</span><h2>학군 가격 비교</h2></div>
@@ -951,6 +959,7 @@
   }
   const closeModal = () => { $('#modal-root').innerHTML = ''; };
   function refreshChrome() {
+    const ft = $('#sitefoot'); if (ft) ft.innerHTML = `어디살지 Beta 1.0 · 가격 기준일 ${esc((window.SG_MASTER || {}).asOf || '확인 중')} (국토교통부 실거래가, 해제 거래 제외) · 서울 주요 학군 29개교 자료이며 서울 전체 순위가 아니에요 · <a href="#/guide">데이터 출처와 기준</a>`;
     // 회원가입·로그인·쪽지·커뮤니티는 서버가 필요해 아직 제공하지 않는다(베타). 가짜 로그인 상태를 보여주지 않는다.
     const a = $('#authbtn'); a.textContent = '회원 기능 준비 중'; a.disabled = true; $('#joinbtn').hidden = true; $$('.bell').forEach((b) => { b.hidden = true; });
   }
