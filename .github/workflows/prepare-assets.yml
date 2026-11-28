@@ -62,6 +62,7 @@ jobs:
         run: |
           git config user.name "asset-pipeline[bot]"
           git config user.email "actions@users.noreply.github.com"
+          find public/assets -type f -size +20M -print -delete | sed 's/^/oversize removed: /' >> assets-run.log || true
           { echo "run: ${{ github.run_id }} sha: ${{ github.sha }} at $(date -u +%FT%TZ)"; echo "--- git status (before add)"; git status --short | head -60; } > assets-run.log 2>&1
           for p in public/assets assets-catalog assets-catalog.log assets-lock.json assets-processed.json assets-report.json assets-fetch.log assets-process.log assets-run.log ATTRIBUTIONS.md; do [ -e "$p" ] && git add "$p"; done
           if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi

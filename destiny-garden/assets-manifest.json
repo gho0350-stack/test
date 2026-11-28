@@ -7,7 +7,8 @@
   ],
   "target": {
     "texture_size": 1024,
-    "model_texture_size": 512
+    "model_texture_size": 512,
+    "max_model_mb": 6
   },
   "assets": [
     {
@@ -473,5 +474,5 @@
       ]
     }
   ],
-  "_rev": 3
+  "_rev": 4
 }
