@@ -37,7 +37,7 @@ export function RoomProps({ id, w, d, accent, light }: { id: string; w: number; 
       {/* 공간별 소품 */}
       {id === 'library' && <Shadowed>
         {!has('model_shelf') && [-4.6, 5.0].map((x) => <group key={x} position={[x, 0, -hd + 0.5]}><mesh position={[0, 1.4, 0]}><boxGeometry args={[1.3, 2.8, 0.5]} /><M c="#6e4a2e" /></mesh>{[0.5, 1.2, 1.9, 2.5].map((y, r) => ['#6f4aa8', '#a8483f', '#3f6fa8', '#c9a13a'].map((c, i) => <mesh key={r + c} position={[-0.45 + i * 0.3, y, 0.3]}><boxGeometry args={[0.22, 0.5, 0.26]} /><M c={c} /></mesh>))}</group>)}
-        <BookStack p={[2.2, 0.8, -0.4]} /><BookStack p={[-2.4, 0, -1.2]} /><Plant p={[hw - 0.9, 0, 2.6]} /><Cushion p={[-1.6, 0.07, 2.0]} c="#5a2f8a" /><Cushion p={[1.6, 0.07, 2.2]} c="#5a2f8a" />
+        <BookStack p={[2.2, 0.8, -0.4]} /><BookStack p={[-2.4, 0, -1.2]} />{!has('model_plant') && <Plant p={[hw - 0.9, 0, 2.6]} />}<Cushion p={[-1.6, 0.07, 2.0]} c="#5a2f8a" /><Cushion p={[1.6, 0.07, 2.2]} c="#5a2f8a" />
         <mesh position={[3.2, 0.9, 2.8]}><sphereGeometry args={[0.45, 14, 14]} /><meshStandardMaterial color="#3f6fa8" metalness={0.4} roughness={0.4} /></mesh><mesh position={[3.2, 0.35, 2.8]}><cylinderGeometry args={[0.1, 0.3, 0.7, 8]} /><M c="#c9a13a" /></mesh>
         <Chandelier p={[0, 3.6, 0.4]} c={light} />
       </Shadowed>}
@@ -45,12 +45,12 @@ export function RoomProps({ id, w, d, accent, light }: { id: string; w: number; 
         <Banner p={[-hw + 0.9, 0, -hd + 0.3]} c="#a8201f" /><Banner p={[hw - 0.9, 0, -hd + 0.3]} c="#a8201f" />
         <Coins p={[-2.2, 0, 1.6]} /><Coins p={[2.4, 0, -1.6]} /><Coins p={[-1.0, 0.8, -0.6]} />
         {!has('model_crate') && [[-4.8, -1.6], [-4.8, -0.6], [-5.0, 2.6]].map(([x, z], i) => <mesh key={i} position={[x, 0.4, z]}><boxGeometry args={[0.8, 0.8, 0.8]} /><M c="#8a5f38" /></mesh>)}
-        <Plant p={[hw - 0.9, 0, 3]} c="#3f8a6a" /><Chandelier p={[0, 3.6, 0.4]} c={light} />
+        {!has('model_plant') && <Plant p={[hw - 0.9, 0, 3]} c="#3f8a6a" />}<Chandelier p={[0, 3.6, 0.4]} c={light} />
       </Shadowed>}
       {id === 'pavilion' && <Shadowed>
         {[-3.5, 0, 3.5].map((x, i) => <group key={i} position={[x, 3.4, -hd + 0.7]}><mesh><sphereGeometry args={[0.38, 10, 10]} /><meshStandardMaterial color="#ffc2de" emissive="#ff8ac0" emissiveIntensity={1.6} toneMapped={false} /></mesh><Halo position={[0, 0, 0]} size={2} color="#ff9ec8" /></group>)}
         {[[-hw + 0.8, 2.0], [-hw + 0.9, -1.2]].map(([x, z], i) => <group key={i} position={[x, 0, z]}><mesh position={[0, 1.2, 0]}><cylinderGeometry args={[0.1, 0.16, 2.4, 6]} /><M c="#5a3a2a" /></mesh>{[[0, 2.6, 0, 0.9], [0.7, 2.3, 0.2, 0.6], [-0.4, 2.2, -0.3, 0.55]].map(([a, b, c, r], k) => <mesh key={k} position={[a, b, c]}><icosahedronGeometry args={[r, 0]} /><M c={['#ff9fd0', '#e684d8', '#ffb7dd'][k]} e="#ff7ac0" ei={0.3} /></mesh>)}</group>)}
-        <Cushion p={[-1.8, 0.07, 2.0]} c="#c0568a" /><Cushion p={[1.6, 0.07, 2.4]} c="#c0568a" /><Plant p={[hw - 0.9, 0, 2.4]} c="#e86aa0" />
+        <Cushion p={[-1.8, 0.07, 2.0]} c="#c0568a" /><Cushion p={[1.6, 0.07, 2.4]} c="#c0568a" />{!has('model_plant') && <Plant p={[hw - 0.9, 0, 2.4]} c="#e86aa0" />}
       </Shadowed>}
       {id === 'time' && <Shadowed>
         <mesh position={[3.5, 2.6, -hd + 0.18]}><planeGeometry args={[3.2, 2.2]} /><meshStandardMaterial map={starTex()} emissive="#3f3f9a" emissiveIntensity={0.5} /></mesh>

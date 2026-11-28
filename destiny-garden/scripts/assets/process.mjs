@@ -27,10 +27,12 @@ async function processTexture(id, files) {
 }
 
 /** 모델: 중복 제거·정리·텍스처 webp 압축 → 바닥 중앙 정렬 + 목표 높이로 스케일 정규화 */
-export async function processModel(id, gltfPath, targetHeight, outFile) {
+export async function processModel(id, gltfPath, targetHeight, outFile, maxTriangles) {
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   const doc = await io.read(gltfPath);
   await doc.transform(dedup(), flatten(), prune(), textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [MTS, MTS], quality: 80 }));
+  const triCount = () => doc.getRoot().listMeshes().flatMap((m) => m.listPrimitives()).reduce((a, p) => a + (p.getIndices()?.getCount() ?? p.getAttribute('POSITION').getCount()) / 3, 0);
+  if (maxTriangles && triCount() > maxTriangles) { await MeshoptSimplifier.ready; const ratio = Math.max(0.03, maxTriangles / triCount()); await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.02 })); }
   const sizeOf = async () => (await io.writeBinary(doc)).length;
   // 너무 큰 모델은 폴리곤을 단계적으로 줄인다(고폴리 스캔 모델 대응)
   if ((await sizeOf()) > MAX_MODEL_BYTES) {
@@ -59,7 +61,7 @@ if (process.argv[1] && process.argv[1].endsWith('process.mjs')) {
     try {
       let r;
       if (asset.kind === 'texture') r = await processTexture(asset.asset_id, l.files);
-      else { const out = path.join(PUB, 'models', `${asset.asset_id}.glb`); r = await processModel(asset.asset_id, l.files.gltf, asset.target_height ?? 1, out); r.path = `/assets/models/${asset.asset_id}.glb`; }
+      else { const out = path.join(PUB, 'models', `${asset.asset_id}.glb`); r = await processModel(asset.asset_id, l.files.gltf, asset.target_height ?? 1, out, asset.max_triangles); r.path = `/assets/models/${asset.asset_id}.glb`; }
       proc[asset.asset_id] = { ...r, optimization_status: 'ok' }; ok++; log(`${asset.asset_id}: OK`);
     } catch (e) { proc[asset.asset_id] = { optimization_status: 'failed', error: String(e.message ?? e) }; fail++; log(`${asset.asset_id}: 실패 ${e.message}`); }
   }

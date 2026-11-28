@@ -177,7 +177,8 @@
           "type": "polyhaven",
           "id": "treasure_chest"
         }
-      ]
+      ],
+      "max_triangles": 25000
     },
     {
       "asset_id": "model_crate",
@@ -219,7 +220,8 @@
           "type": "polyhaven",
           "id": "chinese_console_table"
         }
-      ]
+      ],
+      "max_triangles": 12000
     },
     {
       "asset_id": "model_tea_table",
@@ -317,7 +319,8 @@
           "type": "polyhaven",
           "id": "antique_ceramic_vase_01"
         }
-      ]
+      ],
+      "max_triangles": 8000
     },
     {
       "asset_id": "model_lantern",
@@ -331,7 +334,8 @@
           "type": "polyhaven",
           "id": "wooden_lantern_01"
         }
-      ]
+      ],
+      "max_triangles": 8000
     },
     {
       "asset_id": "model_chandelier",
@@ -359,21 +363,23 @@
           "type": "polyhaven",
           "id": "book_encyclopedia_set_01"
         }
-      ]
+      ],
+      "max_triangles": 12000
     },
     {
       "asset_id": "model_basket",
       "kind": "model",
       "category": "decor",
       "required_room": "wealth",
-      "target_height": 0.6,
+      "target_height": 0.4,
       "fallback_asset": "procedural:sack",
       "sources": [
         {
           "type": "polyhaven",
           "id": "wicker_basket_01"
         }
-      ]
+      ],
+      "max_triangles": 12000
     },
     {
       "asset_id": "model_screen",
@@ -401,7 +407,8 @@
           "type": "polyhaven",
           "id": "potted_plant_02"
         }
-      ]
+      ],
+      "max_triangles": 20000
     },
     {
       "asset_id": "model_teaset",
@@ -415,7 +422,8 @@
           "type": "polyhaven",
           "id": "tea_set_01"
         }
-      ]
+      ],
+      "max_triangles": 12000
     },
     {
       "asset_id": "model_mirror",
@@ -429,7 +437,8 @@
           "type": "polyhaven",
           "id": "ornate_mirror_01"
         }
-      ]
+      ],
+      "max_triangles": 10000
     },
     {
       "asset_id": "model_tree_blossom",
@@ -443,7 +452,8 @@
           "type": "polyhaven",
           "id": "jacaranda_tree"
         }
-      ]
+      ],
+      "max_triangles": 40000
     },
     {
       "asset_id": "model_tree_small",
@@ -457,7 +467,8 @@
           "type": "polyhaven",
           "id": "tree_small_02"
         }
-      ]
+      ],
+      "max_triangles": 20000
     },
     {
       "asset_id": "model_rocks",
@@ -471,8 +482,9 @@
           "type": "polyhaven",
           "id": "rock_moss_set_01"
         }
-      ]
+      ],
+      "max_triangles": 20000
     }
   ],
-  "_rev": 4
+  "_rev": 5
 }
