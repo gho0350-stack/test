@@ -1,20 +1,37 @@
 [fetch] tex_wood_floor 수집 시작
+[fetch]   후보: laminate_floor_02, wood_cabinet_worn_long, wood_floor_deck, weathered_planks
 [fetch] tex_wood_dark 수집 시작
+[fetch]   후보: dark_wooden_planks, wood_table_worn, weathered_brown_planks, brown_planks_03
 [fetch] tex_stone_path 수집 시작
+[fetch]   후보: slab_tiles, floor_pattern_02, pavement_05, square_tiles_03
 [fetch] tex_stone_wall 수집 시작
+[fetch]   후보: white_stucco_02, beige_wall_001, painted_plaster_wall, white_plaster_02
 [fetch] tex_roof_tile 수집 시작
+[fetch]   후보: roof_slates_03, grey_roof_01, grey_roof_tiles_02, roof_slates_02
 [fetch] tex_fabric_rug 수집 시작
+[fetch]   후보: dirty_carpet, fabric_pattern_07, leather_red_02, brown_leather
 [fetch] tex_grass 수집 시작
+[fetch]   후보: 
 [fetch]   polyhaven 실패 → 다음 공급처 (Poly Haven 에서 조건에 맞는 textures 없음 (grass,forest,moss,ground,leaves))
 [fetch] model_treasure_chest 수집 시작
+[fetch]   후보: treasure_chest, wooden_crate_01, metal_tool_chest, wooden_crate_02
 [fetch] model_crate 수집 시작
+[fetch]   후보: wooden_crate_01, wooden_crate_02, treasure_chest, CheeseBox_01
 [fetch] model_barrel 수집 시작
+[fetch]   후보: Barrel_01, cannon_01, Barrel_02, wine_barrel_01
 [fetch] model_table 수집 시작
+[fetch]   후보: WoodenTable_01, SchoolDesk_01, metal_office_desk, wooden_table_02
 [fetch] model_chair 수집 시작
+[fetch]   후보: ArmChair_01, painted_wooden_stool, bar_chair_round_01, chinese_armchair
 [fetch] model_shelf 수집 시작
+[fetch]   후보: Shelf_01, wooden_bookshelf_worn, GothicCabinet_01, steel_frame_shelves_01
 [fetch] model_vase 수집 시작
+[fetch]   후보: antique_ceramic_vase_01, ceramic_vase_02, ceramic_vase_01, ceramic_vase_04
 [fetch] model_lantern 수집 시작
+[fetch]   후보: brass_diya_lantern, Lantern_01, wooden_lantern_01, vintage_oil_lamp
 [fetch] model_books 수집 시작
+[fetch]   후보: decorative_book_set_01, book_encyclopedia_set_01, binder_notebook
 [fetch]   후보 decorative_book_set_01 실패: gltf 파일 정보 없음
 [fetch] model_sack 수집 시작
+[fetch]   후보: metal_trash_can, old_tyre, vintage_suitcase, compost_bags
 [fetch] 완료: 성공 17, 실패 0

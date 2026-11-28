@@ -78,8 +78,8 @@
   },
   "model_treasure_chest": {
     "type": "model",
-    "bytes": 3308508,
-    "sha256": "1cc55fad3c83bdd1a434f0b639c766fa336ac6d609494fef79e9220c753caf93",
+    "bytes": 2961944,
+    "sha256": "d7932fd1b214610248e02c262fe1343953cbfca859d0fe4ac919f48519b12a9e",
     "size_m": [
       1.394,
       0.9,
@@ -91,8 +91,8 @@
   },
   "model_crate": {
     "type": "model",
-    "bytes": 462996,
-    "sha256": "bf779c5b89baf893be3bbb005a15756c42593bd7839cdfa4d5c750d4d52bee64",
+    "bytes": 277124,
+    "sha256": "429217e2efc329ab4371149de622bcff51e88b46ad842de1c42cba60217cb543",
     "size_m": [
       1.888,
       0.8,
@@ -104,8 +104,8 @@
   },
   "model_barrel": {
     "type": "model",
-    "bytes": 410336,
-    "sha256": "f12978a9a513ccfb343af97dc9a8fb2b57a0c08070b422e48d224cc1977288cb",
+    "bytes": 185408,
+    "sha256": "ae8a4f9ae478db2dfe29dd516846490ee40ad31729408604c7af148c60747faa",
     "size_m": [
       0.64,
       1,
@@ -117,8 +117,8 @@
   },
   "model_table": {
     "type": "model",
-    "bytes": 262936,
-    "sha256": "8492667e54216acd1734c1fe8d989cd719f4ccb906db471e1a750902ede20bec",
+    "bytes": 120296,
+    "sha256": "596ee11c806cfe9e4791cdb8df893521a717544b354a625c5ab1cefa61eefacc",
     "size_m": [
       2.787,
       0.85,
@@ -130,8 +130,8 @@
   },
   "model_chair": {
     "type": "model",
-    "bytes": 525588,
-    "sha256": "144e6a3cb9a735f070fb749debda5fe458336180fa1233593f44a972f3f0a48b",
+    "bytes": 242756,
+    "sha256": "d02687a5f4df3088a012a3fb73c9844704e5dfaaf60aba2af1600320e205da65",
     "size_m": [
       0.797,
       1,
@@ -143,8 +143,8 @@
   },
   "model_shelf": {
     "type": "model",
-    "bytes": 333116,
-    "sha256": "3d0f39060bbeadc4deba0ab34ccae0c6cfefc82f8fcccca6f2d4c2a4814a2828",
+    "bytes": 89416,
+    "sha256": "01d83fd9af524ac7315e81ade5a856728f0d3b5c5428c8b3a917424c17e793e9",
     "size_m": [
       1.061,
       2.2,
@@ -156,8 +156,8 @@
   },
   "model_vase": {
     "type": "model",
-    "bytes": 341012,
-    "sha256": "3864974771260129df250ea5d30f24e8c5c6d144bd84b5654be38dfe7ac7b8a9",
+    "bytes": 264720,
+    "sha256": "7db4029e3473313fb3c76807da238825d4424de1c47120ebee26b04c175e0508",
     "size_m": [
       0.406,
       0.7,
@@ -169,8 +169,8 @@
   },
   "model_lantern": {
     "type": "model",
-    "bytes": 645988,
-    "sha256": "3de472e71bb90fecbd7658f7da31483d3433ee0075a0c4e14a583741b8643f97",
+    "bytes": 529436,
+    "sha256": "0fdf87574d9e6b777f079857457496da1b513a4ee9dc1c2525150567e5669449",
     "size_m": [
       0.194,
       0.6,
@@ -182,8 +182,8 @@
   },
   "model_books": {
     "type": "model",
-    "bytes": 2773172,
-    "sha256": "ac545527afa27a27d22fbe7eda0a3543f5930deabe330319e770dc65fc2edaf4",
+    "bytes": 2648852,
+    "sha256": "fcee4913e4f9fcabe9a375d14eba701adf55d5037c751e665d4c3fb7cf034283",
     "size_m": [
       0.697,
       0.3,
@@ -195,8 +195,8 @@
   },
   "model_sack": {
     "type": "model",
-    "bytes": 1136944,
-    "sha256": "9f8b3651beec1d6b5236f58786b05e5099608f3f9c8a6e412b45e939745e20e1",
+    "bytes": 622900,
+    "sha256": "ec0923725bb14b808256941435b0834b078786dfa974775a302e86d9671c9681",
     "size_m": [
       1.373,
       0.7,

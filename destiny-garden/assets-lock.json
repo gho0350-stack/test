@@ -14,7 +14,7 @@
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_floor/arm.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:46:53.683Z"
+    "fetched_at": "2026-11-28T13:51:24.637Z"
   },
   "tex_wood_dark": {
     "source": "polyhaven",
@@ -31,7 +31,7 @@
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_dark/arm.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:46:55.171Z"
+    "fetched_at": "2026-11-28T13:51:25.093Z"
   },
   "tex_stone_path": {
     "source": "polyhaven",
@@ -48,7 +48,7 @@
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_path/arm.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:46:57.844Z"
+    "fetched_at": "2026-11-28T13:51:25.608Z"
   },
   "tex_stone_wall": {
     "source": "polyhaven",
@@ -65,7 +65,7 @@
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_wall/arm.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:03.757Z"
+    "fetched_at": "2026-11-28T13:51:26.308Z"
   },
   "tex_roof_tile": {
     "source": "polyhaven",
@@ -82,7 +82,7 @@
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_roof_tile/arm.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:06.000Z"
+    "fetched_at": "2026-11-28T13:51:27.099Z"
   },
   "tex_fabric_rug": {
     "source": "polyhaven",
@@ -99,7 +99,7 @@
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/arm.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:06.558Z"
+    "fetched_at": "2026-11-28T13:51:27.540Z"
   },
   "tex_grass": {
     "source": "ambientcg",
@@ -115,7 +115,7 @@
       "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/unz/Ground111_1K-JPG_AmbientOcclusion.jpg"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:08.765Z"
+    "fetched_at": "2026-11-28T13:51:29.496Z"
   },
   "model_treasure_chest": {
     "source": "polyhaven",
@@ -128,7 +128,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_treasure_chest/treasure_chest_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:09.821Z"
+    "fetched_at": "2026-11-28T13:51:30.372Z"
   },
   "model_crate": {
     "source": "polyhaven",
@@ -141,7 +141,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_crate/wooden_crate_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:10.583Z"
+    "fetched_at": "2026-11-28T13:51:31.012Z"
   },
   "model_barrel": {
     "source": "polyhaven",
@@ -154,7 +154,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_barrel/Barrel_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:11.056Z"
+    "fetched_at": "2026-11-28T13:51:31.426Z"
   },
   "model_table": {
     "source": "polyhaven",
@@ -167,7 +167,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_table/WoodenTable_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:12.168Z"
+    "fetched_at": "2026-11-28T13:51:31.847Z"
   },
   "model_chair": {
     "source": "polyhaven",
@@ -180,7 +180,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_chair/ArmChair_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:12.583Z"
+    "fetched_at": "2026-11-28T13:51:32.245Z"
   },
   "model_shelf": {
     "source": "polyhaven",
@@ -193,7 +193,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_shelf/Shelf_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:13.126Z"
+    "fetched_at": "2026-11-28T13:51:32.675Z"
   },
   "model_vase": {
     "source": "polyhaven",
@@ -206,7 +206,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_vase/antique_ceramic_vase_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:13.587Z"
+    "fetched_at": "2026-11-28T13:51:33.125Z"
   },
   "model_lantern": {
     "source": "polyhaven",
@@ -219,7 +219,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_lantern/brass_diya_lantern_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:14.306Z"
+    "fetched_at": "2026-11-28T13:51:33.733Z"
   },
   "model_books": {
     "source": "polyhaven",
@@ -232,7 +232,7 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_books/book_encyclopedia_set_01_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:14.856Z"
+    "fetched_at": "2026-11-28T13:51:34.249Z"
   },
   "model_sack": {
     "source": "polyhaven",
@@ -245,6 +245,6 @@
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_sack/metal_trash_can_1k.gltf"
     },
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:47:15.402Z"
+    "fetched_at": "2026-11-28T13:51:34.759Z"
   }
 }
