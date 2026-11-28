@@ -1,0 +1,62 @@
+run: 46153080685 sha: 71e736f694de2bb2797942b1c8a0bf392f8cd5b1 at 2026-11-28T14:09:01Z
+--- git status (before add)
+ M ATTRIBUTIONS.md
+ M assets-catalog/ambientcg-materials.json
+ M assets-catalog/polyhaven-hdris.json
+ M assets-catalog/polyhaven-models.json
+ M assets-catalog/polyhaven-textures.json
+ M assets-fetch.log
+ M assets-lock.json
+ M assets-process.log
+ M assets-processed.json
+ M assets-report.json
+ M public/assets/models/model_chair.glb
+ M public/assets/models/model_lantern.glb
+ M public/assets/models/model_shelf.glb
+ M public/assets/models/model_table.glb
+ M public/assets/registry.json
+ M public/assets/textures/tex_fabric_rug/ao.webp
+ M public/assets/textures/tex_fabric_rug/diff.webp
+ M public/assets/textures/tex_fabric_rug/nor.webp
+ M public/assets/textures/tex_fabric_rug/rough.webp
+ M public/assets/textures/tex_grass/ao.webp
+ M public/assets/textures/tex_grass/diff.webp
+ M public/assets/textures/tex_grass/nor.webp
+ M public/assets/textures/tex_grass/rough.webp
+ M public/assets/textures/tex_roof_tile/ao.webp
+ M public/assets/textures/tex_roof_tile/diff.webp
+ M public/assets/textures/tex_roof_tile/nor.webp
+ M public/assets/textures/tex_roof_tile/rough.webp
+ M public/assets/textures/tex_stone_path/ao.webp
+ M public/assets/textures/tex_stone_path/diff.webp
+ M public/assets/textures/tex_stone_path/nor.webp
+ M public/assets/textures/tex_stone_path/rough.webp
+ M public/assets/textures/tex_stone_wall/ao.webp
+ M public/assets/textures/tex_stone_wall/diff.webp
+ M public/assets/textures/tex_stone_wall/nor.webp
+ M public/assets/textures/tex_stone_wall/rough.webp
+ M public/assets/textures/tex_wood_dark/ao.webp
+ M public/assets/textures/tex_wood_dark/diff.webp
+ M public/assets/textures/tex_wood_dark/nor.webp
+ M public/assets/textures/tex_wood_dark/rough.webp
+ M public/assets/textures/tex_wood_floor/ao.webp
+ M public/assets/textures/tex_wood_floor/diff.webp
+ M public/assets/textures/tex_wood_floor/nor.webp
+ M public/assets/textures/tex_wood_floor/rough.webp
+?? assets-run.log
+?? public/assets/models/model_basket.glb
+?? public/assets/models/model_cabinet.glb
+?? public/assets/models/model_chandelier.glb
+?? public/assets/models/model_drawer.glb
+?? public/assets/models/model_mirror.glb
+?? public/assets/models/model_plant.glb
+?? public/assets/models/model_rocks.glb
+?? public/assets/models/model_screen.glb
+?? public/assets/models/model_stool.glb
+?? public/assets/models/model_tea_table.glb
+?? public/assets/models/model_teaset.glb
+?? public/assets/models/model_tree_blossom.glb
+?? public/assets/models/model_tree_small.glb
+?? public/assets/textures/tex_bamboo/
+?? public/assets/textures/tex_plaster/
+?? public/assets/textures/tex_tatami/

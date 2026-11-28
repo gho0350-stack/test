@@ -2,18 +2,44 @@
 [process] tex_wood_dark: OK
 [process] tex_stone_path: OK
 [process] tex_stone_wall: OK
+[process] tex_plaster: OK
 [process] tex_roof_tile: OK
 [process] tex_fabric_rug: OK
 [process] tex_grass: OK
+[process] tex_tatami: OK
+[process] tex_bamboo: OK
 [process] model_treasure_chest: OK
 [process] model_crate: OK
 [process] model_barrel: OK
 [process] model_table: OK
+[process] model_tea_table: OK
 [process] model_chair: OK
+[process] model_stool: OK
+[process] model_cabinet: OK
 [process] model_shelf: OK
+[process] model_drawer: OK
 [process] model_vase: OK
 [process] model_lantern: OK
+[process] model_chandelier: OK
 prune: Removed types... Texture (1)
 [process] model_books: OK
-[process] model_sack: OK
-[process] 완료: 성공 17, 실패 0
+[process] model_basket: OK
+[process] model_screen: OK
+[process] model_plant: OK
+[process] model_teaset: OK
+[process] model_mirror: OK
+prune: Removed types... Accessor (3)
+quantize: Skipping TEXCOORD_0; out of [0,1] range.
+prune: Removed types... Accessor (8)
+quantize: Skipping TEXCOORD_0; out of [0,1] range.
+prune: Removed types... Accessor (8)
+quantize: Skipping TEXCOORD_0; out of [0,1] range.
+prune: Removed types... Accessor (8)
+[process] model_tree_blossom: OK
+prune: Removed types... Accessor (3)
+prune: Removed types... Accessor (9)
+prune: Removed types... Accessor (9)
+prune: Removed types... Accessor (9)
+[process] model_tree_small: OK
+[process] model_rocks: OK
+[process] 완료: 성공 32, 실패 0

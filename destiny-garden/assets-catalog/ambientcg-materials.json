@@ -658,21 +658,6 @@
     "downloads": 4496
   },
   {
-    "id": "Clay007",
-    "name": "Clay 007",
-    "tags": [
-      "007",
-      "7",
-      "clay",
-      "clay007",
-      "finger",
-      "smooth",
-      "streaks"
-    ],
-    "category": "Clay",
-    "downloads": 5239
-  },
-  {
     "id": "Gravel043",
     "name": "Gravel 043",
     "tags": [
@@ -693,6 +678,21 @@
     ],
     "category": "Gravel",
     "downloads": 35998
+  },
+  {
+    "id": "Clay007",
+    "name": "Clay 007",
+    "tags": [
+      "007",
+      "7",
+      "clay",
+      "clay007",
+      "finger",
+      "smooth",
+      "streaks"
+    ],
+    "category": "Clay",
+    "downloads": 5239
   },
   {
     "id": "Clay006",
@@ -4114,18 +4114,6 @@
     "downloads": 90643
   },
   {
-    "id": "Metal053B",
-    "name": "Metal 053 B",
-    "tags": [
-      "53",
-      "iron",
-      "metal",
-      "rusty"
-    ],
-    "category": "Metal",
-    "downloads": 39104
-  },
-  {
     "id": "Metal029",
     "name": "Metal 029",
     "tags": [
@@ -4139,6 +4127,18 @@
     ],
     "category": "Metal",
     "downloads": 181538
+  },
+  {
+    "id": "Metal053B",
+    "name": "Metal 053 B",
+    "tags": [
+      "53",
+      "iron",
+      "metal",
+      "rusty"
+    ],
+    "category": "Metal",
+    "downloads": 39104
   },
   {
     "id": "Travertine005",
@@ -5136,6 +5136,21 @@
     "downloads": 106225
   },
   {
+    "id": "Fabric060",
+    "name": "Fabric 060",
+    "tags": [
+      "60",
+      "fabric",
+      "pattern",
+      "plain",
+      "smooth",
+      "tartan",
+      "white"
+    ],
+    "category": "Fabric",
+    "downloads": 95919
+  },
+  {
     "id": "Road013B",
     "name": "Road 013 B",
     "tags": [
@@ -5161,21 +5176,6 @@
     ],
     "category": "Road",
     "downloads": 7084
-  },
-  {
-    "id": "Fabric060",
-    "name": "Fabric 060",
-    "tags": [
-      "60",
-      "fabric",
-      "pattern",
-      "plain",
-      "smooth",
-      "tartan",
-      "white"
-    ],
-    "category": "Fabric",
-    "downloads": 95919
   },
   {
     "id": "Metal056C",
@@ -5852,6 +5852,19 @@
     "downloads": 6391
   },
   {
+    "id": "Metal057A",
+    "name": "Metal 057 A",
+    "tags": [
+      "57",
+      "clean",
+      "copper",
+      "metal",
+      "smooth"
+    ],
+    "category": "Metal",
+    "downloads": 28784
+  },
+  {
     "id": "WoodFloor066A",
     "name": "Wood Floor 066 A",
     "tags": [
@@ -5864,19 +5877,6 @@
     ],
     "category": "Wood Floor",
     "downloads": 12972
-  },
-  {
-    "id": "Metal057A",
-    "name": "Metal 057 A",
-    "tags": [
-      "57",
-      "clean",
-      "copper",
-      "metal",
-      "smooth"
-    ],
-    "category": "Metal",
-    "downloads": 28784
   },
   {
     "id": "Rubber001",
@@ -9211,19 +9211,6 @@
     "downloads": 18369
   },
   {
-    "id": "Metal054C",
-    "name": "Metal 054 C",
-    "tags": [
-      "54",
-      "iron",
-      "metal",
-      "rusted",
-      "scratched"
-    ],
-    "category": "Metal",
-    "downloads": 18351
-  },
-  {
     "id": "PaintedWood005",
     "name": "Painted Wood 005",
     "tags": [
@@ -9235,6 +9222,19 @@
     ],
     "category": "Painted Wood",
     "downloads": 76437
+  },
+  {
+    "id": "Metal054C",
+    "name": "Metal 054 C",
+    "tags": [
+      "54",
+      "iron",
+      "metal",
+      "rusted",
+      "scratched"
+    ],
+    "category": "Metal",
+    "downloads": 18351
   },
   {
     "id": "Rocks025",

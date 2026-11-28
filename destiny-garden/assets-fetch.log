@@ -1,37 +1,66 @@
 [fetch] tex_wood_floor 수집 시작
-[fetch]   후보: laminate_floor_02, wood_cabinet_worn_long, wood_floor_deck, weathered_planks
+[fetch]   후보: brown_planks_03
 [fetch] tex_wood_dark 수집 시작
-[fetch]   후보: dark_wooden_planks, wood_table_worn, weathered_brown_planks, brown_planks_03
+[fetch]   후보: dark_wood
 [fetch] tex_stone_path 수집 시작
-[fetch]   후보: slab_tiles, floor_pattern_02, pavement_05, square_tiles_03
+[fetch]   후보: cobblestone_floor_04
 [fetch] tex_stone_wall 수집 시작
-[fetch]   후보: white_stucco_02, beige_wall_001, painted_plaster_wall, white_plaster_02
+[fetch]   후보: japanese_stone_wall
+[fetch] tex_plaster 수집 시작
 [fetch] tex_roof_tile 수집 시작
-[fetch]   후보: roof_slates_03, grey_roof_01, grey_roof_tiles_02, roof_slates_02
+[fetch]   후보: grey_roof_tiles_02
 [fetch] tex_fabric_rug 수집 시작
-[fetch]   후보: dirty_carpet, fabric_pattern_07, leather_red_02, brown_leather
+[fetch]   후보: fabric_pattern_07
+[fetch]   후보 fabric_pattern_07 실패: Diffuse 맵 없음
+[fetch]   polyhaven 실패 → 다음 공급처 (Diffuse 맵 없음)
 [fetch] tex_grass 수집 시작
-[fetch]   후보: 
-[fetch]   polyhaven 실패 → 다음 공급처 (Poly Haven 에서 조건에 맞는 textures 없음 (grass,forest,moss,ground,leaves))
+[fetch]   후보: forrest_ground_01
+[fetch] tex_tatami 수집 시작
+[fetch]   후보: tatami_mat
+[fetch] tex_bamboo 수집 시작
+[fetch]   후보: bamboo_wall
 [fetch] model_treasure_chest 수집 시작
-[fetch]   후보: treasure_chest, wooden_crate_01, metal_tool_chest, wooden_crate_02
+[fetch]   후보: treasure_chest
 [fetch] model_crate 수집 시작
-[fetch]   후보: wooden_crate_01, wooden_crate_02, treasure_chest, CheeseBox_01
+[fetch]   후보: wooden_crate_01
 [fetch] model_barrel 수집 시작
-[fetch]   후보: Barrel_01, cannon_01, Barrel_02, wine_barrel_01
+[fetch]   후보: Barrel_01
 [fetch] model_table 수집 시작
-[fetch]   후보: WoodenTable_01, SchoolDesk_01, metal_office_desk, wooden_table_02
+[fetch]   후보: chinese_console_table
+[fetch] model_tea_table 수집 시작
+[fetch]   후보: chinese_tea_table
 [fetch] model_chair 수집 시작
-[fetch]   후보: ArmChair_01, painted_wooden_stool, bar_chair_round_01, chinese_armchair
+[fetch]   후보: chinese_armchair
+[fetch] model_stool 수집 시작
+[fetch]   후보: chinese_stool
+[fetch] model_cabinet 수집 시작
+[fetch]   후보: chinese_cabinet
 [fetch] model_shelf 수집 시작
-[fetch]   후보: Shelf_01, wooden_bookshelf_worn, GothicCabinet_01, steel_frame_shelves_01
+[fetch]   후보: wooden_bookshelf_worn
+[fetch] model_drawer 수집 시작
+[fetch]   후보: vintage_wooden_drawer_01
 [fetch] model_vase 수집 시작
-[fetch]   후보: antique_ceramic_vase_01, ceramic_vase_02, ceramic_vase_01, ceramic_vase_04
+[fetch]   후보: antique_ceramic_vase_01
 [fetch] model_lantern 수집 시작
-[fetch]   후보: brass_diya_lantern, Lantern_01, wooden_lantern_01, vintage_oil_lamp
+[fetch]   후보: wooden_lantern_01
+[fetch] model_chandelier 수집 시작
+[fetch]   후보: chinese_chandelier
 [fetch] model_books 수집 시작
-[fetch]   후보: decorative_book_set_01, book_encyclopedia_set_01, binder_notebook
-[fetch]   후보 decorative_book_set_01 실패: gltf 파일 정보 없음
-[fetch] model_sack 수집 시작
-[fetch]   후보: metal_trash_can, old_tyre, vintage_suitcase, compost_bags
-[fetch] 완료: 성공 17, 실패 0
+[fetch]   후보: book_encyclopedia_set_01
+[fetch] model_basket 수집 시작
+[fetch]   후보: wicker_basket_01
+[fetch] model_screen 수집 시작
+[fetch]   후보: chinese_screen_panels
+[fetch] model_plant 수집 시작
+[fetch]   후보: potted_plant_02
+[fetch] model_teaset 수집 시작
+[fetch]   후보: tea_set_01
+[fetch] model_mirror 수집 시작
+[fetch]   후보: ornate_mirror_01
+[fetch] model_tree_blossom 수집 시작
+[fetch]   후보: jacaranda_tree
+[fetch] model_tree_small 수집 시작
+[fetch]   후보: tree_small_02
+[fetch] model_rocks 수집 시작
+[fetch]   후보: rock_moss_set_01
+[fetch] 완료: 성공 32, 실패 0

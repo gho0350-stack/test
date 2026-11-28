@@ -117,40 +117,40 @@
   },
   "model_table": {
     "type": "model",
-    "bytes": 120296,
-    "sha256": "596ee11c806cfe9e4791cdb8df893521a717544b354a625c5ab1cefa61eefacc",
+    "bytes": 645504,
+    "sha256": "f36ea1b6c63ce145a23d38701275f081a98f7133b89413bc05fcd754dc9a36d3",
     "size_m": [
-      2.787,
-      0.85,
-      1.018
+      2.342,
+      0.9,
+      0.461
     ],
-    "triangles": 952,
+    "triangles": 13648,
     "path": "/assets/models/model_table.glb",
     "optimization_status": "ok"
   },
   "model_chair": {
     "type": "model",
-    "bytes": 242756,
-    "sha256": "d02687a5f4df3088a012a3fb73c9844704e5dfaaf60aba2af1600320e205da65",
+    "bytes": 153644,
+    "sha256": "3a8d795eb60695fc10cbb29e641461a754fe5325f9138ba031a18538014562f9",
     "size_m": [
-      0.797,
-      1,
-      0.719
+      0.588,
+      1.1,
+      0.546
     ],
-    "triangles": 5626,
+    "triangles": 2675,
     "path": "/assets/models/model_chair.glb",
     "optimization_status": "ok"
   },
   "model_shelf": {
     "type": "model",
-    "bytes": 89416,
-    "sha256": "01d83fd9af524ac7315e81ade5a856728f0d3b5c5428c8b3a917424c17e793e9",
+    "bytes": 391860,
+    "sha256": "9a448a52214a8f7d54c4616b1f482789f23a90b5ea0c42637b2cf81f3544611d",
     "size_m": [
-      1.061,
-      2.2,
-      0.272
+      1.531,
+      2.3,
+      0.648
     ],
-    "triangles": 182,
+    "triangles": 10106,
     "path": "/assets/models/model_shelf.glb",
     "optimization_status": "ok"
   },
@@ -169,14 +169,14 @@
   },
   "model_lantern": {
     "type": "model",
-    "bytes": 529436,
-    "sha256": "0fdf87574d9e6b777f079857457496da1b513a4ee9dc1c2525150567e5669449",
+    "bytes": 393936,
+    "sha256": "ea4e0698cde66bf9176d1fda2365990f670fa0abdca1970024fa90ff900ddf3c",
     "size_m": [
-      0.194,
-      0.6,
-      0.194
+      0.292,
+      0.7,
+      0.31
     ],
-    "triangles": 12742,
+    "triangles": 8321,
     "path": "/assets/models/model_lantern.glb",
     "optimization_status": "ok"
   },
@@ -204,6 +204,208 @@
     ],
     "triangles": 13960,
     "path": "/assets/models/model_sack.glb",
+    "optimization_status": "ok"
+  },
+  "tex_plaster": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_plaster/diff.webp",
+      "nor": "/assets/textures/tex_plaster/nor.webp",
+      "rough": "/assets/textures/tex_plaster/rough.webp",
+      "ao": "/assets/textures/tex_plaster/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_tatami": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_tatami/diff.webp",
+      "nor": "/assets/textures/tex_tatami/nor.webp",
+      "rough": "/assets/textures/tex_tatami/rough.webp",
+      "ao": "/assets/textures/tex_tatami/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_bamboo": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_bamboo/diff.webp",
+      "nor": "/assets/textures/tex_bamboo/nor.webp",
+      "rough": "/assets/textures/tex_bamboo/rough.webp",
+      "ao": "/assets/textures/tex_bamboo/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "model_tea_table": {
+    "type": "model",
+    "bytes": 124692,
+    "sha256": "de17b131175cc0a1982e873523bb895c768c7e967c603bcb4c254b49ae7428ec",
+    "size_m": [
+      1.012,
+      0.6,
+      1.005
+    ],
+    "triangles": 2508,
+    "path": "/assets/models/model_tea_table.glb",
+    "optimization_status": "ok"
+  },
+  "model_stool": {
+    "type": "model",
+    "bytes": 93996,
+    "sha256": "5503a4d0583f5b888ba133b0699368aa4e4e02e6d963a18179533f240876858a",
+    "size_m": [
+      0.475,
+      0.5,
+      0.402
+    ],
+    "triangles": 1090,
+    "path": "/assets/models/model_stool.glb",
+    "optimization_status": "ok"
+  },
+  "model_cabinet": {
+    "type": "model",
+    "bytes": 584736,
+    "sha256": "cee4e696ab43a32086f6b8b917c698b1ca072049faddeda3ccc017f5b8cc267c",
+    "size_m": [
+      0.835,
+      1.9,
+      0.361
+    ],
+    "triangles": 15668,
+    "path": "/assets/models/model_cabinet.glb",
+    "optimization_status": "ok"
+  },
+  "model_drawer": {
+    "type": "model",
+    "bytes": 289004,
+    "sha256": "2a605d6a5e73da2d4984f36988c9ffd5ab8116ec8e129614751306350b036936",
+    "size_m": [
+      1.887,
+      1.2,
+      1.108
+    ],
+    "triangles": 5184,
+    "path": "/assets/models/model_drawer.glb",
+    "optimization_status": "ok"
+  },
+  "model_chandelier": {
+    "type": "model",
+    "bytes": 401200,
+    "sha256": "56d3d76c21314536c347448cfc3e80db4b02d6fd195ccc49fbaffcb8aac67831",
+    "size_m": [
+      1.291,
+      1.1,
+      1.292
+    ],
+    "triangles": 7828,
+    "path": "/assets/models/model_chandelier.glb",
+    "optimization_status": "ok"
+  },
+  "model_basket": {
+    "type": "model",
+    "bytes": 731444,
+    "sha256": "89945e28ae188378873ab2e278390710b1b725fed313acd03be8267c6506b38b",
+    "size_m": [
+      1.958,
+      0.6,
+      1.507
+    ],
+    "triangles": 22276,
+    "path": "/assets/models/model_basket.glb",
+    "optimization_status": "ok"
+  },
+  "model_screen": {
+    "type": "model",
+    "bytes": 108948,
+    "sha256": "51c895aaaad9e9d12e17fa5b4239bac1e5c9b6b9efa731d9d1fd90087414d921",
+    "size_m": [
+      1.614,
+      2,
+      0.47
+    ],
+    "triangles": 784,
+    "path": "/assets/models/model_screen.glb",
+    "optimization_status": "ok"
+  },
+  "model_plant": {
+    "type": "model",
+    "bytes": 1965860,
+    "sha256": "6db8e9d3d4e9b52145b475dda30898cc994818eee2d3e1d02ce8d0b62a06a821",
+    "size_m": [
+      1,
+      1.2,
+      0.938
+    ],
+    "triangles": 69806,
+    "path": "/assets/models/model_plant.glb",
+    "optimization_status": "ok"
+  },
+  "model_teaset": {
+    "type": "model",
+    "bytes": 914432,
+    "sha256": "b0bbb816802df1f5423b0472310b8c92233a9d3c515c74ace9bf836abf31f9a2",
+    "size_m": [
+      1.392,
+      0.25,
+      0.733
+    ],
+    "triangles": 40296,
+    "path": "/assets/models/model_teaset.glb",
+    "optimization_status": "ok"
+  },
+  "model_mirror": {
+    "type": "model",
+    "bytes": 422748,
+    "sha256": "c3d69240689458c037f02d0f1f33d98c0192a63d937f264416f386f569e5bd21",
+    "size_m": [
+      1.177,
+      1.8,
+      0.063
+    ],
+    "triangles": 14246,
+    "path": "/assets/models/model_mirror.glb",
+    "optimization_status": "ok"
+  },
+  "model_tree_blossom": {
+    "type": "model",
+    "bytes": 4409584,
+    "sha256": "9d98c35f359cae80803b72cd46dcf9f3d644876bc7ab7b3280b1aebe1817e4a3",
+    "size_m": [
+      7.478,
+      6,
+      5.889
+    ],
+    "triangles": 71346,
+    "path": "/assets/models/model_tree_blossom.glb",
+    "optimization_status": "ok"
+  },
+  "model_tree_small": {
+    "type": "model",
+    "bytes": 1369592,
+    "sha256": "354138fe3c3c6b1bd3c8b9f6ecf67b59518d98b09e5364a84bfcd16e2b4d3dd4",
+    "size_m": [
+      2.537,
+      4,
+      3.642
+    ],
+    "triangles": 30743,
+    "path": "/assets/models/model_tree_small.glb",
+    "optimization_status": "ok"
+  },
+  "model_rocks": {
+    "type": "model",
+    "bytes": 1542736,
+    "sha256": "84d559f20354792e94792dacf5846ac7d6c1ea9bdf5bcbd6e02947af99553426",
+    "size_m": [
+      5.432,
+      1.2,
+      4.716
+    ],
+    "triangles": 63127,
+    "path": "/assets/models/model_rocks.glb",
     "optimization_status": "ok"
   }
 }

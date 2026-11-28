@@ -1,11 +1,11 @@
 {
   "tex_wood_floor": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/laminate_floor_02",
-    "download_url": "https://api.polyhaven.com/files/laminate_floor_02",
+    "source_url": "https://polyhaven.com/a/brown_planks_03",
+    "download_url": "https://api.polyhaven.com/files/brown_planks_03",
     "license": "CC0",
-    "attribution": "Laminate Floor 02 — Poly Haven (CC0)",
-    "external_id": "laminate_floor_02",
+    "attribution": "brown_planks_03 — Poly Haven (CC0)",
+    "external_id": "brown_planks_03",
     "files": {
       "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_floor/diff.jpg",
       "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_floor/nor.jpg",
@@ -13,16 +13,17 @@
       "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_floor/ao.jpg",
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_floor/arm.jpg"
     },
+    "spec": "95eb2820f248de2bfc702d6b12c8141ec22fe5e9105dfbb7d5a3164b571c4033",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:24.637Z"
+    "fetched_at": "2026-11-28T14:08:22.227Z"
   },
   "tex_wood_dark": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/dark_wooden_planks",
-    "download_url": "https://api.polyhaven.com/files/dark_wooden_planks",
+    "source_url": "https://polyhaven.com/a/dark_wood",
+    "download_url": "https://api.polyhaven.com/files/dark_wood",
     "license": "CC0",
-    "attribution": "Dark Wooden Planks — Poly Haven (CC0)",
-    "external_id": "dark_wooden_planks",
+    "attribution": "dark_wood — Poly Haven (CC0)",
+    "external_id": "dark_wood",
     "files": {
       "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_dark/diff.jpg",
       "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_dark/nor.jpg",
@@ -30,16 +31,17 @@
       "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_dark/ao.jpg",
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_wood_dark/arm.jpg"
     },
+    "spec": "1109f0b48063393be995aef45138e5eb3081177c4dcdaa6e76e5a4cf5f0046cd",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:25.093Z"
+    "fetched_at": "2026-11-28T14:08:22.688Z"
   },
   "tex_stone_path": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/slab_tiles",
-    "download_url": "https://api.polyhaven.com/files/slab_tiles",
+    "source_url": "https://polyhaven.com/a/cobblestone_floor_04",
+    "download_url": "https://api.polyhaven.com/files/cobblestone_floor_04",
     "license": "CC0",
-    "attribution": "Slab Tiles — Poly Haven (CC0)",
-    "external_id": "slab_tiles",
+    "attribution": "cobblestone_floor_04 — Poly Haven (CC0)",
+    "external_id": "cobblestone_floor_04",
     "files": {
       "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_path/diff.jpg",
       "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_path/nor.jpg",
@@ -47,16 +49,17 @@
       "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_path/ao.jpg",
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_path/arm.jpg"
     },
+    "spec": "5b4ec54c23648dc9fd791ae8fa8bf067d7bac06fec239cb0df9424d064a03294",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:25.608Z"
+    "fetched_at": "2026-11-28T14:08:23.213Z"
   },
   "tex_stone_wall": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/white_stucco_02",
-    "download_url": "https://api.polyhaven.com/files/white_stucco_02",
+    "source_url": "https://polyhaven.com/a/japanese_stone_wall",
+    "download_url": "https://api.polyhaven.com/files/japanese_stone_wall",
     "license": "CC0",
-    "attribution": "White Stucco 02 — Poly Haven (CC0)",
-    "external_id": "white_stucco_02",
+    "attribution": "japanese_stone_wall — Poly Haven (CC0)",
+    "external_id": "japanese_stone_wall",
     "files": {
       "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_wall/diff.jpg",
       "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_wall/nor.jpg",
@@ -64,16 +67,17 @@
       "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_wall/ao.jpg",
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_stone_wall/arm.jpg"
     },
+    "spec": "34c3bc8997d6436d720882ae79b444d8c060200215dc442dadc3a53b94161c47",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:26.308Z"
+    "fetched_at": "2026-11-28T14:08:23.687Z"
   },
   "tex_roof_tile": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/roof_slates_03",
-    "download_url": "https://api.polyhaven.com/files/roof_slates_03",
+    "source_url": "https://polyhaven.com/a/grey_roof_tiles_02",
+    "download_url": "https://api.polyhaven.com/files/grey_roof_tiles_02",
     "license": "CC0",
-    "attribution": "Roof Slates 03 — Poly Haven (CC0)",
-    "external_id": "roof_slates_03",
+    "attribution": "grey_roof_tiles_02 — Poly Haven (CC0)",
+    "external_id": "grey_roof_tiles_02",
     "files": {
       "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_roof_tile/diff.jpg",
       "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_roof_tile/nor.jpg",
@@ -81,67 +85,72 @@
       "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_roof_tile/ao.jpg",
       "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_roof_tile/arm.jpg"
     },
+    "spec": "c6f8bb9256b908a4afbb3d1c3ed93614efcfd6bdad28b6db0f238eced95b864e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:27.099Z"
+    "fetched_at": "2026-11-28T14:08:25.831Z"
   },
   "tex_fabric_rug": {
-    "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/dirty_carpet",
-    "download_url": "https://api.polyhaven.com/files/dirty_carpet",
+    "source": "ambientcg",
+    "source_url": "https://ambientcg.com/view?id=Fabric061",
+    "download_url": "https://ambientcg.com/get?file=Fabric061_1K-JPG.zip",
     "license": "CC0",
-    "attribution": "Dirty Carpet — Poly Haven (CC0)",
-    "external_id": "dirty_carpet",
+    "attribution": "Fabric061 — ambientCG (CC0)",
+    "external_id": "Fabric061",
     "files": {
-      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/diff.jpg",
-      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/nor.jpg",
-      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/rough.jpg",
-      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/ao.jpg",
-      "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/arm.jpg"
+      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/unz/Fabric061_1K-JPG_Color.jpg",
+      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/unz/Fabric061_1K-JPG_NormalGL.jpg",
+      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/unz/Fabric061_1K-JPG_Roughness.jpg",
+      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_fabric_rug/unz/Fabric061_1K-JPG_AmbientOcclusion.jpg"
     },
+    "spec": "080b70feffcc2a25b04d490c3c3c14a21503b25cf64f0a9622152b2852e7b57e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:27.540Z"
+    "fetched_at": "2026-11-28T14:08:26.905Z"
   },
   "tex_grass": {
-    "source": "ambientcg",
-    "source_url": "https://ambientcg.com/view?id=Ground111",
-    "download_url": "https://ambientcg.com/get?file=Ground111_1K-JPG.zip",
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/forrest_ground_01",
+    "download_url": "https://api.polyhaven.com/files/forrest_ground_01",
     "license": "CC0",
-    "attribution": "Ground111 — ambientCG (CC0)",
-    "external_id": "Ground111",
+    "attribution": "forrest_ground_01 — Poly Haven (CC0)",
+    "external_id": "forrest_ground_01",
     "files": {
-      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/unz/Ground111_1K-JPG_Color.jpg",
-      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/unz/Ground111_1K-JPG_NormalGL.jpg",
-      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/unz/Ground111_1K-JPG_Roughness.jpg",
-      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/unz/Ground111_1K-JPG_AmbientOcclusion.jpg"
+      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/diff.jpg",
+      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/nor.jpg",
+      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/rough.jpg",
+      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/ao.jpg",
+      "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_grass/arm.jpg"
     },
+    "spec": "15e35f1c8219fc6f4ef69bc45ded3b4755f361d6802fe7cc3c7bbf9a897b64ae",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:29.496Z"
+    "fetched_at": "2026-11-28T14:08:27.371Z"
   },
   "model_treasure_chest": {
     "source": "polyhaven",
     "source_url": "https://polyhaven.com/a/treasure_chest",
     "download_url": "https://api.polyhaven.com/files/treasure_chest",
     "license": "CC0",
-    "attribution": "Treasure Chest — Poly Haven (CC0)",
+    "attribution": "treasure_chest — Poly Haven (CC0)",
     "external_id": "treasure_chest",
     "files": {
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_treasure_chest/treasure_chest_1k.gltf"
     },
+    "spec": "6ba9f4dd0b5a649138c389b82e9d7f2e5fa6392ab86b57c6f40fc6021e66eb48",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:30.372Z"
+    "fetched_at": "2026-11-28T14:08:28.659Z"
   },
   "model_crate": {
     "source": "polyhaven",
     "source_url": "https://polyhaven.com/a/wooden_crate_01",
     "download_url": "https://api.polyhaven.com/files/wooden_crate_01",
     "license": "CC0",
-    "attribution": "Wooden Crate 01 — Poly Haven (CC0)",
+    "attribution": "wooden_crate_01 — Poly Haven (CC0)",
     "external_id": "wooden_crate_01",
     "files": {
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_crate/wooden_crate_01_1k.gltf"
     },
+    "spec": "1e5106384916701f9032d57f6fa4e3493fffa3a71d7cd60a05c59b4f9b54bf9a",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:31.012Z"
+    "fetched_at": "2026-11-28T14:08:29.092Z"
   },
   "model_barrel": {
     "source": "polyhaven",
@@ -153,86 +162,93 @@
     "files": {
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_barrel/Barrel_01_1k.gltf"
     },
+    "spec": "a4508c0fe55d7094d462ff491e730cbc7033ab7af73268201dc64e60297f0d4a",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:31.426Z"
+    "fetched_at": "2026-11-28T14:08:29.533Z"
   },
   "model_table": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/WoodenTable_01",
-    "download_url": "https://api.polyhaven.com/files/WoodenTable_01",
+    "source_url": "https://polyhaven.com/a/chinese_console_table",
+    "download_url": "https://api.polyhaven.com/files/chinese_console_table",
     "license": "CC0",
-    "attribution": "Wooden Table 01 — Poly Haven (CC0)",
-    "external_id": "WoodenTable_01",
+    "attribution": "chinese_console_table — Poly Haven (CC0)",
+    "external_id": "chinese_console_table",
     "files": {
-      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_table/WoodenTable_01_1k.gltf"
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_table/chinese_console_table_1k.gltf"
     },
+    "spec": "cfdd8e9e53639be02475835106472c8f57e27f480fd0c8ff9d80730e34b25acd",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:31.847Z"
+    "fetched_at": "2026-11-28T14:08:29.939Z"
   },
   "model_chair": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/ArmChair_01",
-    "download_url": "https://api.polyhaven.com/files/ArmChair_01",
+    "source_url": "https://polyhaven.com/a/chinese_armchair",
+    "download_url": "https://api.polyhaven.com/files/chinese_armchair",
     "license": "CC0",
-    "attribution": "Arm Chair 01 — Poly Haven (CC0)",
-    "external_id": "ArmChair_01",
+    "attribution": "chinese_armchair — Poly Haven (CC0)",
+    "external_id": "chinese_armchair",
     "files": {
-      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_chair/ArmChair_01_1k.gltf"
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_chair/chinese_armchair_1k.gltf"
     },
+    "spec": "fb20dc07ade8ab7e479382bb45dcead85addd1b757a7f1f5537dfa6bbfe2da3a",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:32.245Z"
+    "fetched_at": "2026-11-28T14:08:30.771Z"
   },
   "model_shelf": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/Shelf_01",
-    "download_url": "https://api.polyhaven.com/files/Shelf_01",
+    "source_url": "https://polyhaven.com/a/wooden_bookshelf_worn",
+    "download_url": "https://api.polyhaven.com/files/wooden_bookshelf_worn",
     "license": "CC0",
-    "attribution": "Shelf 01 — Poly Haven (CC0)",
-    "external_id": "Shelf_01",
+    "attribution": "wooden_bookshelf_worn — Poly Haven (CC0)",
+    "external_id": "wooden_bookshelf_worn",
     "files": {
-      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_shelf/Shelf_01_1k.gltf"
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_shelf/wooden_bookshelf_worn_1k.gltf"
     },
+    "spec": "5b11673ef2548ae0007d14a23c32da256ec8cb1d26799308346a0d7054693845",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:32.675Z"
+    "fetched_at": "2026-11-28T14:08:32.118Z"
   },
   "model_vase": {
     "source": "polyhaven",
     "source_url": "https://polyhaven.com/a/antique_ceramic_vase_01",
     "download_url": "https://api.polyhaven.com/files/antique_ceramic_vase_01",
     "license": "CC0",
-    "attribution": "Antique Ceramic Vase 01 — Poly Haven (CC0)",
+    "attribution": "antique_ceramic_vase_01 — Poly Haven (CC0)",
     "external_id": "antique_ceramic_vase_01",
     "files": {
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_vase/antique_ceramic_vase_01_1k.gltf"
     },
+    "spec": "80c0c595689396f2f78ee7e706894869558af36aeb6b72e005ea2dbb6842ca0e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:33.125Z"
+    "fetched_at": "2026-11-28T14:08:32.913Z"
   },
   "model_lantern": {
     "source": "polyhaven",
-    "source_url": "https://polyhaven.com/a/brass_diya_lantern",
-    "download_url": "https://api.polyhaven.com/files/brass_diya_lantern",
+    "source_url": "https://polyhaven.com/a/wooden_lantern_01",
+    "download_url": "https://api.polyhaven.com/files/wooden_lantern_01",
     "license": "CC0",
-    "attribution": "Brass Diya Lantern — Poly Haven (CC0)",
-    "external_id": "brass_diya_lantern",
+    "attribution": "wooden_lantern_01 — Poly Haven (CC0)",
+    "external_id": "wooden_lantern_01",
     "files": {
-      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_lantern/brass_diya_lantern_1k.gltf"
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_lantern/wooden_lantern_01_1k.gltf"
     },
+    "spec": "d733b9d658de20904557a6da280153b15c87d1bc7dd1b28e5189fb11561156b9",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:33.733Z"
+    "fetched_at": "2026-11-28T14:08:33.379Z"
   },
   "model_books": {
     "source": "polyhaven",
     "source_url": "https://polyhaven.com/a/book_encyclopedia_set_01",
     "download_url": "https://api.polyhaven.com/files/book_encyclopedia_set_01",
     "license": "CC0",
-    "attribution": "Book Encyclopedia Set 01 — Poly Haven (CC0)",
+    "attribution": "book_encyclopedia_set_01 — Poly Haven (CC0)",
     "external_id": "book_encyclopedia_set_01",
     "files": {
       "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_books/book_encyclopedia_set_01_1k.gltf"
     },
+    "spec": "e03147eb4ee88cc3a8de9cbaf1096ca097a437a8feb3496ae755b3efd0f045c8",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T13:51:34.249Z"
+    "fetched_at": "2026-11-28T14:08:34.258Z"
   },
   "model_sack": {
     "source": "polyhaven",
@@ -246,5 +262,240 @@
     },
     "download_status": "ok",
     "fetched_at": "2026-11-28T13:51:34.759Z"
+  },
+  "tex_plaster": {
+    "source": "ambientcg",
+    "source_url": "https://ambientcg.com/view?id=Plaster007",
+    "download_url": "https://ambientcg.com/get?file=Plaster007_1K-JPG.zip",
+    "license": "CC0",
+    "attribution": "Plaster007 — ambientCG (CC0)",
+    "external_id": "Plaster007",
+    "files": {
+      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_plaster/unz/Plaster007_1K-JPG_Color.jpg",
+      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_plaster/unz/Plaster007_1K-JPG_NormalGL.jpg",
+      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_plaster/unz/Plaster007_1K-JPG_Roughness.jpg",
+      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_plaster/unz/Plaster007_1K-JPG_AmbientOcclusion.jpg"
+    },
+    "spec": "6ecb59267b142e89abde2cb9466980509d864aba017e0172e0aa575842c05a73",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:25.288Z"
+  },
+  "tex_tatami": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/tatami_mat",
+    "download_url": "https://api.polyhaven.com/files/tatami_mat",
+    "license": "CC0",
+    "attribution": "tatami_mat — Poly Haven (CC0)",
+    "external_id": "tatami_mat",
+    "files": {
+      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_tatami/diff.jpg",
+      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_tatami/nor.jpg",
+      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_tatami/rough.jpg",
+      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_tatami/ao.jpg",
+      "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_tatami/arm.jpg"
+    },
+    "spec": "bad25d73906ab025d5955be2f0c2d89761955f695803fbf2db874bc4f86a5e34",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:27.768Z"
+  },
+  "tex_bamboo": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/bamboo_wall",
+    "download_url": "https://api.polyhaven.com/files/bamboo_wall",
+    "license": "CC0",
+    "attribution": "bamboo_wall — Poly Haven (CC0)",
+    "external_id": "bamboo_wall",
+    "files": {
+      "diff": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_bamboo/diff.jpg",
+      "nor": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_bamboo/nor.jpg",
+      "rough": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_bamboo/rough.jpg",
+      "ao": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_bamboo/ao.jpg",
+      "arm": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/tex_bamboo/arm.jpg"
+    },
+    "spec": "fa8008b542623df092d8fcd0c742592bb40d197218b2b1ffcd1c3452854833eb",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:28.199Z"
+  },
+  "model_tea_table": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/chinese_tea_table",
+    "download_url": "https://api.polyhaven.com/files/chinese_tea_table",
+    "license": "CC0",
+    "attribution": "chinese_tea_table — Poly Haven (CC0)",
+    "external_id": "chinese_tea_table",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_tea_table/chinese_tea_table_1k.gltf"
+    },
+    "spec": "5ff3e78ec60c26c2e8ebd5caf39c1e57284f32a14555e28e2cfe65bb8179e2b0",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:30.352Z"
+  },
+  "model_stool": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/chinese_stool",
+    "download_url": "https://api.polyhaven.com/files/chinese_stool",
+    "license": "CC0",
+    "attribution": "chinese_stool — Poly Haven (CC0)",
+    "external_id": "chinese_stool",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_stool/chinese_stool_1k.gltf"
+    },
+    "spec": "78a2a379af2e9a44d1fd58362212c7a8ee86f6706fffa1c60a0d76336de2f93b",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:31.262Z"
+  },
+  "model_cabinet": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/chinese_cabinet",
+    "download_url": "https://api.polyhaven.com/files/chinese_cabinet",
+    "license": "CC0",
+    "attribution": "chinese_cabinet — Poly Haven (CC0)",
+    "external_id": "chinese_cabinet",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_cabinet/chinese_cabinet_1k.gltf"
+    },
+    "spec": "e12fb477de6fdb0d48548d4cce1a5c8eca8d5899a3327b3f62303f6772507a14",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:31.695Z"
+  },
+  "model_drawer": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/vintage_wooden_drawer_01",
+    "download_url": "https://api.polyhaven.com/files/vintage_wooden_drawer_01",
+    "license": "CC0",
+    "attribution": "vintage_wooden_drawer_01 — Poly Haven (CC0)",
+    "external_id": "vintage_wooden_drawer_01",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_drawer/vintage_wooden_drawer_01_1k.gltf"
+    },
+    "spec": "b9750ddc1acc1adfe5097e3abe40a7b2886bd5dd06bd6a082558d73e3f424a64",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:32.520Z"
+  },
+  "model_chandelier": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/chinese_chandelier",
+    "download_url": "https://api.polyhaven.com/files/chinese_chandelier",
+    "license": "CC0",
+    "attribution": "chinese_chandelier — Poly Haven (CC0)",
+    "external_id": "chinese_chandelier",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_chandelier/chinese_chandelier_1k.gltf"
+    },
+    "spec": "5f5ccb2f772671dd49977161b4c7dd9f3e343e2437eace4536bbade2319937e5",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:33.787Z"
+  },
+  "model_basket": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/wicker_basket_01",
+    "download_url": "https://api.polyhaven.com/files/wicker_basket_01",
+    "license": "CC0",
+    "attribution": "wicker_basket_01 — Poly Haven (CC0)",
+    "external_id": "wicker_basket_01",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_basket/wicker_basket_01_1k.gltf"
+    },
+    "spec": "2bd87786611c111b4cf35e1d74818db68d81dcf6901c50b4a2e4f77de773f9b1",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:34.670Z"
+  },
+  "model_screen": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/chinese_screen_panels",
+    "download_url": "https://api.polyhaven.com/files/chinese_screen_panels",
+    "license": "CC0",
+    "attribution": "chinese_screen_panels — Poly Haven (CC0)",
+    "external_id": "chinese_screen_panels",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_screen/chinese_screen_panels_1k.gltf"
+    },
+    "spec": "5887b67674cdbacc4ed6a8f4d4c196c594fcde1cae439e9a63fe0983d58e2cf8",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:35.078Z"
+  },
+  "model_plant": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/potted_plant_02",
+    "download_url": "https://api.polyhaven.com/files/potted_plant_02",
+    "license": "CC0",
+    "attribution": "potted_plant_02 — Poly Haven (CC0)",
+    "external_id": "potted_plant_02",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_plant/potted_plant_02_1k.gltf"
+    },
+    "spec": "eedb62c440b08ab86cdd39360acb0ad2fdd007cbc6b82a3588d2bec2f2e8618c",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:35.556Z"
+  },
+  "model_teaset": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/tea_set_01",
+    "download_url": "https://api.polyhaven.com/files/tea_set_01",
+    "license": "CC0",
+    "attribution": "tea_set_01 — Poly Haven (CC0)",
+    "external_id": "tea_set_01",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_teaset/tea_set_01_1k.gltf"
+    },
+    "spec": "7ba196216c900c54e5bc9435b12bdd1799a26a89819b3e66c02b4c4def53ce40",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:35.962Z"
+  },
+  "model_mirror": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/ornate_mirror_01",
+    "download_url": "https://api.polyhaven.com/files/ornate_mirror_01",
+    "license": "CC0",
+    "attribution": "ornate_mirror_01 — Poly Haven (CC0)",
+    "external_id": "ornate_mirror_01",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_mirror/ornate_mirror_01_1k.gltf"
+    },
+    "spec": "8e2db588d5e86b5868fd3b222f3de27820b15dce5f77333472ecc65e0853ac01",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:36.354Z"
+  },
+  "model_tree_blossom": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/jacaranda_tree",
+    "download_url": "https://api.polyhaven.com/files/jacaranda_tree",
+    "license": "CC0",
+    "attribution": "jacaranda_tree — Poly Haven (CC0)",
+    "external_id": "jacaranda_tree",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_tree_blossom/jacaranda_tree_1k.gltf"
+    },
+    "spec": "8c959e575cd0d78fcd8e9128cf87365b8ee24451ad7d357c426e6569709e8035",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:38.014Z"
+  },
+  "model_tree_small": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/tree_small_02",
+    "download_url": "https://api.polyhaven.com/files/tree_small_02",
+    "license": "CC0",
+    "attribution": "tree_small_02 — Poly Haven (CC0)",
+    "external_id": "tree_small_02",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_tree_small/tree_small_02_1k.gltf"
+    },
+    "spec": "f2162d040ef16f195185d73e11f3c78390583dfd041949e9777ce37785e47ca9",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:39.061Z"
+  },
+  "model_rocks": {
+    "source": "polyhaven",
+    "source_url": "https://polyhaven.com/a/rock_moss_set_01",
+    "download_url": "https://api.polyhaven.com/files/rock_moss_set_01",
+    "license": "CC0",
+    "attribution": "rock_moss_set_01 — Poly Haven (CC0)",
+    "external_id": "rock_moss_set_01",
+    "files": {
+      "gltf": "/home/runner/work/test/test/destiny-garden/.cache/assets/raw/model_rocks/rock_moss_set_01_1k.gltf"
+    },
+    "spec": "9077631f89c738cfd977a99234c6b3b93fae064be402126d718c2dfe439f4c0e",
+    "download_status": "ok",
+    "fetched_at": "2026-11-28T14:08:39.467Z"
   }
 }
