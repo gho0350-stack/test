@@ -1,0 +1,65 @@
+name: prepare-assets
+# 운명의 정원: 3D 에셋 자동 수집·가공 (Poly Haven / ambientCG 공식 API, CC0만)
+# - assets-manifest.json 또는 scripts/assets 변경 시 자동 실행, 수동 실행(workflow_dispatch) 가능
+# - 결과(에셋, 잠금 파일, 상태 리포트, 로그, ATTRIBUTIONS.md)를 같은 브랜치에 커밋한다.
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: '캐시를 무시하고 다시 수집'
+        type: boolean
+        default: false
+  push:
+    branches: [claude/destiny-garden-game-30ardo]
+    paths:
+      - 'destiny-garden/assets-manifest.json'
+      - 'destiny-garden/scripts/assets/**'
+      - '.github/workflows/prepare-assets.yml'
+
+permissions:
+  contents: write   # 결과 커밋에 필요한 최소 권한
+
+concurrency:
+  group: prepare-assets
+  cancel-in-progress: false
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: destiny-garden
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: destiny-garden/package-lock.json
+      - name: 원본 다운로드 캐시
+        uses: actions/cache@v4
+        with:
+          path: destiny-garden/.cache/assets
+          key: assets-raw-${{ hashFiles('destiny-garden/assets-manifest.json') }}-${{ inputs.force && github.run_id || 'v1' }}
+      - run: npm ci
+      - name: 수집(fetch)
+        run: node scripts/assets/fetch.mjs 2>&1 | tee assets-fetch.log
+        continue-on-error: true
+      - name: 가공(process)
+        run: node scripts/assets/process.mjs 2>&1 | tee assets-process.log
+        continue-on-error: true
+      - name: 레지스트리·출처·리포트 생성
+        if: always()
+        run: node scripts/assets/report.mjs
+      - name: 결과 커밋
+        if: always()
+        run: |
+          git config user.name "asset-pipeline[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/assets assets-lock.json assets-processed.json assets-report.json assets-fetch.log assets-process.log ATTRIBUTIONS.md || true
+          if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
+          git commit -m "chore(assets): 3D 에셋 자동 수집 결과 갱신 [pipeline]"
+          for i in 1 2 3; do git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break || sleep 5; done

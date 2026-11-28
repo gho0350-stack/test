@@ -8,7 +8,11 @@
     "start": "next start",
     "test": "tsx --test tests/*.test.ts",
     "test:sb": "TEST_SUPABASE=1 SUPABASE_URL=https://ubhjmzyabtihglskfmmx.supabase.co SUPABASE_SECRET_KEY=${SUPABASE_SECRET_KEY:-proxy-injected} tsx --test tests/game.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "assets:fetch": "node scripts/assets/fetch.mjs",
+    "assets:process": "node scripts/assets/process.mjs",
+    "assets:report": "node scripts/assets/report.mjs",
+    "assets:all": "node scripts/assets/fetch.mjs && node scripts/assets/process.mjs && node scripts/assets/report.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -23,10 +27,14 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@types/node": "^26.6.11",
     "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.187.0",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "5.9"
   }
