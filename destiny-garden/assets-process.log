@@ -1,0 +1,19 @@
+[process] tex_wood_floor: OK
+[process] tex_wood_dark: OK
+[process] tex_stone_path: OK
+[process] tex_stone_wall: OK
+[process] tex_roof_tile: OK
+[process] tex_fabric_rug: OK
+[process] tex_grass: OK
+[process] model_treasure_chest: OK
+[process] model_crate: OK
+[process] model_barrel: OK
+[process] model_table: OK
+[process] model_chair: OK
+[process] model_shelf: OK
+[process] model_vase: OK
+[process] model_lantern: OK
+prune: Removed types... Texture (1)
+[process] model_books: OK
+[process] model_sack: OK
+[process] 완료: 성공 17, 실패 0

@@ -1,0 +1,209 @@
+{
+  "tex_wood_floor": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_wood_floor/diff.webp",
+      "nor": "/assets/textures/tex_wood_floor/nor.webp",
+      "rough": "/assets/textures/tex_wood_floor/rough.webp",
+      "ao": "/assets/textures/tex_wood_floor/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_wood_dark": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_wood_dark/diff.webp",
+      "nor": "/assets/textures/tex_wood_dark/nor.webp",
+      "rough": "/assets/textures/tex_wood_dark/rough.webp",
+      "ao": "/assets/textures/tex_wood_dark/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_stone_path": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_stone_path/diff.webp",
+      "nor": "/assets/textures/tex_stone_path/nor.webp",
+      "rough": "/assets/textures/tex_stone_path/rough.webp",
+      "ao": "/assets/textures/tex_stone_path/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_stone_wall": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_stone_wall/diff.webp",
+      "nor": "/assets/textures/tex_stone_wall/nor.webp",
+      "rough": "/assets/textures/tex_stone_wall/rough.webp",
+      "ao": "/assets/textures/tex_stone_wall/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_roof_tile": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_roof_tile/diff.webp",
+      "nor": "/assets/textures/tex_roof_tile/nor.webp",
+      "rough": "/assets/textures/tex_roof_tile/rough.webp",
+      "ao": "/assets/textures/tex_roof_tile/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_fabric_rug": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_fabric_rug/diff.webp",
+      "nor": "/assets/textures/tex_fabric_rug/nor.webp",
+      "rough": "/assets/textures/tex_fabric_rug/rough.webp",
+      "ao": "/assets/textures/tex_fabric_rug/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "tex_grass": {
+    "type": "texture",
+    "maps": {
+      "diff": "/assets/textures/tex_grass/diff.webp",
+      "nor": "/assets/textures/tex_grass/nor.webp",
+      "rough": "/assets/textures/tex_grass/rough.webp",
+      "ao": "/assets/textures/tex_grass/ao.webp"
+    },
+    "size": 1024,
+    "optimization_status": "ok"
+  },
+  "model_treasure_chest": {
+    "type": "model",
+    "bytes": 3308508,
+    "sha256": "1cc55fad3c83bdd1a434f0b639c766fa336ac6d609494fef79e9220c753caf93",
+    "size_m": [
+      1.394,
+      0.9,
+      0.76
+    ],
+    "triangles": 103330,
+    "path": "/assets/models/model_treasure_chest.glb",
+    "optimization_status": "ok"
+  },
+  "model_crate": {
+    "type": "model",
+    "bytes": 462996,
+    "sha256": "bf779c5b89baf893be3bbb005a15756c42593bd7839cdfa4d5c750d4d52bee64",
+    "size_m": [
+      1.888,
+      0.8,
+      0.936
+    ],
+    "triangles": 6576,
+    "path": "/assets/models/model_crate.glb",
+    "optimization_status": "ok"
+  },
+  "model_barrel": {
+    "type": "model",
+    "bytes": 410336,
+    "sha256": "f12978a9a513ccfb343af97dc9a8fb2b57a0c08070b422e48d224cc1977288cb",
+    "size_m": [
+      0.64,
+      1,
+      0.64
+    ],
+    "triangles": 2682,
+    "path": "/assets/models/model_barrel.glb",
+    "optimization_status": "ok"
+  },
+  "model_table": {
+    "type": "model",
+    "bytes": 262936,
+    "sha256": "8492667e54216acd1734c1fe8d989cd719f4ccb906db471e1a750902ede20bec",
+    "size_m": [
+      2.787,
+      0.85,
+      1.018
+    ],
+    "triangles": 952,
+    "path": "/assets/models/model_table.glb",
+    "optimization_status": "ok"
+  },
+  "model_chair": {
+    "type": "model",
+    "bytes": 525588,
+    "sha256": "144e6a3cb9a735f070fb749debda5fe458336180fa1233593f44a972f3f0a48b",
+    "size_m": [
+      0.797,
+      1,
+      0.719
+    ],
+    "triangles": 5626,
+    "path": "/assets/models/model_chair.glb",
+    "optimization_status": "ok"
+  },
+  "model_shelf": {
+    "type": "model",
+    "bytes": 333116,
+    "sha256": "3d0f39060bbeadc4deba0ab34ccae0c6cfefc82f8fcccca6f2d4c2a4814a2828",
+    "size_m": [
+      1.061,
+      2.2,
+      0.272
+    ],
+    "triangles": 182,
+    "path": "/assets/models/model_shelf.glb",
+    "optimization_status": "ok"
+  },
+  "model_vase": {
+    "type": "model",
+    "bytes": 341012,
+    "sha256": "3864974771260129df250ea5d30f24e8c5c6d144bd84b5654be38dfe7ac7b8a9",
+    "size_m": [
+      0.406,
+      0.7,
+      0.406
+    ],
+    "triangles": 9408,
+    "path": "/assets/models/model_vase.glb",
+    "optimization_status": "ok"
+  },
+  "model_lantern": {
+    "type": "model",
+    "bytes": 645988,
+    "sha256": "3de472e71bb90fecbd7658f7da31483d3433ee0075a0c4e14a583741b8643f97",
+    "size_m": [
+      0.194,
+      0.6,
+      0.194
+    ],
+    "triangles": 12742,
+    "path": "/assets/models/model_lantern.glb",
+    "optimization_status": "ok"
+  },
+  "model_books": {
+    "type": "model",
+    "bytes": 2773172,
+    "sha256": "ac545527afa27a27d22fbe7eda0a3543f5930deabe330319e770dc65fc2edaf4",
+    "size_m": [
+      0.697,
+      0.3,
+      0.206
+    ],
+    "triangles": 67306,
+    "path": "/assets/models/model_books.glb",
+    "optimization_status": "ok"
+  },
+  "model_sack": {
+    "type": "model",
+    "bytes": 1136944,
+    "sha256": "9f8b3651beec1d6b5236f58786b05e5099608f3f9c8a6e412b45e939745e20e1",
+    "size_m": [
+      1.373,
+      0.7,
+      0.43
+    ],
+    "triangles": 13960,
+    "path": "/assets/models/model_sack.glb",
+    "optimization_status": "ok"
+  }
+}
