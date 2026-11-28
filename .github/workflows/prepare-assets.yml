@@ -62,7 +62,12 @@ jobs:
         run: |
           git config user.name "asset-pipeline[bot]"
           git config user.email "actions@users.noreply.github.com"
-          git add public/assets assets-catalog assets-catalog.log assets-lock.json assets-processed.json assets-report.json assets-fetch.log assets-process.log ATTRIBUTIONS.md || true
+          { echo "run: ${{ github.run_id }} sha: ${{ github.sha }} at $(date -u +%FT%TZ)"; echo "--- git status (before add)"; git status --short | head -60; } > assets-run.log 2>&1
+          for p in public/assets assets-catalog assets-catalog.log assets-lock.json assets-processed.json assets-report.json assets-fetch.log assets-process.log assets-run.log ATTRIBUTIONS.md; do [ -e "$p" ] && git add "$p"; done
           if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
           git commit -m "chore(assets): 3D 에셋 자동 수집 결과 갱신 [pipeline]"
-          for i in 1 2 3; do git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break || sleep 5; done
+          for i in 1 2 3; do
+            git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && exit 0
+            sleep 5
+          done
+          echo "::error::결과 푸시 실패"; exit 1
