@@ -455,3 +455,6 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .cov { margin: 0 var(--gx) 10px; padding: 9px 12px; border-radius: 10px; background: var(--accent-soft, #e8f1ec); color: var(--ink); font-size: 12.5px; line-height: 1.5; } .cov.s3 { background: #f1efe9; } .cov b { font-weight: 800; }
 
 .warnline { color: #a4361e; font-weight: 600; }
+
+.sitefoot{max-width:1100px;margin:24px auto 90px;padding:0 16px;font-size:12px;color:#7a7a72;line-height:1.6}
+.sitefoot a{color:inherit;text-decoration:underline}

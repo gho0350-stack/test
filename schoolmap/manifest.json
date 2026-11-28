@@ -1,7 +1,7 @@
 {
   "name": "어디살지",
   "short_name": "어디살지",
-  "description": "학교로 찾는 집, 우리 아이의 학군 라이프",
+  "description": "서울 주요 학군 29개 고등학교의 진학 실적과 주변 아파트 정보",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1c6b45",
