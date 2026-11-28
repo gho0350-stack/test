@@ -1,21 +1,254 @@
 {
-  "_doc": "방별 장식(비상호작용) 에셋 배치. asset_id 는 assets-manifest.json 의 model_* 이며, 레지스트리에 준비된 모델만 로드되고 없으면 건너뛴다(기존 절차적 소품 유지). 좌표는 방 중심 기준(m).",
-  "wealth": [
-    { "asset_id": "model_shelf", "position": [1.9, -3.95], "rotation": 0, "radius": 0.9 },
-    { "asset_id": "model_crate", "position": [-5.2, -1.9], "rotation": 0.4, "radius": 0.6 },
-    { "asset_id": "model_barrel", "position": [5.3, -2.2], "rotation": 0, "radius": 0.55 },
-    { "asset_id": "model_vase", "position": [2.6, -0.6], "rotation": 0, "radius": 0.4 },
-    { "asset_id": "model_sack", "position": [-5.2, 2.7], "rotation": 0.8, "radius": 0.5 },
-    { "asset_id": "model_table", "position": [-2.6, 2.4], "rotation": 0.2, "radius": 1.0 },
-    { "asset_id": "model_chair", "position": [-3.4, 3.1], "rotation": 2.2, "radius": 0.5 },
-    { "asset_id": "model_lantern", "position": [5.4, 3.0], "rotation": 0, "radius": 0.35 }
-  ],
-  "library": [
-    { "asset_id": "model_shelf", "position": [-3.0, -3.95], "rotation": 0, "radius": 0.9 },
-    { "asset_id": "model_shelf", "position": [5.0, -3.95], "rotation": 0, "radius": 0.9 },
-    { "asset_id": "model_books", "position": [2.4, -0.3], "rotation": 0.3, "radius": 0.3 },
-    { "asset_id": "model_lantern", "position": [-5.2, 3.0], "rotation": 0, "radius": 0.35 }
-  ],
-  "pavilion": [ { "asset_id": "model_vase", "position": [5.2, 3.2], "rotation": 0, "radius": 0.4 }, { "asset_id": "model_lantern", "position": [-5.2, 3.0], "rotation": 0, "radius": 0.35 } ],
-  "time": [ { "asset_id": "model_shelf", "position": [-0.8, -3.95], "rotation": 0, "radius": 0.9 }, { "asset_id": "model_books", "position": [2.0, -0.3], "rotation": 0.3, "radius": 0.3 }, { "asset_id": "model_lantern", "position": [-5.2, 3.0], "rotation": 0, "radius": 0.35 } ]
+ "wealth": [
+  {
+   "asset_id": "model_cabinet",
+   "position": [
+    1.9,
+    -3.95
+   ],
+   "rotation": 0,
+   "radius": 0.9
+  },
+  {
+   "asset_id": "model_crate",
+   "position": [
+    -5.2,
+    -1.9
+   ],
+   "rotation": 0.4,
+   "radius": 0.6
+  },
+  {
+   "asset_id": "model_barrel",
+   "position": [
+    5.3,
+    -2.2
+   ],
+   "rotation": 0,
+   "radius": 0.55
+  },
+  {
+   "asset_id": "model_vase",
+   "position": [
+    2.6,
+    -0.6
+   ],
+   "rotation": 0,
+   "radius": 0.4
+  },
+  {
+   "asset_id": "model_basket",
+   "position": [
+    -5.2,
+    2.7
+   ],
+   "rotation": 0.8,
+   "radius": 0.5
+  },
+  {
+   "asset_id": "model_table",
+   "position": [
+    -2.6,
+    2.5
+   ],
+   "rotation": 0.1,
+   "radius": 1.0
+  },
+  {
+   "asset_id": "model_stool",
+   "position": [
+    -1.6,
+    3.3
+   ],
+   "rotation": 0.5,
+   "radius": 0.4
+  },
+  {
+   "asset_id": "model_lantern",
+   "position": [
+    5.4,
+    3.0
+   ],
+   "rotation": 0,
+   "radius": 0.35
+  },
+  {
+   "asset_id": "model_plant",
+   "position": [
+    5.2,
+    1.8
+   ],
+   "rotation": 0,
+   "radius": 0.4
+  }
+ ],
+ "library": [
+  {
+   "asset_id": "model_shelf",
+   "position": [
+    -3.0,
+    -3.95
+   ],
+   "rotation": 0,
+   "radius": 0.9
+  },
+  {
+   "asset_id": "model_shelf",
+   "position": [
+    5.0,
+    -3.95
+   ],
+   "rotation": 0,
+   "radius": 0.9
+  },
+  {
+   "asset_id": "model_drawer",
+   "position": [
+    -5.3,
+    -1.4
+   ],
+   "rotation": 1.57,
+   "radius": 0.7
+  },
+  {
+   "asset_id": "model_books",
+   "position": [
+    2.4,
+    -0.3
+   ],
+   "rotation": 0.3,
+   "radius": 0.3
+  },
+  {
+   "asset_id": "model_chair",
+   "position": [
+    1.2,
+    1.4
+   ],
+   "rotation": 3.3,
+   "radius": 0.5
+  },
+  {
+   "asset_id": "model_lantern",
+   "position": [
+    -5.2,
+    3.0
+   ],
+   "rotation": 0,
+   "radius": 0.35
+  },
+  {
+   "asset_id": "model_plant",
+   "position": [
+    5.3,
+    2.6
+   ],
+   "rotation": 0,
+   "radius": 0.4
+  }
+ ],
+ "pavilion": [
+  {
+   "asset_id": "model_screen",
+   "position": [
+    0.0,
+    -4.1
+   ],
+   "rotation": 0,
+   "radius": 1.2
+  },
+  {
+   "asset_id": "model_tea_table",
+   "position": [
+    -1.0,
+    1.0
+   ],
+   "rotation": 0,
+   "radius": 0.7
+  },
+  {
+   "asset_id": "model_teaset",
+   "position": [
+    -1.0,
+    1.0
+   ],
+   "rotation": 0,
+   "radius": 0.01
+  },
+  {
+   "asset_id": "model_vase",
+   "position": [
+    5.2,
+    3.2
+   ],
+   "rotation": 0,
+   "radius": 0.4
+  },
+  {
+   "asset_id": "model_lantern",
+   "position": [
+    -5.2,
+    3.0
+   ],
+   "rotation": 0,
+   "radius": 0.35
+  },
+  {
+   "asset_id": "model_plant",
+   "position": [
+    5.3,
+    2.0
+   ],
+   "rotation": 0,
+   "radius": 0.4
+  }
+ ],
+ "time": [
+  {
+   "asset_id": "model_shelf",
+   "position": [
+    -1.0,
+    -3.95
+   ],
+   "rotation": 0,
+   "radius": 0.9
+  },
+  {
+   "asset_id": "model_books",
+   "position": [
+    2.0,
+    -0.3
+   ],
+   "rotation": 0.3,
+   "radius": 0.3
+  },
+  {
+   "asset_id": "model_chair",
+   "position": [
+    -1.5,
+    1.6
+   ],
+   "rotation": 3.0,
+   "radius": 0.5
+  },
+  {
+   "asset_id": "model_mirror",
+   "position": [
+    -5.5,
+    2.0
+   ],
+   "rotation": 1.57,
+   "radius": 0.3
+  },
+  {
+   "asset_id": "model_lantern",
+   "position": [
+    -5.2,
+    3.4
+   ],
+   "rotation": 0,
+   "radius": 0.35
+  }
+ ],
+ "_doc": "방별 장식(비상호작용) 에셋 배치. asset_id 는 assets-manifest.json 의 model_* 이며, 레지스트리에 준비된 모델만 로드되고 없으면 건너뛴다. 좌표는 방 중심 기준(m)."
 }

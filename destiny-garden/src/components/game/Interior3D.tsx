@@ -18,6 +18,7 @@ import { AVATARS } from '@/lib/game/world';
 
 import { Halo } from './RoomProps';
 
+const FLOOR: Record<string, string> = { library: 'tex_wood_floor', wealth: 'tex_wood_dark', pavilion: 'tex_tatami', time: 'tex_wood_dark' };
 export function Interior({ id }: { id: string }) {
   const room = roomOf(id)!;
   const st = useGame((s) => s.state);
@@ -36,9 +37,9 @@ export function Interior({ id }: { id: string }) {
       <directionalLight position={[4, 11, 7]} intensity={1.5} color={T.light} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={28} shadow-bias={-0.0004} />
       <pointLight position={[0, 3.4, 0]} intensity={10} distance={13} color={T.light} />
       {/* 바닥/벽 (정면·우측은 열린 단면 구조: 캐릭터가 가려지지 않음, 벽은 단면이라 뒤에서 보면 투명) */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[w, d]} /><PbrMaterial id="tex_wood_floor" repeat={[w / 3, d / 3]} tint={T.floor} roughness={0.85} fallback={<meshStandardMaterial map={woodTex(T.floor, [w / 3, d / 3])} roughness={0.75} />} /></mesh>
-      <mesh position={[0, 2.2, -d / 2]} receiveShadow><planeGeometry args={[w + 0.4, 4.4]} /><PbrMaterial id="tex_stone_wall" repeat={[w / 3, 1.6]} tint={T.wall} fallback={<meshStandardMaterial map={plasterTex(T.wall, [w / 3, 1.6])} />} /></mesh>
-      <mesh position={[-w / 2, 2.2, 0]} rotation-y={Math.PI / 2} receiveShadow><planeGeometry args={[d, 4.4]} /><PbrMaterial id="tex_stone_wall" repeat={[d / 3, 1.6]} tint={T.wall} fallback={<meshStandardMaterial map={plasterTex(T.wall, [d / 3, 1.6])} />} /></mesh>
+      <mesh rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[w, d]} /><PbrMaterial id={FLOOR[id] ?? 'tex_wood_floor'} repeat={[w / 3, d / 3]} tint="#c9b8a8" roughness={0.85} fallback={<meshStandardMaterial map={woodTex(T.floor, [w / 3, d / 3])} roughness={0.75} />} /></mesh>
+      <mesh position={[0, 2.2, -d / 2]} receiveShadow><planeGeometry args={[w + 0.4, 4.4]} /><PbrMaterial id="tex_plaster" repeat={[w / 3, 1.6]} tint="#d8c8b0" fallback={<meshStandardMaterial map={plasterTex(T.wall, [w / 3, 1.6])} />} /></mesh>
+      <mesh position={[-w / 2, 2.2, 0]} rotation-y={Math.PI / 2} receiveShadow><planeGeometry args={[d, 4.4]} /><PbrMaterial id="tex_plaster" repeat={[d / 3, 1.6]} tint="#d8c8b0" fallback={<meshStandardMaterial map={plasterTex(T.wall, [d / 3, 1.6])} />} /></mesh>
       <mesh position={[0, 0.6, -d / 2 + 0.02]}><planeGeometry args={[w + 0.4, 1.2]} /><meshStandardMaterial map={woodTex('#5a3a22', [w / 2, 0.5])} /></mesh>
       <mesh position={[-w / 2 + 0.02, 0.6, 0]} rotation-y={Math.PI / 2}><planeGeometry args={[d, 1.2]} /><meshStandardMaterial map={woodTex('#5a3a22', [d / 2, 0.5])} /></mesh>
       <mesh position={[0, 1.22, -d / 2 + 0.05]}><boxGeometry args={[w + 0.4, 0.08, 0.1]} /><meshStandardMaterial color={T.accent} emissive={T.accent} emissiveIntensity={0.15} /></mesh>

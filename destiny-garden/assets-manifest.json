@@ -1,42 +1,476 @@
 {
   "_doc": "에셋 자동 수집 목록. 존재 여부를 모르는 ID 대신 '검색 조건'(카테고리·키워드)을 쓰고, 파이프라인이 공식 API에서 실제 존재하는 에셋을 찾아 선택한다. 라이선스는 CC0 계열만 허용(allowed_licenses).",
-  "allowed_licenses": ["CC0", "CC0-1.0", "Public Domain"],
-  "target": { "texture_size": 1024, "model_texture_size": 512 },
+  "allowed_licenses": [
+    "CC0",
+    "CC0-1.0",
+    "Public Domain"
+  ],
+  "target": {
+    "texture_size": 1024,
+    "model_texture_size": 512
+  },
   "assets": [
-    { "asset_id": "tex_wood_floor", "kind": "texture", "category": "floor", "required_room": "all", "fallback_asset": "procedural:wood",
-      "sources": [{ "type": "polyhaven", "categories": ["wood", "floor"], "keywords": ["plank", "floor", "wood"], "avoid": ["white", "bleached", "painted"] }, { "type": "ambientcg", "query": "WoodFloor" }] },
-    { "asset_id": "tex_wood_dark", "kind": "texture", "category": "furniture", "required_room": "all", "fallback_asset": "procedural:wood",
-      "sources": [{ "type": "polyhaven", "categories": ["wood"], "keywords": ["dark", "old", "brown", "planks"], "avoid": ["white", "light"] }, { "type": "ambientcg", "query": "Wood" }] },
-    { "asset_id": "tex_stone_path", "kind": "texture", "category": "ground", "required_room": "garden", "fallback_asset": "procedural:stone",
-      "sources": [{ "type": "polyhaven", "categories": ["floor", "rock"], "keywords": ["paving", "cobble", "stone", "slab", "tiles"], "avoid": ["marble", "white"] }, { "type": "ambientcg", "query": "PavingStones" }] },
-    { "asset_id": "tex_stone_wall", "kind": "texture", "category": "wall", "required_room": "all", "fallback_asset": "procedural:plaster",
-      "sources": [{ "type": "polyhaven", "categories": ["wall", "plaster"], "keywords": ["plaster", "stucco", "wall", "concrete"], "avoid": ["brick"] }, { "type": "ambientcg", "query": "Plaster" }] },
-    { "asset_id": "tex_roof_tile", "kind": "texture", "category": "roof", "required_room": "garden", "fallback_asset": "procedural:roof",
-      "sources": [{ "type": "polyhaven", "categories": ["roofing", "roof"], "keywords": ["roof", "tile", "slate"], "avoid": [] }, { "type": "ambientcg", "query": "RoofingTiles" }] },
-    { "asset_id": "tex_fabric_rug", "kind": "texture", "category": "fabric", "required_room": "all", "fallback_asset": "procedural:rug",
-      "sources": [{ "type": "polyhaven", "categories": ["fabric"], "keywords": ["fabric", "carpet", "rug", "leather", "cloth"], "avoid": [] }, { "type": "ambientcg", "query": "Fabric" }] },
-    { "asset_id": "tex_grass", "kind": "texture", "category": "ground", "required_room": "garden", "fallback_asset": "procedural:ground",
-      "sources": [{ "type": "polyhaven", "categories": ["ground", "nature"], "keywords": ["grass", "forest", "moss", "ground", "leaves"], "avoid": ["snow", "sand"] }, { "type": "ambientcg", "query": "Ground" }] },
-
-    { "asset_id": "model_treasure_chest", "kind": "model", "category": "container", "required_room": "wealth", "target_height": 0.9, "fallback_asset": "procedural:chest",
-      "sources": [{ "type": "polyhaven", "categories": ["containers", "furniture", "decorative"], "keywords": ["chest", "trunk", "treasure"], "avoid": [] }] },
-    { "asset_id": "model_crate", "kind": "model", "category": "container", "required_room": "wealth", "target_height": 0.8, "fallback_asset": "procedural:crate",
-      "sources": [{ "type": "polyhaven", "categories": ["containers", "furniture", "props"], "keywords": ["crate", "box", "wooden_crate"], "avoid": [] }] },
-    { "asset_id": "model_barrel", "kind": "model", "category": "container", "required_room": "wealth", "target_height": 1.0, "fallback_asset": "procedural:barrel",
-      "sources": [{ "type": "polyhaven", "categories": ["containers", "props"], "keywords": ["barrel", "cask"], "avoid": [] }] },
-    { "asset_id": "model_table", "kind": "model", "category": "furniture", "required_room": "wealth", "target_height": 0.85, "fallback_asset": "procedural:desk",
-      "sources": [{ "type": "polyhaven", "categories": ["furniture"], "keywords": ["table", "desk"], "avoid": ["coffee", "side"] }] },
-    { "asset_id": "model_chair", "kind": "model", "category": "furniture", "required_room": "wealth", "target_height": 1.0, "fallback_asset": "procedural:chair",
-      "sources": [{ "type": "polyhaven", "categories": ["furniture"], "keywords": ["chair", "stool", "armchair"], "avoid": [] }] },
-    { "asset_id": "model_shelf", "kind": "model", "category": "furniture", "required_room": "wealth", "target_height": 2.2, "fallback_asset": "procedural:bookshelf",
-      "sources": [{ "type": "polyhaven", "categories": ["furniture"], "keywords": ["shelf", "bookcase", "bookshelf", "cabinet"], "avoid": [] }] },
-    { "asset_id": "model_vase", "kind": "model", "category": "decor", "required_room": "wealth", "target_height": 0.7, "fallback_asset": "procedural:vase",
-      "sources": [{ "type": "polyhaven", "categories": ["decorative", "props"], "keywords": ["vase", "pot", "jar", "ceramic", "amphora"], "avoid": [] }] },
-    { "asset_id": "model_lantern", "kind": "model", "category": "lighting", "required_room": "all", "target_height": 0.6, "fallback_asset": "procedural:lantern",
-      "sources": [{ "type": "polyhaven", "categories": ["lighting", "decorative"], "keywords": ["lantern", "lamp", "candle", "oil_lamp"], "avoid": [] }] },
-    { "asset_id": "model_books", "kind": "model", "category": "decor", "required_room": "wealth", "target_height": 0.3, "fallback_asset": "procedural:books",
-      "sources": [{ "type": "polyhaven", "categories": ["decorative", "props"], "keywords": ["book", "books"], "avoid": [] }] },
-    { "asset_id": "model_sack", "kind": "model", "category": "decor", "required_room": "wealth", "target_height": 0.7, "fallback_asset": "procedural:sack",
-      "sources": [{ "type": "polyhaven", "categories": ["props", "containers", "decorative"], "keywords": ["sack", "bag", "burlap"], "avoid": [] }] }
+    {
+      "asset_id": "tex_wood_floor",
+      "kind": "texture",
+      "category": "floor",
+      "required_room": "all",
+      "fallback_asset": "procedural:wood",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "brown_planks_03"
+        },
+        {
+          "type": "ambientcg",
+          "id": "WoodFloor051"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_wood_dark",
+      "kind": "texture",
+      "category": "furniture",
+      "required_room": "all",
+      "fallback_asset": "procedural:wood",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "dark_wood"
+        },
+        {
+          "type": "ambientcg",
+          "id": "Wood051"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_stone_path",
+      "kind": "texture",
+      "category": "ground",
+      "required_room": "garden",
+      "fallback_asset": "procedural:stone",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "cobblestone_floor_04"
+        },
+        {
+          "type": "ambientcg",
+          "id": "PavingStones138"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_stone_wall",
+      "kind": "texture",
+      "category": "wall",
+      "required_room": "garden",
+      "fallback_asset": "procedural:plaster",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "japanese_stone_wall"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_plaster",
+      "kind": "texture",
+      "category": "wall",
+      "required_room": "all",
+      "fallback_asset": "procedural:plaster",
+      "sources": [
+        {
+          "type": "ambientcg",
+          "id": "Plaster007"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_roof_tile",
+      "kind": "texture",
+      "category": "roof",
+      "required_room": "garden",
+      "fallback_asset": "procedural:roof",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "grey_roof_tiles_02"
+        },
+        {
+          "type": "ambientcg",
+          "id": "RoofingTiles010"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_fabric_rug",
+      "kind": "texture",
+      "category": "fabric",
+      "required_room": "all",
+      "fallback_asset": "procedural:rug",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "fabric_pattern_07"
+        },
+        {
+          "type": "ambientcg",
+          "id": "Fabric061"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_grass",
+      "kind": "texture",
+      "category": "ground",
+      "required_room": "garden",
+      "fallback_asset": "procedural:ground",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "forrest_ground_01"
+        },
+        {
+          "type": "ambientcg",
+          "id": "Ground111"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_tatami",
+      "kind": "texture",
+      "category": "floor",
+      "required_room": "pavilion",
+      "fallback_asset": "procedural:wood",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "tatami_mat"
+        }
+      ]
+    },
+    {
+      "asset_id": "tex_bamboo",
+      "kind": "texture",
+      "category": "wall",
+      "required_room": "pavilion",
+      "fallback_asset": "procedural:wood",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "bamboo_wall"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_treasure_chest",
+      "kind": "model",
+      "category": "container",
+      "required_room": "wealth",
+      "target_height": 0.9,
+      "fallback_asset": "procedural:chest",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "treasure_chest"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_crate",
+      "kind": "model",
+      "category": "container",
+      "required_room": "wealth",
+      "target_height": 0.8,
+      "fallback_asset": "procedural:crate",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "wooden_crate_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_barrel",
+      "kind": "model",
+      "category": "container",
+      "required_room": "wealth",
+      "target_height": 1.0,
+      "fallback_asset": "procedural:barrel",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "Barrel_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_table",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "all",
+      "target_height": 0.9,
+      "fallback_asset": "procedural:desk",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_console_table"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_tea_table",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "pavilion",
+      "target_height": 0.6,
+      "fallback_asset": "procedural:desk",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_tea_table"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_chair",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "all",
+      "target_height": 1.1,
+      "fallback_asset": "procedural:chair",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_armchair"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_stool",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "all",
+      "target_height": 0.5,
+      "fallback_asset": "procedural:chair",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_stool"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_cabinet",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "wealth",
+      "target_height": 1.9,
+      "fallback_asset": "procedural:bookshelf",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_cabinet"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_shelf",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "library",
+      "target_height": 2.3,
+      "fallback_asset": "procedural:bookshelf",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "wooden_bookshelf_worn"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_drawer",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "library",
+      "target_height": 1.2,
+      "fallback_asset": "procedural:drawer",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "vintage_wooden_drawer_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_vase",
+      "kind": "model",
+      "category": "decor",
+      "required_room": "all",
+      "target_height": 0.7,
+      "fallback_asset": "procedural:vase",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "antique_ceramic_vase_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_lantern",
+      "kind": "model",
+      "category": "lighting",
+      "required_room": "all",
+      "target_height": 0.7,
+      "fallback_asset": "procedural:lantern",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "wooden_lantern_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_chandelier",
+      "kind": "model",
+      "category": "lighting",
+      "required_room": "all",
+      "target_height": 1.1,
+      "fallback_asset": "procedural:chandelier",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_chandelier"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_books",
+      "kind": "model",
+      "category": "decor",
+      "required_room": "library",
+      "target_height": 0.3,
+      "fallback_asset": "procedural:books",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "book_encyclopedia_set_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_basket",
+      "kind": "model",
+      "category": "decor",
+      "required_room": "wealth",
+      "target_height": 0.6,
+      "fallback_asset": "procedural:sack",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "wicker_basket_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_screen",
+      "kind": "model",
+      "category": "furniture",
+      "required_room": "pavilion",
+      "target_height": 2.0,
+      "fallback_asset": "procedural:screen",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "chinese_screen_panels"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_plant",
+      "kind": "model",
+      "category": "plant",
+      "required_room": "all",
+      "target_height": 1.2,
+      "fallback_asset": "procedural:plant",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "potted_plant_02"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_teaset",
+      "kind": "model",
+      "category": "decor",
+      "required_room": "pavilion",
+      "target_height": 0.25,
+      "fallback_asset": "procedural:vase",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "tea_set_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_mirror",
+      "kind": "model",
+      "category": "decor",
+      "required_room": "all",
+      "target_height": 1.8,
+      "fallback_asset": "procedural:mirror",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "ornate_mirror_01"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_tree_blossom",
+      "kind": "model",
+      "category": "nature",
+      "required_room": "garden",
+      "target_height": 6.0,
+      "fallback_asset": "procedural:tree",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "jacaranda_tree"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_tree_small",
+      "kind": "model",
+      "category": "nature",
+      "required_room": "garden",
+      "target_height": 4.0,
+      "fallback_asset": "procedural:tree",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "tree_small_02"
+        }
+      ]
+    },
+    {
+      "asset_id": "model_rocks",
+      "kind": "model",
+      "category": "nature",
+      "required_room": "garden",
+      "target_height": 1.2,
+      "fallback_asset": "procedural:rock",
+      "sources": [
+        {
+          "type": "polyhaven",
+          "id": "rock_moss_set_01"
+        }
+      ]
+    }
   ]
 }

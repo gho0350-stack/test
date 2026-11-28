@@ -72,7 +72,8 @@ for (const asset of manifest.assets) {
   if (only.length && !only.includes(asset.asset_id)) continue;
   const dir = path.join(CACHE, 'raw', asset.asset_id);
   const prev = lock[asset.asset_id];
-  if (prev?.download_status === 'ok' && prev.files && Object.values(prev.files).every((f) => fs.existsSync(f))) { log(`${asset.asset_id}: 캐시 사용`); ok++; continue; }
+  const spec = sha256(Buffer.from(JSON.stringify(asset.sources)));
+  if (prev?.download_status === 'ok' && prev.spec === spec && prev.files && Object.values(prev.files).every((f) => fs.existsSync(f))) { log(`${asset.asset_id}: 캐시 사용`); ok++; continue; }
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   log(`${asset.asset_id} 수집 시작`);
   let result = null; const errors = [];
@@ -80,7 +81,7 @@ for (const asset of manifest.assets) {
     try { result = await adapters[src.type](asset, src, dir); break; } catch (e) { errors.push(`${src.type}: ${e.message}`); log(`  ${src.type} 실패 → 다음 공급처 (${e.message})`); }
   }
   if (result && !(manifest.allowed_licenses ?? ['CC0']).includes(result.license)) { errors.push(`허용되지 않는 라이선스 ${result.license}`); result = null; }
-  lock[asset.asset_id] = result ? { ...result, download_status: 'ok', fetched_at: new Date().toISOString() } : { download_status: 'failed', errors, fallback_asset: asset.fallback_asset, alt_sources: '다른 공급처 추가 필요(Kenney/Quaternius/Poly Pizza 는 공식 API 미확인)' };
+  lock[asset.asset_id] = result ? { ...result, spec, download_status: 'ok', fetched_at: new Date().toISOString() } : { download_status: 'failed', errors, fallback_asset: asset.fallback_asset, alt_sources: '다른 공급처 추가 필요(Kenney/Quaternius/Poly Pizza 는 공식 API 미확인)' };
   result ? ok++ : fail++;
   await sleep(300);
 }
