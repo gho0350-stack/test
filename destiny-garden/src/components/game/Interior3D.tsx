@@ -12,6 +12,8 @@ import { cam, camRelative, resetCam } from '@/lib/client/camera';
 import { woodTex, plasterTex } from '@/lib/client/textures';
 import { RoomProps } from './RoomProps';
 import { Shadowed } from './Shadowed';
+import { RoomDecor } from './Decor';
+import { PbrMaterial } from './Pbr';
 import { AVATARS } from '@/lib/game/world';
 
 import { Halo } from './RoomProps';
@@ -34,14 +36,15 @@ export function Interior({ id }: { id: string }) {
       <directionalLight position={[4, 11, 7]} intensity={1.5} color={T.light} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={28} shadow-bias={-0.0004} />
       <pointLight position={[0, 3.4, 0]} intensity={10} distance={13} color={T.light} />
       {/* 바닥/벽 (정면·우측은 열린 단면 구조: 캐릭터가 가려지지 않음, 벽은 단면이라 뒤에서 보면 투명) */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[w, d]} /><meshStandardMaterial map={woodTex(T.floor, [w / 3, d / 3])} roughness={0.75} /></mesh>
-      <mesh position={[0, 2.2, -d / 2]} receiveShadow><planeGeometry args={[w + 0.4, 4.4]} /><meshStandardMaterial map={plasterTex(T.wall, [w / 3, 1.6])} /></mesh>
-      <mesh position={[-w / 2, 2.2, 0]} rotation-y={Math.PI / 2} receiveShadow><planeGeometry args={[d, 4.4]} /><meshStandardMaterial map={plasterTex(T.wall, [d / 3, 1.6])} /></mesh>
+      <mesh rotation-x={-Math.PI / 2} receiveShadow><planeGeometry args={[w, d]} /><PbrMaterial id="tex_wood_floor" repeat={[w / 3, d / 3]} tint={T.floor} roughness={0.85} fallback={<meshStandardMaterial map={woodTex(T.floor, [w / 3, d / 3])} roughness={0.75} />} /></mesh>
+      <mesh position={[0, 2.2, -d / 2]} receiveShadow><planeGeometry args={[w + 0.4, 4.4]} /><PbrMaterial id="tex_stone_wall" repeat={[w / 3, 1.6]} tint={T.wall} fallback={<meshStandardMaterial map={plasterTex(T.wall, [w / 3, 1.6])} />} /></mesh>
+      <mesh position={[-w / 2, 2.2, 0]} rotation-y={Math.PI / 2} receiveShadow><planeGeometry args={[d, 4.4]} /><PbrMaterial id="tex_stone_wall" repeat={[d / 3, 1.6]} tint={T.wall} fallback={<meshStandardMaterial map={plasterTex(T.wall, [d / 3, 1.6])} />} /></mesh>
       <mesh position={[0, 0.6, -d / 2 + 0.02]}><planeGeometry args={[w + 0.4, 1.2]} /><meshStandardMaterial map={woodTex('#5a3a22', [w / 2, 0.5])} /></mesh>
       <mesh position={[-w / 2 + 0.02, 0.6, 0]} rotation-y={Math.PI / 2}><planeGeometry args={[d, 1.2]} /><meshStandardMaterial map={woodTex('#5a3a22', [d / 2, 0.5])} /></mesh>
       <mesh position={[0, 1.22, -d / 2 + 0.05]}><boxGeometry args={[w + 0.4, 0.08, 0.1]} /><meshStandardMaterial color={T.accent} emissive={T.accent} emissiveIntensity={0.15} /></mesh>
-      {[-3.2, 3.2].map((x) => <group key={x}><mesh position={[x, 2.9, -d / 2 + 0.03]}><planeGeometry args={[1.5, 1.7]} /><meshStandardMaterial color="#1b1550" emissive="#6a5fd0" emissiveIntensity={0.9} toneMapped={false} /></mesh>{[-0.75, 0, 0.75].map((dx) => <mesh key={dx} position={[x + dx, 2.9, -d / 2 + 0.06]}><boxGeometry args={[0.05, 1.7, 0.04]} /><meshStandardMaterial color="#3a2418" /></mesh>)}<mesh position={[x, 2.9, -d / 2 + 0.06]}><boxGeometry args={[1.6, 0.05, 0.04]} /><meshStandardMaterial color="#3a2418" /></mesh><Halo position={[x, 2.9, -d / 2 + 0.6]} size={3.4} color="#9a8cff" opacity={0.25} /></group>)}
+      {[-3.2, 3.2].map((x) => <group key={x}><mesh position={[x, 2.9, -d / 2 + 0.03]}><planeGeometry args={[1.5, 1.7]} /><meshStandardMaterial color="#1b1550" emissive="#b9c9e6" emissiveIntensity={0.75} toneMapped={false} /></mesh>{[-0.75, 0, 0.75].map((dx) => <mesh key={dx} position={[x + dx, 2.9, -d / 2 + 0.06]}><boxGeometry args={[0.05, 1.7, 0.04]} /><meshStandardMaterial color="#3a2418" /></mesh>)}<mesh position={[x, 2.9, -d / 2 + 0.06]}><boxGeometry args={[1.6, 0.05, 0.04]} /><meshStandardMaterial color="#3a2418" /></mesh><Halo position={[x, 2.9, -d / 2 + 0.6]} size={3.4} color="#cfe0ff" opacity={0.2} /></group>)}
       <RoomProps id={id} w={w} d={d} accent={T.accent} light={T.light} />
+      <RoomDecor id={id} />
       {/* 출입구 */}
       {[-1.1, 1.1].map((x) => <mesh key={x} position={[x, 1.1, d / 2 - 0.1]}><boxGeometry args={[0.14, 2.2, 0.14]} /><meshStandardMaterial color={T.accent} emissive={T.accent} emissiveIntensity={0.5} /></mesh>)}
       <Halo position={[0, 1.2, d / 2 - 0.2]} size={4} color={T.light} opacity={0.25} />
@@ -126,9 +129,12 @@ function InteriorPlayer({ id }: { id: string }) {
     }
     walk.current += ((moving ? 1 : 0) - walk.current) * Math.min(1, dt * 10);
     if (group.current) { group.current.position.copy(pos.current); group.current.rotation.y = yaw.current; }
-    const cp = Math.cos(cam.pitch) * cam.dist; const tx = pos.current.x * 0.6, tz = pos.current.z * 0.5 - 0.4;
-    camera.position.lerp(new THREE.Vector3(tx + Math.sin(cam.yaw) * cp, 0.4 + Math.sin(cam.pitch) * cam.dist, tz + Math.cos(cam.yaw) * cp), Math.min(1, dt * 6));
-    camera.lookAt(tx, 0.6, tz);
+    const cp = Math.cos(cam.pitch) * cam.dist; const tx = pos.current.x, tz = pos.current.z - 1.0;
+    const want = new THREE.Vector3(tx + Math.sin(cam.yaw) * cp, 1.0 + Math.sin(cam.pitch) * cam.dist, tz + Math.cos(cam.yaw) * cp);
+    // 카메라 충돌: 방 안쪽(뒷벽·왼쪽 벽 바깥)으로 나가지 않게 제한
+    want.x = Math.max(-room.size.w / 2 + 0.4, Math.min(room.size.w / 2 + 6, want.x)); want.z = Math.max(-room.size.d / 2 + 0.5, want.z); want.y = Math.max(1.6, Math.min(8.5, want.y));
+    camera.position.lerp(want, Math.min(1, dt * 6));
+    camera.lookAt(tx, 1.3, tz - Math.cos(cam.yaw) * 1.5);
     tick.current += dt;
     if (tick.current > 0.1) {
       tick.current = 0; const n = nearestIn(room, pos.current.x, pos.current.z); const key = n ? n.kind + n.id : '';

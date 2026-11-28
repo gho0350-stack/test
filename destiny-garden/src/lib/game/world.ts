@@ -34,11 +34,13 @@ export function interactWith(kind: 'building' | 'npc', id: string, store: { play
   else { const [x, z] = kind === 'npc' ? resolve(t.x + (player.x > t.x ? 1.5 : -1.5), t.z + (player.z > t.z ? 1.5 : -1.5), 0.2) : [t.x, t.z]; store.set({ target: { x, z }, pending: { kind, id, x: t.x, z: t.z } }); }
 }
 
+/** 실내 장식 GLB 충돌 원 (레지스트리에 준비된 모델만 RoomDecor 가 등록) */
+export const decorCols: Record<string, [number, number, number][]> = {};
 /** 실내: 벽/가구 충돌 */
 export function resolveIn(room: (typeof rooms)[number], x: number, z: number, r = 0.4): [number, number] {
   const hw = room.size.w / 2 - 0.7, hd = room.size.d / 2 - 0.6;
   x = Math.max(-hw, Math.min(hw, x)); z = Math.max(-hd + 0.4, Math.min(hd, z));
-  const cols: [number, number, number][] = [...(room.objects as any[]).map((o) => [o.pos.x, o.pos.z, o.type === 'chairs' ? 0.9 : o.type === 'mirror' || o.type === 'map' ? 0.5 : 0.8] as [number, number, number]), [room.sage.pos.x, room.sage.pos.z, 0.6]];
+  const cols: [number, number, number][] = [...(room.objects as any[]).map((o) => [o.pos.x, o.pos.z, o.type === 'chairs' ? 0.9 : o.type === 'mirror' || o.type === 'map' ? 0.5 : 0.8] as [number, number, number]), [room.sage.pos.x, room.sage.pos.z, 0.6], ...(decorCols[room.id] ?? [])];
   for (const [ox, oz, or] of cols) { const dx = x - ox, dz = z - oz, dd = Math.hypot(dx, dz), min = or + r; if (dd < min && dd > 0.0001) { x = ox + (dx / dd) * min; z = oz + (dz / dd) * min; } }
   return [x, z];
 }

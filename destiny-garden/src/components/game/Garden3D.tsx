@@ -11,6 +11,7 @@ import { CameraControls } from './CameraControls';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { Shadowed } from './Shadowed';
 import { groundTex, stoneTex, roofTex } from '@/lib/client/textures';
+import { PbrMaterial } from './Pbr';
 import { cam, camRelative, resetCam } from '@/lib/client/camera';
 
 // ───────── 공용 ─────────
@@ -189,7 +190,7 @@ function Ground() {
     <mesh rotation-x={-Math.PI / 2} position={[0, -0.02, 0]} onPointerDown={(e) => { if (e.delta > 4) return; e.stopPropagation(); const [x, z] = resolve(e.point.x, e.point.z); useGame.setState({ target: { x, z }, pending: null }); }}>
       <circleGeometry args={[RADIUS + 4, 48]} /><meshStandardMaterial map={groundTex('#3d3a5e', [12, 12])} />
     </mesh>
-    <mesh rotation-x={-Math.PI / 2} position={[0, -0.01, 0]}><circleGeometry args={[RADIUS - 0.5, 48]} /><meshStandardMaterial map={groundTex('#4d6a5c', [9, 9])} /></mesh>
+    <mesh rotation-x={-Math.PI / 2} position={[0, -0.01, 0]}><circleGeometry args={[RADIUS - 0.5, 48]} /><PbrMaterial id="tex_grass" repeat={[9, 9]} tint="#9fb890" fallback={<meshStandardMaterial map={groundTex('#4d6a5c', [9, 9])} />} /></mesh>
     {patches.map(([x, z, r], i) => <mesh key={i} rotation-x={-Math.PI / 2} position={[x, 0.0, z]}><circleGeometry args={[r, 7]} /><meshStandardMaterial color={i % 2 ? '#587068' : '#415b57'} flatShading /></mesh>)}
     {/* 외곽 산 */}
     {Array.from({ length: 14 }, (_, i) => { const a = (i / 14) * Math.PI * 2, r = RADIUS + 10 + (i % 3) * 4; return <mesh key={i} position={[Math.cos(a) * r, 3 + (i % 4), Math.sin(a) * r]}><coneGeometry args={[7 + (i % 3) * 2, 12 + (i % 4) * 3, 6]} /><meshStandardMaterial color={i % 2 ? '#2a2552' : '#332b63'} flatShading /></mesh>; })}
@@ -316,8 +317,9 @@ function Player() {
     // 카메라
     const cp = Math.cos(cam.pitch) * cam.dist;
     const want = new THREE.Vector3(pos.current.x + Math.sin(cam.yaw) * cp, 1 + Math.sin(cam.pitch) * cam.dist, pos.current.z + Math.cos(cam.yaw) * cp);
+    want.y = Math.max(1.4, want.y);
     camera.position.lerp(want, Math.min(1, dt * 6));
-    camera.lookAt(pos.current.x, 0.9, pos.current.z - 1.5);
+    camera.lookAt(pos.current.x - Math.sin(cam.yaw) * 2, 1.5, pos.current.z - Math.cos(cam.yaw) * 2);
     // 근접 감지/HUD 동기화 (프레임당 상태 갱신 최소화)
     tick.current += dt;
     if (tick.current > 0.1) {
@@ -341,17 +343,17 @@ export default function Garden3D() {
       <CameraControls />
       {room ? <Interior key={room} id={room} /> : (
         <>
-          <color attach="background" args={['#1b1140']} />
-          <fog attach="fog" args={['#2b1a5c', 26, 66]} />
-          <ambientLight intensity={1.15} color="#b8a6ff" />
-          <hemisphereLight args={['#c9b8ff', '#3a2b5a', 0.8]} />
+          <color attach="background" args={['#141a30']} />
+          <fog attach="fog" args={['#1d2644', 26, 70]} />
+          <ambientLight intensity={1.0} color="#c8c0e0" />
+          <hemisphereLight args={['#dfe6ff', '#4a3b30', 0.8]} />
           <directionalLight position={[-14, 22, 10]} intensity={1.4} color="#ffe6c4" castShadow={hi} shadow-mapSize={[1536, 1536]} shadow-camera-left={-26} shadow-camera-right={26} shadow-camera-top={26} shadow-camera-bottom={-26} shadow-camera-near={1} shadow-camera-far={70} shadow-bias={-0.0006} />
           <directionalLight position={[10, 8, -8]} intensity={0.5} color="#8a7cff" />
           <Stars radius={90} depth={40} count={1400} factor={5} fade speed={0.6} />
           <Moon /><Ground /><PathStones /><Pond /><BlossomTrees /><Lanterns /><Buildings /><Player /><Petals />
         </>
       )}
-      {hi && <EffectComposer multisampling={0}><Bloom intensity={0.75} luminanceThreshold={0.82} luminanceSmoothing={0.2} mipmapBlur /><Vignette eskil={false} offset={0.25} darkness={0.55} /></EffectComposer>}
+      {hi && <EffectComposer multisampling={0}><Bloom intensity={0.45} luminanceThreshold={0.9} luminanceSmoothing={0.2} mipmapBlur /><Vignette eskil={false} offset={0.25} darkness={0.55} /></EffectComposer>}
     </Canvas>
   );
 }
