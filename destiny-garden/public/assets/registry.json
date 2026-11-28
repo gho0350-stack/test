@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-28T14:09:01.718Z",
+  "generated_at": "2026-11-28T14:12:07.708Z",
   "textures": {
     "tex_wood_floor": {
       "diff": "/assets/textures/tex_wood_floor/diff.webp",
@@ -66,12 +66,12 @@
     "model_treasure_chest": {
       "path": "/assets/models/model_treasure_chest.glb",
       "size_m": [
-        1.394,
+        1.395,
         0.9,
         0.76
       ],
-      "triangles": 103330,
-      "bytes": 2961944
+      "triangles": 24993,
+      "bytes": 968580
     },
     "model_crate": {
       "path": "/assets/models/model_crate.glb",
@@ -100,8 +100,8 @@
         0.9,
         0.461
       ],
-      "triangles": 13648,
-      "bytes": 645504
+      "triangles": 12000,
+      "bytes": 587424
     },
     "model_tea_table": {
       "path": "/assets/models/model_tea_table.glb",
@@ -170,8 +170,8 @@
         0.7,
         0.406
       ],
-      "triangles": 9408,
-      "bytes": 264720
+      "triangles": 8000,
+      "bytes": 233456
     },
     "model_lantern": {
       "path": "/assets/models/model_lantern.glb",
@@ -180,8 +180,8 @@
         0.7,
         0.31
       ],
-      "triangles": 8321,
-      "bytes": 393936
+      "triangles": 7999,
+      "bytes": 383848
     },
     "model_chandelier": {
       "path": "/assets/models/model_chandelier.glb",
@@ -200,18 +200,18 @@
         0.3,
         0.206
       ],
-      "triangles": 67306,
-      "bytes": 2648852
+      "triangles": 27802,
+      "bytes": 1663292
     },
     "model_basket": {
       "path": "/assets/models/model_basket.glb",
       "size_m": [
-        1.958,
-        0.6,
-        1.507
+        1.305,
+        0.4,
+        1.005
       ],
-      "triangles": 22276,
-      "bytes": 731444
+      "triangles": 12000,
+      "bytes": 468628
     },
     "model_screen": {
       "path": "/assets/models/model_screen.glb",
@@ -228,20 +228,20 @@
       "size_m": [
         1,
         1.2,
-        0.938
+        0.936
       ],
-      "triangles": 69806,
-      "bytes": 1965860
+      "triangles": 19994,
+      "bytes": 733888
     },
     "model_teaset": {
       "path": "/assets/models/model_teaset.glb",
       "size_m": [
-        1.392,
+        1.391,
         0.25,
         0.733
       ],
-      "triangles": 40296,
-      "bytes": 914432
+      "triangles": 11986,
+      "bytes": 363584
     },
     "model_mirror": {
       "path": "/assets/models/model_mirror.glb",
@@ -250,38 +250,38 @@
         1.8,
         0.063
       ],
-      "triangles": 14246,
-      "bytes": 422748
+      "triangles": 9999,
+      "bytes": 322452
     },
     "model_tree_blossom": {
       "path": "/assets/models/model_tree_blossom.glb",
       "size_m": [
-        7.478,
+        7.506,
         6,
-        5.889
+        5.935
       ],
-      "triangles": 71346,
-      "bytes": 4409584
+      "triangles": 66519,
+      "bytes": 4072020
     },
     "model_tree_small": {
       "path": "/assets/models/model_tree_small.glb",
       "size_m": [
-        2.537,
+        2.538,
         4,
-        3.642
+        3.667
       ],
-      "triangles": 30743,
-      "bytes": 1369592
+      "triangles": 61692,
+      "bytes": 3597072
     },
     "model_rocks": {
       "path": "/assets/models/model_rocks.glb",
       "size_m": [
         5.432,
         1.2,
-        4.716
+        4.712
       ],
-      "triangles": 63127,
-      "bytes": 1542736
+      "triangles": 19992,
+      "bytes": 576320
     }
   }
 }

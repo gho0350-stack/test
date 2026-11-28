@@ -31,15 +31,8 @@ prune: Removed types... Texture (1)
 prune: Removed types... Accessor (3)
 quantize: Skipping TEXCOORD_0; out of [0,1] range.
 prune: Removed types... Accessor (8)
-quantize: Skipping TEXCOORD_0; out of [0,1] range.
-prune: Removed types... Accessor (8)
-quantize: Skipping TEXCOORD_0; out of [0,1] range.
-prune: Removed types... Accessor (8)
 [process] model_tree_blossom: OK
 prune: Removed types... Accessor (3)
-prune: Removed types... Accessor (9)
-prune: Removed types... Accessor (9)
-prune: Removed types... Accessor (9)
 [process] model_tree_small: OK
 [process] model_rocks: OK
 [process] 완료: 성공 32, 실패 0

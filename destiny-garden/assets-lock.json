@@ -15,7 +15,7 @@
     },
     "spec": "95eb2820f248de2bfc702d6b12c8141ec22fe5e9105dfbb7d5a3164b571c4033",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:22.227Z"
+    "fetched_at": "2026-11-28T14:11:29.984Z"
   },
   "tex_wood_dark": {
     "source": "polyhaven",
@@ -33,7 +33,7 @@
     },
     "spec": "1109f0b48063393be995aef45138e5eb3081177c4dcdaa6e76e5a4cf5f0046cd",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:22.688Z"
+    "fetched_at": "2026-11-28T14:11:30.666Z"
   },
   "tex_stone_path": {
     "source": "polyhaven",
@@ -51,7 +51,7 @@
     },
     "spec": "5b4ec54c23648dc9fd791ae8fa8bf067d7bac06fec239cb0df9424d064a03294",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:23.213Z"
+    "fetched_at": "2026-11-28T14:11:31.469Z"
   },
   "tex_stone_wall": {
     "source": "polyhaven",
@@ -69,7 +69,7 @@
     },
     "spec": "34c3bc8997d6436d720882ae79b444d8c060200215dc442dadc3a53b94161c47",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:23.687Z"
+    "fetched_at": "2026-11-28T14:11:32.656Z"
   },
   "tex_roof_tile": {
     "source": "polyhaven",
@@ -87,7 +87,7 @@
     },
     "spec": "c6f8bb9256b908a4afbb3d1c3ed93614efcfd6bdad28b6db0f238eced95b864e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:25.831Z"
+    "fetched_at": "2026-11-28T14:11:34.855Z"
   },
   "tex_fabric_rug": {
     "source": "ambientcg",
@@ -104,7 +104,7 @@
     },
     "spec": "080b70feffcc2a25b04d490c3c3c14a21503b25cf64f0a9622152b2852e7b57e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:26.905Z"
+    "fetched_at": "2026-11-28T14:11:36.303Z"
   },
   "tex_grass": {
     "source": "polyhaven",
@@ -122,7 +122,7 @@
     },
     "spec": "15e35f1c8219fc6f4ef69bc45ded3b4755f361d6802fe7cc3c7bbf9a897b64ae",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:27.371Z"
+    "fetched_at": "2026-11-28T14:11:36.858Z"
   },
   "model_treasure_chest": {
     "source": "polyhaven",
@@ -136,7 +136,7 @@
     },
     "spec": "6ba9f4dd0b5a649138c389b82e9d7f2e5fa6392ab86b57c6f40fc6021e66eb48",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:28.659Z"
+    "fetched_at": "2026-11-28T14:11:39.114Z"
   },
   "model_crate": {
     "source": "polyhaven",
@@ -150,7 +150,7 @@
     },
     "spec": "1e5106384916701f9032d57f6fa4e3493fffa3a71d7cd60a05c59b4f9b54bf9a",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:29.092Z"
+    "fetched_at": "2026-11-28T14:11:39.559Z"
   },
   "model_barrel": {
     "source": "polyhaven",
@@ -164,7 +164,7 @@
     },
     "spec": "a4508c0fe55d7094d462ff491e730cbc7033ab7af73268201dc64e60297f0d4a",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:29.533Z"
+    "fetched_at": "2026-11-28T14:11:39.994Z"
   },
   "model_table": {
     "source": "polyhaven",
@@ -178,7 +178,7 @@
     },
     "spec": "cfdd8e9e53639be02475835106472c8f57e27f480fd0c8ff9d80730e34b25acd",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:29.939Z"
+    "fetched_at": "2026-11-28T14:11:40.689Z"
   },
   "model_chair": {
     "source": "polyhaven",
@@ -192,7 +192,7 @@
     },
     "spec": "fb20dc07ade8ab7e479382bb45dcead85addd1b757a7f1f5537dfa6bbfe2da3a",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:30.771Z"
+    "fetched_at": "2026-11-28T14:11:41.578Z"
   },
   "model_shelf": {
     "source": "polyhaven",
@@ -206,7 +206,7 @@
     },
     "spec": "5b11673ef2548ae0007d14a23c32da256ec8cb1d26799308346a0d7054693845",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:32.118Z"
+    "fetched_at": "2026-11-28T14:11:43.096Z"
   },
   "model_vase": {
     "source": "polyhaven",
@@ -220,7 +220,7 @@
     },
     "spec": "80c0c595689396f2f78ee7e706894869558af36aeb6b72e005ea2dbb6842ca0e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:32.913Z"
+    "fetched_at": "2026-11-28T14:11:44.236Z"
   },
   "model_lantern": {
     "source": "polyhaven",
@@ -234,7 +234,7 @@
     },
     "spec": "d733b9d658de20904557a6da280153b15c87d1bc7dd1b28e5189fb11561156b9",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:33.379Z"
+    "fetched_at": "2026-11-28T14:11:44.743Z"
   },
   "model_books": {
     "source": "polyhaven",
@@ -248,7 +248,7 @@
     },
     "spec": "e03147eb4ee88cc3a8de9cbaf1096ca097a437a8feb3496ae755b3efd0f045c8",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:34.258Z"
+    "fetched_at": "2026-11-28T14:11:46.045Z"
   },
   "model_sack": {
     "source": "polyhaven",
@@ -278,7 +278,7 @@
     },
     "spec": "6ecb59267b142e89abde2cb9466980509d864aba017e0172e0aa575842c05a73",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:25.288Z"
+    "fetched_at": "2026-11-28T14:11:34.365Z"
   },
   "tex_tatami": {
     "source": "polyhaven",
@@ -296,7 +296,7 @@
     },
     "spec": "bad25d73906ab025d5955be2f0c2d89761955f695803fbf2db874bc4f86a5e34",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:27.768Z"
+    "fetched_at": "2026-11-28T14:11:38.114Z"
   },
   "tex_bamboo": {
     "source": "polyhaven",
@@ -314,7 +314,7 @@
     },
     "spec": "fa8008b542623df092d8fcd0c742592bb40d197218b2b1ffcd1c3452854833eb",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:28.199Z"
+    "fetched_at": "2026-11-28T14:11:38.640Z"
   },
   "model_tea_table": {
     "source": "polyhaven",
@@ -328,7 +328,7 @@
     },
     "spec": "5ff3e78ec60c26c2e8ebd5caf39c1e57284f32a14555e28e2cfe65bb8179e2b0",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:30.352Z"
+    "fetched_at": "2026-11-28T14:11:41.135Z"
   },
   "model_stool": {
     "source": "polyhaven",
@@ -342,7 +342,7 @@
     },
     "spec": "78a2a379af2e9a44d1fd58362212c7a8ee86f6706fffa1c60a0d76336de2f93b",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:31.262Z"
+    "fetched_at": "2026-11-28T14:11:41.998Z"
   },
   "model_cabinet": {
     "source": "polyhaven",
@@ -356,7 +356,7 @@
     },
     "spec": "e12fb477de6fdb0d48548d4cce1a5c8eca8d5899a3327b3f62303f6772507a14",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:31.695Z"
+    "fetched_at": "2026-11-28T14:11:42.655Z"
   },
   "model_drawer": {
     "source": "polyhaven",
@@ -370,7 +370,7 @@
     },
     "spec": "b9750ddc1acc1adfe5097e3abe40a7b2886bd5dd06bd6a082558d73e3f424a64",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:32.520Z"
+    "fetched_at": "2026-11-28T14:11:43.814Z"
   },
   "model_chandelier": {
     "source": "polyhaven",
@@ -384,7 +384,7 @@
     },
     "spec": "5f5ccb2f772671dd49977161b4c7dd9f3e343e2437eace4536bbade2319937e5",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:33.787Z"
+    "fetched_at": "2026-11-28T14:11:45.345Z"
   },
   "model_basket": {
     "source": "polyhaven",
@@ -398,7 +398,7 @@
     },
     "spec": "2bd87786611c111b4cf35e1d74818db68d81dcf6901c50b4a2e4f77de773f9b1",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:34.670Z"
+    "fetched_at": "2026-11-28T14:11:46.717Z"
   },
   "model_screen": {
     "source": "polyhaven",
@@ -412,7 +412,7 @@
     },
     "spec": "5887b67674cdbacc4ed6a8f4d4c196c594fcde1cae439e9a63fe0983d58e2cf8",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:35.078Z"
+    "fetched_at": "2026-11-28T14:11:47.243Z"
   },
   "model_plant": {
     "source": "polyhaven",
@@ -426,7 +426,7 @@
     },
     "spec": "eedb62c440b08ab86cdd39360acb0ad2fdd007cbc6b82a3588d2bec2f2e8618c",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:35.556Z"
+    "fetched_at": "2026-11-28T14:11:47.792Z"
   },
   "model_teaset": {
     "source": "polyhaven",
@@ -440,7 +440,7 @@
     },
     "spec": "7ba196216c900c54e5bc9435b12bdd1799a26a89819b3e66c02b4c4def53ce40",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:35.962Z"
+    "fetched_at": "2026-11-28T14:11:48.310Z"
   },
   "model_mirror": {
     "source": "polyhaven",
@@ -454,7 +454,7 @@
     },
     "spec": "8e2db588d5e86b5868fd3b222f3de27820b15dce5f77333472ecc65e0853ac01",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:36.354Z"
+    "fetched_at": "2026-11-28T14:11:48.718Z"
   },
   "model_tree_blossom": {
     "source": "polyhaven",
@@ -468,7 +468,7 @@
     },
     "spec": "8c959e575cd0d78fcd8e9128cf87365b8ee24451ad7d357c426e6569709e8035",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:38.014Z"
+    "fetched_at": "2026-11-28T14:11:50.754Z"
   },
   "model_tree_small": {
     "source": "polyhaven",
@@ -482,7 +482,7 @@
     },
     "spec": "f2162d040ef16f195185d73e11f3c78390583dfd041949e9777ce37785e47ca9",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:39.061Z"
+    "fetched_at": "2026-11-28T14:11:52.021Z"
   },
   "model_rocks": {
     "source": "polyhaven",
@@ -496,6 +496,6 @@
     },
     "spec": "9077631f89c738cfd977a99234c6b3b93fae064be402126d718c2dfe439f4c0e",
     "download_status": "ok",
-    "fetched_at": "2026-11-28T14:08:39.467Z"
+    "fetched_at": "2026-11-28T14:11:52.440Z"
   }
 }

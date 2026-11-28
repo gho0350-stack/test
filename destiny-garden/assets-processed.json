@@ -78,14 +78,14 @@
   },
   "model_treasure_chest": {
     "type": "model",
-    "bytes": 2961944,
-    "sha256": "d7932fd1b214610248e02c262fe1343953cbfca859d0fe4ac919f48519b12a9e",
+    "bytes": 968580,
+    "sha256": "fa88449706e90765163c01eeef689131afb6074850db3d9364a3016b2f67d0b6",
     "size_m": [
-      1.394,
+      1.395,
       0.9,
       0.76
     ],
-    "triangles": 103330,
+    "triangles": 24993,
     "path": "/assets/models/model_treasure_chest.glb",
     "optimization_status": "ok"
   },
@@ -117,14 +117,14 @@
   },
   "model_table": {
     "type": "model",
-    "bytes": 645504,
-    "sha256": "f36ea1b6c63ce145a23d38701275f081a98f7133b89413bc05fcd754dc9a36d3",
+    "bytes": 587424,
+    "sha256": "6767b12f4b35df63d2fcc9cb752316b71279e84c09b722cc2c4c550102e407a1",
     "size_m": [
       2.342,
       0.9,
       0.461
     ],
-    "triangles": 13648,
+    "triangles": 12000,
     "path": "/assets/models/model_table.glb",
     "optimization_status": "ok"
   },
@@ -156,40 +156,40 @@
   },
   "model_vase": {
     "type": "model",
-    "bytes": 264720,
-    "sha256": "7db4029e3473313fb3c76807da238825d4424de1c47120ebee26b04c175e0508",
+    "bytes": 233456,
+    "sha256": "275532ec681b346e195d4afcec26b0b6a126ad314ddce5d5b6aa844b72065de9",
     "size_m": [
       0.406,
       0.7,
       0.406
     ],
-    "triangles": 9408,
+    "triangles": 8000,
     "path": "/assets/models/model_vase.glb",
     "optimization_status": "ok"
   },
   "model_lantern": {
     "type": "model",
-    "bytes": 393936,
-    "sha256": "ea4e0698cde66bf9176d1fda2365990f670fa0abdca1970024fa90ff900ddf3c",
+    "bytes": 383848,
+    "sha256": "10f45a7441e1b84e25dece0d9b4545d7ef9732a4a010c55589f0a3b4abead992",
     "size_m": [
       0.292,
       0.7,
       0.31
     ],
-    "triangles": 8321,
+    "triangles": 7999,
     "path": "/assets/models/model_lantern.glb",
     "optimization_status": "ok"
   },
   "model_books": {
     "type": "model",
-    "bytes": 2648852,
-    "sha256": "fcee4913e4f9fcabe9a375d14eba701adf55d5037c751e665d4c3fb7cf034283",
+    "bytes": 1663292,
+    "sha256": "185eea24df428e8853b7c9d18e5f7cb50a68f0bdbb49decf64a6f6ab0c07472a",
     "size_m": [
       0.697,
       0.3,
       0.206
     ],
-    "triangles": 67306,
+    "triangles": 27802,
     "path": "/assets/models/model_books.glb",
     "optimization_status": "ok"
   },
@@ -306,14 +306,14 @@
   },
   "model_basket": {
     "type": "model",
-    "bytes": 731444,
-    "sha256": "89945e28ae188378873ab2e278390710b1b725fed313acd03be8267c6506b38b",
+    "bytes": 468628,
+    "sha256": "e73534991a146a0e92493a2b9d95d90d7d0fa7a88277e0d21f53463d68cadeea",
     "size_m": [
-      1.958,
-      0.6,
-      1.507
+      1.305,
+      0.4,
+      1.005
     ],
-    "triangles": 22276,
+    "triangles": 12000,
     "path": "/assets/models/model_basket.glb",
     "optimization_status": "ok"
   },
@@ -332,79 +332,79 @@
   },
   "model_plant": {
     "type": "model",
-    "bytes": 1965860,
-    "sha256": "6db8e9d3d4e9b52145b475dda30898cc994818eee2d3e1d02ce8d0b62a06a821",
+    "bytes": 733888,
+    "sha256": "cb0036b4ea9d529a301b91fe9999581fd751507225cd2f787d8f82a74917c764",
     "size_m": [
       1,
       1.2,
-      0.938
+      0.936
     ],
-    "triangles": 69806,
+    "triangles": 19994,
     "path": "/assets/models/model_plant.glb",
     "optimization_status": "ok"
   },
   "model_teaset": {
     "type": "model",
-    "bytes": 914432,
-    "sha256": "b0bbb816802df1f5423b0472310b8c92233a9d3c515c74ace9bf836abf31f9a2",
+    "bytes": 363584,
+    "sha256": "5d6791bd013b333b5f34955d355b2e88de788496fc527015edc8b0c97342d3fb",
     "size_m": [
-      1.392,
+      1.391,
       0.25,
       0.733
     ],
-    "triangles": 40296,
+    "triangles": 11986,
     "path": "/assets/models/model_teaset.glb",
     "optimization_status": "ok"
   },
   "model_mirror": {
     "type": "model",
-    "bytes": 422748,
-    "sha256": "c3d69240689458c037f02d0f1f33d98c0192a63d937f264416f386f569e5bd21",
+    "bytes": 322452,
+    "sha256": "2aadfb7617e8b549500ba0794b82786e9108dd9d62630b5218d091b7ab920b5e",
     "size_m": [
       1.177,
       1.8,
       0.063
     ],
-    "triangles": 14246,
+    "triangles": 9999,
     "path": "/assets/models/model_mirror.glb",
     "optimization_status": "ok"
   },
   "model_tree_blossom": {
     "type": "model",
-    "bytes": 4409584,
-    "sha256": "9d98c35f359cae80803b72cd46dcf9f3d644876bc7ab7b3280b1aebe1817e4a3",
+    "bytes": 4072020,
+    "sha256": "fafd0babab5b774522fb0840d26884263f1a5ea027296c210ff7ed9784320cc8",
     "size_m": [
-      7.478,
+      7.506,
       6,
-      5.889
+      5.935
     ],
-    "triangles": 71346,
+    "triangles": 66519,
     "path": "/assets/models/model_tree_blossom.glb",
     "optimization_status": "ok"
   },
   "model_tree_small": {
     "type": "model",
-    "bytes": 1369592,
-    "sha256": "354138fe3c3c6b1bd3c8b9f6ecf67b59518d98b09e5364a84bfcd16e2b4d3dd4",
+    "bytes": 3597072,
+    "sha256": "3f882aca8ed0c544852a4774a617a0ad4a23b406f0c579f1d5fbbc64fe757c90",
     "size_m": [
-      2.537,
+      2.538,
       4,
-      3.642
+      3.667
     ],
-    "triangles": 30743,
+    "triangles": 61692,
     "path": "/assets/models/model_tree_small.glb",
     "optimization_status": "ok"
   },
   "model_rocks": {
     "type": "model",
-    "bytes": 1542736,
-    "sha256": "84d559f20354792e94792dacf5846ac7d6c1ea9bdf5bcbd6e02947af99553426",
+    "bytes": 576320,
+    "sha256": "544157735cfb221c2f6e0d661a5cf46919221966f315928514babe021f1295ff",
     "size_m": [
       5.432,
       1.2,
-      4.716
+      4.712
     ],
-    "triangles": 63127,
+    "triangles": 19992,
     "path": "/assets/models/model_rocks.glb",
     "optimization_status": "ok"
   }
