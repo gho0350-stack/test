@@ -47,7 +47,7 @@ function Roof({ w, d, h = 1.7, y, color = ROOF, segs = 4, rot = Math.PI / 4 }: {
   const r = Math.hypot(w, d) / 2;
   return (
     <group position={[0, y, 0]}>
-      <mesh rotation-y={rot} scale={[w / (r * 1.41), 1, d / (r * 1.41)]} position={[0, h / 2, 0]}><coneGeometry args={[r * 1.02, h, segs]} /><meshStandardMaterial map={roofTex(color, [4, 3])} color="#fff" flatShading /></mesh>
+      <mesh rotation-y={rot} scale={[w / (r * 1.41), 1, d / (r * 1.41)]} position={[0, h / 2, 0]}><coneGeometry args={[r * 1.02, h, segs]} /><PbrMaterial id="tex_roof_tile" repeat={[4, 3]} tint="#8a8fb0" fallback={<meshStandardMaterial map={roofTex(color, [4, 3])} color="#fff" flatShading />} /></mesh>
       <mesh rotation-y={rot} scale={[w / (r * 1.41), 1, d / (r * 1.41)]} position={[0, -0.04, 0]}><coneGeometry args={[r * 1.12, 0.24, segs]} /><Mat c={ROOF2} /></mesh>
       <mesh position={[0, h + 0.1, 0]}><coneGeometry args={[0.12, 0.34, 6]} /><Mat c="#f5c451" e="#f5c451" ei={0.6} /></mesh>
     </group>
@@ -207,7 +207,7 @@ function PathStones() {
     return out;
   }, []);
   useEffect(() => { const m = ref.current; if (!m) return; const o = new THREE.Object3D(); pts.forEach(([x, z, s, j], i) => { o.position.set(x, 0.03, z); o.rotation.y = j; o.scale.set(s, 1, s); o.updateMatrix(); m.setMatrixAt(i, o.matrix); m.setColorAt(i, new THREE.Color(j % 2 ? '#a7a3bb' : '#8f8ba6')); }); m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }, [pts]);
-  return <instancedMesh ref={ref} args={[undefined, undefined, pts.length]}><cylinderGeometry args={[1, 1, 0.08, 7]} /><meshStandardMaterial map={stoneTex('#b6b2cc', [1, 1])} flatShading /></instancedMesh>;
+  return <instancedMesh ref={ref} args={[undefined, undefined, pts.length]}><cylinderGeometry args={[1, 1, 0.08, 7]} /><PbrMaterial id="tex_stone_path" repeat={[1, 1]} fallback={<meshStandardMaterial map={stoneTex('#b6b2cc', [1, 1])} flatShading />} /></instancedMesh>;
 }
 function Pond() {
   return <group position={[-9, 0, 7]}>

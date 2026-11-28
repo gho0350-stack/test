@@ -17,9 +17,10 @@ async function polyhaven(asset, src, dir) {
   const type = asset.kind === 'texture' ? 'textures' : 'models';
   const cats = src.categories?.length ? src.categories : [''];
   const pool = new Map();
-  for (const c of cats) { try { const list = await http(`${PH}/assets?t=${type}${c ? `&c=${encodeURIComponent(c)}` : ''}`, { json: true }); for (const [id, info] of Object.entries(list)) pool.set(id, info); } catch (e) { log(`  목록 실패(${c}): ${e.message}`); } }
-  const ranked = [...pool.entries()].map(([id, info]) => ({ id, info, s: score(id, info, src.keywords, src.avoid) })).filter((x) => x.s > 0)
+  if (!src.id) for (const c of cats) { try { const list = await http(`${PH}/assets?t=${type}${c ? `&c=${encodeURIComponent(c)}` : ''}`, { json: true }); for (const [id, info] of Object.entries(list)) pool.set(id, info); } catch (e) { log(`  목록 실패(${c}): ${e.message}`); } }
+  const ranked = src.id ? [{ id: src.id, info: { name: src.id }, s: 99 }] : [...pool.entries()].map(([id, info]) => ({ id, info, s: score(id, info, src.keywords, src.avoid) })).filter((x) => x.s > 0)
     .sort((a, b) => b.s - a.s || (b.info.download_count ?? 0) - (a.info.download_count ?? 0)).slice(0, 4);
+  log(`  후보: ${ranked.map((r) => r.id).join(', ')}`);
   if (!ranked.length) throw new Error(`Poly Haven 에서 조건에 맞는 ${type} 없음 (${(src.keywords || []).join(',')})`);
   let lastErr;
   for (const cand of ranked) {
@@ -48,7 +49,7 @@ async function polyhaven(asset, src, dir) {
 
 async function ambientcg(asset, src, dir) {
   if (asset.kind !== 'texture') throw new Error('ambientCG 는 텍스처만 지원');
-  const data = await http(`https://ambientcg.com/api/v2/full_json?type=Material&q=${encodeURIComponent(src.query)}&sort=Popular&limit=3&include=downloadData`, { json: true });
+  const data = await http(src.id ? `https://ambientcg.com/api/v2/full_json?id=${encodeURIComponent(src.id)}&include=downloadData` : `https://ambientcg.com/api/v2/full_json?type=Material&q=${encodeURIComponent(src.query)}&sort=Popular&limit=3&include=downloadData`, { json: true });
   for (const a of data.foundAssets ?? []) {
     try {
       const dl = Object.values(a.downloadFolders ?? {}).flatMap((f) => Object.values(f.downloadFiletypeCategories ?? {})).flatMap((c) => c.downloads ?? []).find((d) => /^1K-JPG$/i.test(d.attribute));

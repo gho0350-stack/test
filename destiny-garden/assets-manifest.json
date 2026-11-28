@@ -1,7 +1,7 @@
 {
   "_doc": "에셋 자동 수집 목록. 존재 여부를 모르는 ID 대신 '검색 조건'(카테고리·키워드)을 쓰고, 파이프라인이 공식 API에서 실제 존재하는 에셋을 찾아 선택한다. 라이선스는 CC0 계열만 허용(allowed_licenses).",
   "allowed_licenses": ["CC0", "CC0-1.0", "Public Domain"],
-  "target": { "texture_size": 1024, "model_texture_size": 1024 },
+  "target": { "texture_size": 1024, "model_texture_size": 512 },
   "assets": [
     { "asset_id": "tex_wood_floor", "kind": "texture", "category": "floor", "required_room": "all", "fallback_asset": "procedural:wood",
       "sources": [{ "type": "polyhaven", "categories": ["wood", "floor"], "keywords": ["plank", "floor", "wood"], "avoid": ["white", "bleached", "painted"] }, { "type": "ambientcg", "query": "WoodFloor" }] },
